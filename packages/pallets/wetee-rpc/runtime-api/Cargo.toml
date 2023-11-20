@@ -1,0 +1,21 @@
+[package]
+name = "wetee-runtime-api"
+version = "1.0.0"
+authors = ["dao-entrance"]
+edition = "2021"
+publish = false
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = [
+	"derive",
+] }
+sp-api = { default-features = false, git = "https://github.com/paritytech/substrate.git", "branch" = "polkadot-v1.0.0" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", "branch" = "polkadot-v1.0.0" }
+wetee-primitives = { path = "../../../primitives", default-features = false }
+
+[features]
+default = ["std"]
+std = ["codec/std", "wetee-primitives/std", "sp-api/std", "sp-runtime/std"]
