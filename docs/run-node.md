@@ -13,7 +13,7 @@ Follow the steps below to get started with the example node.
 Use Rust's native `cargo` command to build and launch the node:  
 
 ```sh
-cargo run --release -p dao-entrance-node -- --dev
+cargo run --release -p wetee-node -- --dev
 ```
 
 ### Build
@@ -31,7 +31,7 @@ Once the project has been built, the following command can be used to explore al
 subcommands:  
 
 ```sh
-./target/release/dao-entrance-node -h
+./target/release/wetee-node -h
 ```
 
 ## Run
@@ -46,19 +46,19 @@ After the project has been built, there are other ways to launch the node.
 This command will start the single-node development chain with non-persistent state:  
 
 ```bash
-./target/release/dao-entrance-node --dev
+./target/release/wetee-node --dev
 ```
 
 Purge the development chain's state:  
 
 ```bash
-./target/release/dao-entrance-node purge-chain --dev
+./target/release/wetee-node purge-chain --dev
 ```
 
 Start the development chain with detailed logging:  
 
 ```bash
-RUST_BACKTRACE=1 ./target/release/dao-entrance-node -ldebug --dev
+RUST_BACKTRACE=1 ./target/release/wetee-node -ldebug --dev
 ```
 
 > Development chain means that the state of our chain will be in a tmp folder while the nodes are
@@ -76,7 +76,7 @@ is ran. The following commands shows how to use a newly created folder as our db
 $ mkdir local-chain-state
 
 // Use of that folder to store the chain state
-$ ./target/release/dao-entrance-node --dev --base-path ./local-chain-state/
+$ ./target/release/wetee-node --dev --base-path ./local-chain-state/
 
 // Check the folder structure created inside the base path after running the chain
 $ ls ./local-chain-state

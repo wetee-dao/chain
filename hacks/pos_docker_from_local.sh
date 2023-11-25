@@ -23,7 +23,7 @@ if [ $# -gt 0 ]; then
 fi
 
 # 编译
-cargo build --release -p dao-entrance-node
+cargo build --release -p wetee-node
 
-docker build . -f pos_from_bin.Dockerfile -t "wetee/dao-entrance-node:$TAG"
-docker push "wetee/dao-entrance-node:$TAG"
+docker build . -f pos_from_bin.Dockerfile -t "wetee/wetee-node:$TAG"
+docker push "wetee/wetee-node:$TAG"

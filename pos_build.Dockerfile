@@ -7,7 +7,7 @@ RUN cargo build --locked --release
 FROM ubuntu:22.10
 
 # 复制
-COPY  --from=builder  /target/release/dao-entrance-node /usr/local/bin
+COPY  --from=builder  /target/release/wetee-node /usr/local/bin
 
 ## shell json解析包
 RUN apt-get update
@@ -21,4 +21,4 @@ VOLUME ["/chain-data"]
 
 WORKDIR /chain-data
 
-CMD ["/usr/local/bin/dao-entrance-node"]
+CMD ["/usr/local/bin/wetee-node"]
