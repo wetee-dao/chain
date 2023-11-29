@@ -22,7 +22,7 @@ members = [
 	"packages/pallets/wetee-task",
 
 	# 工具
-	# "tools/hash",
+	"tools/hash",
 	# "tools/subkey",
 	# "tools/chain-spec-builder",
 

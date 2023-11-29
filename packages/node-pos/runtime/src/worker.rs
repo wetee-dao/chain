@@ -12,7 +12,7 @@ use frame_support::{
 };
 use scale_info::TypeInfo;
 
-use wetee_primitives::{traits::AfterCreate, types::WorkerMsgId, vec2bytes};
+use wetee_primitives::{traits::AfterCreate, types::WorkerId, vec2bytes};
 
 use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::EnqueueMessage;
 use crate::{AccountId, MessageQueue, WeteeWorker};
@@ -26,8 +26,8 @@ pub enum MessageOrigin {
 }
 
 pub struct WorkerQueueHook;
-impl AfterCreate<WorkerMsgId, AccountId> for WorkerQueueHook {
-    fn run_hook(id: WorkerMsgId, aid: AccountId) {
+impl AfterCreate<WorkerId, AccountId> for WorkerQueueHook {
+    fn run_hook(id: WorkerId, aid: AccountId) {
         // 添加消息到队列
         MessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::Account(aid));
     }
@@ -59,7 +59,7 @@ impl ProcessMessage for WorkerMessageProcessor {
         //     NumMessagesErrored::set(NumMessagesErrored::get() + 1);
         //     return Err(e);
         // }
-        let msg_id = WorkerMsgId::decode(&mut message).unwrap();
+        let msg_id = WorkerId::decode(&mut message).unwrap();
         let _required = Weight::from_parts(1, 1);
         log::warn!(
             "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",

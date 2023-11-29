@@ -38,9 +38,9 @@ We provide the following pallets:
 
 - [Linux development environment](https://docs.substrate.io/install/linux/).  
 
-- [MacOS development environment](https://docs.substrate.io/install/linux/).  
+- [MacOS development environment](https://docs.substrate.io/install/macos/).  
 
-- [Windows development environment](https://docs.substrate.io/install/linux/).  
+- [Windows development environment](https://docs.substrate.io/install/windows/).  
 
 ### Run Node
 If you want to started with the example node, please refer to [run node](./docs/run-node.md) .  

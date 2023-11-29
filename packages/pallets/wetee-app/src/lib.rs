@@ -8,7 +8,7 @@ use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{TeeAppId, WorkerMsgId},
+    types::{TeeAppId, WorkerId},
 };
 
 #[cfg(test)]
@@ -47,7 +47,7 @@ pub struct TeeApp<AccountId, BlockNumber> {
     pub port: Vec<u32>,
     /// State of the App
     /// App状态
-    status: u8,
+    pub status: u8,
 }
 
 #[frame_support::pallet]
@@ -62,7 +62,7 @@ pub mod pallet {
 
         /// Do some things after creating dao, such as setting up a sudo account.
         /// 创建部署任务后回调
-        type AfterCreate: AfterCreate<WorkerMsgId, Self::AccountId>;
+        type AfterCreate: AfterCreate<WorkerId, Self::AccountId>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -125,7 +125,6 @@ pub mod pallet {
             port: Vec<u32>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            // let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(who)?;
 
             let id = Self::next_tee_id();
             let app = TeeApp {
@@ -145,7 +144,7 @@ pub mod pallet {
             });
 
             // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(WorkerMsgId { t: 1, id }, who);
+            <T as pallet::Config>::AfterCreate::run_hook(WorkerId { t: 1, id }, who);
 
             Ok(().into())
         }
@@ -154,7 +153,7 @@ pub mod pallet {
         #[pallet::call_index(002)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn update(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let creator = ensure_signed(origin)?;
+            // let who = ensure_signed(origin)?;
             Ok(().into())
         }
 
@@ -162,7 +161,7 @@ pub mod pallet {
         #[pallet::call_index(003)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn set_settings(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let creator = ensure_signed(origin)?;
+            // let who = ensure_signed(origin)?;
             Ok(().into())
         }
 
@@ -170,7 +169,7 @@ pub mod pallet {
         #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn charge(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let creator = ensure_signed(origin)?;
+            // let who = ensure_signed(origin)?;
             Ok(().into())
         }
 
@@ -178,7 +177,7 @@ pub mod pallet {
         #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn stop(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let creator = ensure_signed(origin)?;
+            // let who = ensure_signed(origin)?;
             Ok(().into())
         }
     }

@@ -1,4 +1,5 @@
 pub use frame_support::codec::{Decode, Encode};
+use sp_runtime::RuntimeDebug;
 
 /// Simple index type for proposal counting.
 pub type ProposalIndex = u32;
@@ -35,11 +36,11 @@ pub type TaskId = u64;
 /// 应用ID
 pub type TeeAppId = u64;
 
-/// WorkerMsgId (type 1 =》app / 2=》 task )
+/// WorkerId (type 1 =》app / 2=》 task )
 /// 任务ID (类型 1 =》app / 2=》 task )
 /// (类型,任务id) (type,id)
-#[derive(Encode, Decode)]
-pub struct WorkerMsgId {
+#[derive(Default, Clone, RuntimeDebug, Encode, Decode)]
+pub struct WorkerId {
     pub t: u8,
     pub id: u64,
 }

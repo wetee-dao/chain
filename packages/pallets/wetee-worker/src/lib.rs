@@ -11,7 +11,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::types::{TeeAppId, WorkerMsgId};
+use wetee_primitives::types::{TeeAppId, WorkerId};
 
 #[cfg(test)]
 mod mock;
@@ -40,6 +40,12 @@ pub struct K8sCluster<AccountId, BlockNumber> {
     /// The block that creates the K8sCluster
     /// App创建的区块
     pub start_block: BlockNumber,
+    /// Stop time
+    /// 停止时间
+    pub stop_block: Option<BlockNumber>,
+    /// terminal time
+    /// 终止时间
+    pub terminal_block: Option<BlockNumber>,
     /// name of the K8sCluster.
     /// 集群名字
     pub name: Vec<u8>,
@@ -54,12 +60,12 @@ pub struct K8sCluster<AccountId, BlockNumber> {
     pub port: Vec<u32>,
     /// State of the App
     /// K8sCluster 状态
-    status: u8,
+    pub status: u8,
 }
 
 /// 计算资源
 /// computing resource
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Default, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct Cr {
     pub cpu: u16,
     pub memory: u16,
@@ -74,6 +80,33 @@ pub struct Deposit<Balance> {
     pub cpu: u16,
     pub memory: u16,
     pub disk: u16,
+}
+
+/// 集群证明
+/// proof of K8sCluster
+#[derive(Encode, Decode, Default, Clone, RuntimeDebug)]
+pub struct ProofOfCluster {
+    /// 节点id
+    /// 节点id
+    pub cid: u64,
+}
+
+/// 工作证明
+/// proof of K8sCluster
+#[derive(Encode, Decode, Default, Clone, RuntimeDebug)]
+pub struct ProofOfWork {
+    /// 节点id
+    /// 节点id
+    pub cid: u64,
+    /// worker id
+    /// worker id
+    pub wid: WorkerId,
+    /// 任务日志地址及hash
+    /// task log address and hash
+    pub logs: Vec<u8>,
+    /// 任务cpu 内存 占用
+    /// task cpu memory usage
+    pub cr: Cr,
 }
 
 #[frame_support::pallet]
@@ -108,6 +141,7 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     /// 用户对应集群的信息
+    /// user's K8sCluster information
     #[pallet::storage]
     #[pallet::getter(fn k8s_cluster_accounts)]
     pub type K8sClusterAccounts<T: Config> =
@@ -203,6 +237,8 @@ pub mod pallet {
                 id: cid.clone(),
                 account: creator.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
+                stop_block: None,
+                terminal_block: None,
                 name,
                 image,
                 ip,
@@ -362,7 +398,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         pub fn match_app_deploy(
             account: T::AccountId,
-            msg_id: WorkerMsgId,
+            msg_id: WorkerId,
         ) -> result::Result<(), DispatchError> {
             // let num = NextClusterId::<T>::get();
             let num = 9999;
