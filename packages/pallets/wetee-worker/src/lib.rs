@@ -93,7 +93,7 @@ pub struct ProofOfCluster {
 
 /// 工作证明
 /// proof of K8sCluster
-#[derive(Encode, Decode, Default, Clone, RuntimeDebug)]
+#[derive(Encode, Decode, Default, Clone, RuntimeDebug, TypeInfo)]
 pub struct ProofOfWork {
     /// 节点id
     /// 节点id
@@ -190,6 +190,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn match_contract)]
     pub type MatchContract<T: Config> = StorageMap<_, Identity, u64, (u8, u8), OptionQuery>;
+
+    /// 智能合约工作证明
+    /// Contract proof of work
+    #[pallet::storage]
+    #[pallet::getter(fn contract_proofs)]
+    pub type ContractProofs<T: Config> =
+        StorageDoubleMap<_, Identity, u64, Identity, BlockNumberFor<T>, ProofOfWork, OptionQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
