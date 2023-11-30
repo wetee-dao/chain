@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// forked from https://github.com/paritytech/substrate/tree/master/frame/democracy
+// forked from https://github.com/paritytech/polkadot-sdk.git/tree/master/frame/democracy
 // Only a small portion of the democracy module's code is used here, and the functionality varies considerably.
 // For better compatibility, it should be simple and easy to understand.
 // You can set a minimum vote value for each call.
@@ -24,14 +24,12 @@
 #![allow(clippy::type_complexity)]
 
 use codec::{Decode, Encode};
-use frame_support::{
-    dispatch::{DispatchResult as DResult, UnfilteredDispatchable},
-    traits::OriginTrait,
-    RuntimeDebug,
-};
+use frame_support::traits::UnfilteredDispatchable;
+use frame_support::{dispatch::DispatchResult as DResult, traits::OriginTrait};
 use frame_system::pallet_prelude::*;
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
+use sp_runtime::RuntimeDebug;
 use sp_runtime::{
     traits::{BlockNumberProvider, Hash, Saturating},
     DispatchError, Percent,

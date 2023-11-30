@@ -1,10 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 use codec::MaxEncodedLen;
-use frame_support::{
-    codec::{Decode, Encode},
-    traits::IsSubType,
-};
+use codec::{Decode, Encode};
+use frame_support::traits::IsSubType;
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{traits::BlockNumberProvider, RuntimeDebug};

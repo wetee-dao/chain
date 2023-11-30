@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::codec::{Decode, Encode};
+use codec::{Decode, Encode};
 use frame_support::traits::UnfilteredDispatchable;
 use scale_info::prelude::boxed::Box;
 use scale_info::TypeInfo;

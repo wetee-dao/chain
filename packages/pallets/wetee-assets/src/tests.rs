@@ -3,7 +3,7 @@
 
 use crate as wetee_assets;
 use crate::mock::*;
-use frame_support::{assert_noop, assert_ok, debug, log::debug};
+use frame_support::{assert_noop, assert_ok, debug};
 use wetee_primitives::types::DaoAssetId;
 
 pub fn create_asset() -> DaoAssetId {

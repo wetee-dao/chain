@@ -4,8 +4,8 @@ exclude = ["native-nostd-hasher"]
 
 members = [
 	# POS
-	"packages/node-pos/node",
-	"packages/node-pos/runtime",
+	"packages/node/node",
+	"packages/node/runtime",
 
 	# pellets
 	"packages/pallets/wetee-org",
@@ -22,7 +22,7 @@ members = [
 	"packages/pallets/wetee-task",
 
 	# 工具
-	"tools/hash",
+	# "tools/hash",
 	# "tools/subkey",
 	# "tools/chain-spec-builder",
 

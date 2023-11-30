@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::RuntimeDebug;
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
 use scale_info::prelude::vec::Vec;

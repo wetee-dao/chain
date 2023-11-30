@@ -6,16 +6,16 @@ edition = "2021"
 license = "Apache-2.0"
 
 [dependencies]
-scale-info = { version = "2.5.0", default-features = false, features = [
+scale-info = { version = "2.10.0", default-features = false, features = [
 	"derive",
 ] }
 codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = [
 	"derive",
 ] }
 
-frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v1.0.0', default-features = false }
+frame-support = { git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false }
 
 [features]
 default = ["std"]

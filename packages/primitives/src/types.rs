@@ -1,4 +1,4 @@
-pub use frame_support::codec::{Decode, Encode};
+use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 

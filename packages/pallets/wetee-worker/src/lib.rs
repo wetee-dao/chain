@@ -2,11 +2,11 @@
 
 use codec::{Decode, Encode};
 use frame_support::traits::Randomness;
-use frame_support::RuntimeDebug;
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
+use sp_runtime::RuntimeDebug;
 use sp_std::result;
 
 use orml_traits::MultiCurrency;

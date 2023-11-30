@@ -1,5 +1,5 @@
 // use crate::*;
-use frame_support::codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode, MaxEncodedLen};
 pub use scale_info::TypeInfo;
 use sp_runtime::{DispatchError, RuntimeDebug};
 

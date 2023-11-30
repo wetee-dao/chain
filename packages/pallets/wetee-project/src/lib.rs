@@ -2,7 +2,7 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
-use frame_support::codec::{Decode, Encode};
+use codec::{Decode, Encode};
 use frame_support::sp_runtime::SaturatedConversion;
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;

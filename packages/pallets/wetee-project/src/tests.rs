@@ -3,7 +3,7 @@
 
 use crate as wetee_project;
 use crate::mock::*;
-use frame_support::{assert_noop, assert_ok, debug, log::debug};
+use frame_support::{assert_noop, assert_ok, debug};
 use wetee_gov::MemberData;
 use wetee_primitives::types::DaoAssetId;
 use wetee_primitives::types::ProjectId;

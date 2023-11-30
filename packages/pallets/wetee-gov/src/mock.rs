@@ -7,11 +7,12 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
     parameter_types,
     traits::{ConstU32, ConstU64, Contains},
-    PalletId, RuntimeDebug,
+    PalletId,
 };
 use orml_traits::parameter_type_with_key;
 use scale_info::TypeInfo;
 use sp_core::H256;
+use sp_runtime::RuntimeDebug;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup, Zero},
     BuildStorage, DispatchError,
@@ -188,7 +189,16 @@ impl wetee_assets::Config for Test {
 }
 
 #[derive(
-    PartialEq, Eq, Encode, Decode, RuntimeDebug, Clone, TypeInfo, Copy, MaxEncodedLen, Default,
+    PartialEq,
+    Eq,
+    Encode,
+    Decode,
+    sp_core::RuntimeDebug,
+    Clone,
+    TypeInfo,
+    Copy,
+    MaxEncodedLen,
+    Default,
 )]
 pub struct Vote(pub AccountId);
 

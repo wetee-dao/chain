@@ -23,7 +23,7 @@
 
 use codec::{Codec, Decode, Encode, MaxEncodedLen};
 use frame_support::{
-    dispatch::{DispatchError, DispatchResult},
+    dispatch::DispatchResult,
     ensure,
     pallet_prelude::*,
     traits::{

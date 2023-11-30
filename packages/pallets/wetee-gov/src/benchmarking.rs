@@ -5,7 +5,7 @@ use wetee_primitives::{
     traits::AfterCreate,
     types::{DaoAssetId, GuildId, ProjectId, TaskId},
 };
-use frame_support::codec::{Decode, Encode};
+use codec::{Decode, Encode};
 use frame_support::traits::UnfilteredDispatchable;
 use scale_info::TypeInfo;
 use frame_system::{RawOrigin,Pallet as System};
