@@ -70,6 +70,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         CreatedApp { creator: T::AccountId, id: u64 },
         AppRuning { minter: T::AccountId, id: u64 },
+        Reported,
     }
 
     // Errors inform users that something went wrong.
@@ -85,7 +86,7 @@ pub mod pallet {
         /// Worker cluster register
         #[pallet::call_index(001)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_register(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_register(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -93,7 +94,7 @@ pub mod pallet {
         /// Worker cluster mortgage
         #[pallet::call_index(002)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_mortgage(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_mortgage(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -101,7 +102,7 @@ pub mod pallet {
         /// Worker cluster upload proof of work data
         #[pallet::call_index(003)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_proof_upload(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_proof_upload(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -109,7 +110,7 @@ pub mod pallet {
         /// Worker cluster withdrawal
         #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_withdrawal(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_withdrawal(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -117,7 +118,7 @@ pub mod pallet {
         /// Worker cluster stop
         #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_stop(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_stop(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -125,8 +126,9 @@ pub mod pallet {
         /// Worker cluster report
         #[pallet::call_index(006)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_report(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_report(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
+            Self::deposit_event(Event::Reported);
             Ok(().into())
         }
     }

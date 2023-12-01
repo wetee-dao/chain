@@ -55,10 +55,6 @@ impl ProcessMessage for WorkerMessageProcessor {
         _meter: &mut WeightMeter,
         id: &mut [u8; 32],
     ) -> Result<bool, ProcessMessageError> {
-        // if let Err(e) = processing_message(message, &origin) {
-        //     NumMessagesErrored::set(NumMessagesErrored::get() + 1);
-        //     return Err(e);
-        // }
         let msg_id = WorkerId::decode(&mut message).unwrap();
         let _required = Weight::from_parts(1, 1);
         log::warn!(
@@ -72,13 +68,6 @@ impl ProcessMessage for WorkerMessageProcessor {
         };
 
         Ok(true)
-        // if meter.check_accrue(required) {
-        //     NumMessagesProcessed::set(NumMessagesProcessed::get() + 1);
-        //     Ok(true)
-        // } else {
-        //     Err(ProcessMessageError::Overweight(required))
-        // }
-        // Err(ProcessMessageError::Overweight(required))
     }
 }
 

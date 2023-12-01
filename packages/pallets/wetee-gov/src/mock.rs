@@ -12,7 +12,6 @@ use frame_support::{
 use orml_traits::parameter_type_with_key;
 use scale_info::TypeInfo;
 use sp_core::H256;
-use sp_runtime::RuntimeDebug;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup, Zero},
     BuildStorage, DispatchError,

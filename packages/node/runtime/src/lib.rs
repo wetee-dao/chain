@@ -48,16 +48,6 @@ pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
 // Import the WETEE pallet.
-use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
-use wetee_primitives::{
-    traits::{AfterCreate, GovIsJoin},
-    types::{CallId, DaoAssetId},
-};
-
-use frame_support::{traits::Contains, PalletId};
-use orml_traits::parameter_type_with_key;
-pub use scale_info::TypeInfo;
-use sp_runtime::traits::Zero;
 mod call;
 pub use call::*;
 mod vote;
@@ -67,12 +57,15 @@ pub use worker::*;
 mod wetee;
 pub use wetee::*;
 
+pub use wetee_app::Call as WeteeAppCall;
 pub use wetee_assets::Call as WeteeAssetsCall;
 pub use wetee_gov::Call as WeteeGovCall;
 pub use wetee_guild::Call as WeteeGuildCall;
 pub use wetee_org::Call as WeteeOrgCall;
 pub use wetee_project::Call as WeteeProjectCall;
 pub use wetee_sudo::Call as WeteeSudoCall;
+pub use wetee_treasury::Call as WeteeTreasuryCall;
+pub use wetee_worker::Call as WeteeWorkerCall;
 // end WETEE pallet.
 
 /// An index to a block.

@@ -151,7 +151,7 @@ pub mod pallet {
         /// Worker cluster mortgage
         #[pallet::call_index(002)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn update(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn update(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let who = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -159,7 +159,7 @@ pub mod pallet {
         /// Worker cluster upload proof of work data
         #[pallet::call_index(003)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn set_settings(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn set_settings(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let who = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -167,7 +167,7 @@ pub mod pallet {
         /// Worker cluster withdrawal
         #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn charge(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn charge(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let who = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -175,7 +175,7 @@ pub mod pallet {
         /// Worker cluster stop
         #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn stop(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn stop(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let who = ensure_signed(origin)?;
             Ok(().into())
         }

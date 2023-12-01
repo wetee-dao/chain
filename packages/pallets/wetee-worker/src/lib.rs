@@ -371,7 +371,7 @@ pub mod pallet {
         /// 提交集群的工作证明
         #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_proof_upload(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_proof_upload(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -380,7 +380,7 @@ pub mod pallet {
         /// 提现余额
         #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_withdrawal(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_withdrawal(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -388,7 +388,7 @@ pub mod pallet {
         /// Worker cluster stop
         #[pallet::call_index(006)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_stop(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_stop(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -396,7 +396,7 @@ pub mod pallet {
         /// Worker cluster report
         #[pallet::call_index(007)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_report(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_report(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
@@ -404,7 +404,7 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         pub fn match_app_deploy(
-            account: T::AccountId,
+            _account: T::AccountId,
             msg_id: WorkerId,
         ) -> result::Result<(), DispatchError> {
             // let num = NextClusterId::<T>::get();
@@ -518,12 +518,12 @@ pub mod pallet {
     }
 }
 
-fn unique_elements(arr: Vec<u64>) -> Vec<u64> {
-    let mut visited = Vec::new();
-    for &num in &arr {
-        if !visited.contains(&num) {
-            visited.push(num);
-        }
-    }
-    visited
-}
+// fn unique_elements(arr: Vec<u64>) -> Vec<u64> {
+//     let mut visited = Vec::new();
+//     for &num in &arr {
+//         if !visited.contains(&num) {
+//             visited.push(num);
+//         }
+//     }
+//     visited
+// }
