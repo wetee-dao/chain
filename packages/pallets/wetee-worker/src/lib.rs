@@ -262,9 +262,12 @@ pub mod pallet {
                 status: 1,
             };
 
-            // 保存集群
+            // 保存集群用户信息
             K8sClusterAccounts::<T>::insert(creator.clone(), cid.clone());
+            // 保存集群信息
             K8sClusters::<T>::insert(cid.clone(), cluster);
+            // 初始化资源
+            // initialize resource
             Crs::<T>::insert(
                 cid.clone(),
                 (
@@ -280,6 +283,7 @@ pub mod pallet {
                     },
                 ),
             );
+            // 初始化评级
             Scores::<T>::insert(cid, (1, 5));
             Self::deposit_event(Event::ClusterCreated { creator });
 
@@ -300,8 +304,8 @@ pub mod pallet {
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
-
             let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
+            
             // 检查是否是集群的主人
             ensure!(
                 cluster.account == creator.clone(),
@@ -427,7 +431,9 @@ pub mod pallet {
             let mut randoms = Vec::new();
             let mut scores = Vec::new();
             for i in 1..100 {
+                // 获取随机数
                 let random_number = Self::get_random(msg_id.id + i);
+                // 必须保证数字在集群的范围内
                 let v = num - random_number % num;
                 if !randoms.contains(&v) {
                     let score = Scores::<T>::get(v).unwrap();
@@ -444,12 +450,11 @@ pub mod pallet {
                 }
             }
 
-            // 确认有候选集群
-            if randoms.is_empty() {
-                return Err(Error::<T>::NoCluster.into());
-            }
+            // 确认候选集群不为空
+            ensure!(!randoms.is_empty(), Error::<T>::NoCluster);
 
-            let index = randoms
+            // 选择列表中最优的集群
+            let index = scores
                 .iter()
                 .enumerate()
                 .max_by_key(|(_idx, &val)| val)
