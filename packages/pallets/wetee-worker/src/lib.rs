@@ -84,7 +84,7 @@ pub struct Deposit<Balance> {
 
 /// 集群证明
 /// proof of K8sCluster
-#[derive(Encode, Decode, Default, Clone, RuntimeDebug)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct ProofOfCluster {
     /// 节点id
     /// 节点id
@@ -130,6 +130,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Weight information for extrinsics in this pallet.
+        /// extrinsics 权重信息
         type WeightInfo: WeightInfo;
     }
 
@@ -146,6 +147,14 @@ pub mod pallet {
     #[pallet::getter(fn k8s_cluster_accounts)]
     pub type K8sClusterAccounts<T: Config> =
         StorageMap<_, Identity, T::AccountId, u64, OptionQuery>;
+
+    /// 集群工作量证明
+    /// K8sCluster proof of work
+    pub type ProofsOfCluster<T: Config> = StorageMap<_, Identity, u64, ProofOfCluster, OptionQuery>;
+
+    /// 工作任务工作量证明
+    /// proof of work of task
+    pub type ProofsOfWork<T: Config> = StorageMap<_, Identity, WorkerId, ProofOfWork, OptionQuery>;
 
     /// The id of the next cluster to be created.
     /// 获取下一个集群id
@@ -371,7 +380,10 @@ pub mod pallet {
         /// 提交集群的工作证明
         #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_proof_upload(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_proof_upload(
+            origin: OriginFor<T>,
+            proof: ProofOfCluster,
+        ) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
             Ok(().into())
         }
