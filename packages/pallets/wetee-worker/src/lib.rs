@@ -150,11 +150,15 @@ pub mod pallet {
 
     /// 集群工作量证明
     /// K8sCluster proof of work
-    pub type ProofsOfCluster<T: Config> = StorageMap<_, Identity, u64, ProofOfCluster, OptionQuery>;
+    #[pallet::storage]
+    #[pallet::getter(fn proofs_of_cluster)]
+    pub type ProofOfClusters<T: Config> = StorageMap<_, Identity, u64, ProofOfCluster, OptionQuery>;
 
     /// 工作任务工作量证明
     /// proof of work of task
-    pub type ProofsOfWork<T: Config> = StorageMap<_, Identity, WorkerId, ProofOfWork, OptionQuery>;
+    #[pallet::storage]
+    #[pallet::getter(fn proofs_of_work)]
+    pub type ProofsOfWorks<T: Config> = StorageMap<_, Identity, WorkerId, ProofOfWork, OptionQuery>;
 
     /// The id of the next cluster to be created.
     /// 获取下一个集群id
@@ -220,6 +224,8 @@ pub mod pallet {
         AppStatusMismatch,
         ClusterIsExists,
         ClusterNotExists,
+        ClusterNotStarted,
+        ClusterCanNotStopped,
         TooManyApp,
         NoCluster,
     }
@@ -305,7 +311,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
             let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
-            
+
             // 检查是否是集群的主人
             ensure!(
                 cluster.account == creator.clone(),
@@ -354,7 +360,6 @@ pub mod pallet {
             block_num: BlockNumberFor<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
-
             let d = Deposits::<T>::get(id, block_num).unwrap();
 
             // 添加抵押历史
@@ -388,7 +393,19 @@ pub mod pallet {
             origin: OriginFor<T>,
             proof: ProofOfCluster,
         ) -> DispatchResultWithPostInfo {
-            // let creator = ensure_signed(origin)?;
+            let who = ensure_signed(origin)?;
+
+            // 获取当前账户的集群
+            let cluster_id =
+                K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
+            let cluster = K8sClusters::<T>::get(cluster_id).ok_or(Error::<T>::ClusterNotExists)?;
+
+            // 检查集群是否已经开始
+            ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
+
+            // 保存工作证明
+            ProofOfClusters::<T>::insert(cluster.id.clone(), proof);
+
             Ok(().into())
         }
 
@@ -402,14 +419,57 @@ pub mod pallet {
         }
 
         /// Worker cluster stop
+        /// 停止集群
         #[pallet::call_index(006)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_stop(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let creator = ensure_signed(origin)?;
+        pub fn cluster_stop(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            // 获取当前账户的集群
+            let cluster_id =
+                K8sClusterAccounts::<T>::get(who.clone()).ok_or(Error::<T>::ClusterNotExists)?;
+            let mut cluster =
+                K8sClusters::<T>::get(cluster_id).ok_or(Error::<T>::ClusterNotExists)?;
+
+            // 检查集群是否已经开始
+            ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
+
+            // 检查是否已经处理完所有的任务
+            let cr = Crs::<T>::get(cluster_id).unwrap();
+            ensure!(cr.1.cpu == 0, Error::<T>::ClusterCanNotStopped);
+
+            let mut iter = Deposits::<T>::iter_prefix(cluster_id);
+            // 解除所有的抵押
+            while let Some(value) = iter.next() {
+                Deposits::<T>::remove(cluster_id, value.0);
+                wetee_assets::Pallet::<T>::unreserve(0, who.clone(), value.1.deposit).unwrap();
+            }
+
+            // 重置抵押数据
+            Crs::<T>::insert(
+                cluster_id,
+                (
+                    Cr {
+                        cpu: 0,
+                        memory: 0,
+                        disk: 0,
+                    },
+                    Cr {
+                        cpu: 0,
+                        memory: 0,
+                        disk: 0,
+                    },
+                ),
+            );
+
+            // 保存集群信息
+            cluster.status = 3;
+            K8sClusters::<T>::insert(cluster_id, cluster);
+
             Ok(().into())
         }
 
         /// Worker cluster report
+        /// 投诉集群
         #[pallet::call_index(007)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_report(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
