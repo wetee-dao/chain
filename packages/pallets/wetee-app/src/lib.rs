@@ -3,11 +3,10 @@
 use codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
-use scale_info::prelude::vec::Vec;
-use scale_info::TypeInfo;
+use scale_info::{prelude::vec::Vec, TypeInfo};
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{TeeAppId, WorkerId},
+    types::{Cr, TeeAppId, WorkerId},
 };
 
 #[cfg(test)]
@@ -47,6 +46,9 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// State of the App
     /// App状态
     pub status: u8,
+    /// cpu memory disk
+    /// cpu memory disk
+    pub cr: Cr,
 }
 
 #[frame_support::pallet]
@@ -114,7 +116,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Worker cluster register
+        /// App create
+        /// 注册任务
         #[pallet::call_index(001)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn create(
@@ -134,6 +137,11 @@ pub mod pallet {
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 status: 1,
+                cr: Cr {
+                    cpu: 0,
+                    memory: 0,
+                    disk: 0,
+                },
             };
 
             <TEEApps<T>>::insert(who.clone(), id, app);
@@ -148,7 +156,8 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Worker cluster mortgage
+        /// App update
+        /// 更新任务
         #[pallet::call_index(002)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn update(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -156,7 +165,8 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Worker cluster upload proof of work data
+        /// App settings
+        /// 任务设置
         #[pallet::call_index(003)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn set_settings(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -164,15 +174,17 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Worker cluster withdrawal
+        /// App charge
+        /// 任务充值
         #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn charge(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn recharge(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let who = ensure_signed(origin)?;
             Ok(().into())
         }
 
-        /// Worker cluster stop
+        /// App stop
+        /// 停止任务
         #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn stop(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {

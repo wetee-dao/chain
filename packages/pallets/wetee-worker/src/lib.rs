@@ -11,7 +11,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::types::{TeeAppId, WorkerId};
+use wetee_primitives::types::{Cr, TeeAppId, WorkerId};
 
 #[cfg(test)]
 mod mock;
@@ -61,15 +61,6 @@ pub struct K8sCluster<AccountId, BlockNumber> {
     /// State of the App
     /// K8sCluster 状态
     pub status: u8,
-}
-
-/// 计算资源
-/// computing resource
-#[derive(PartialEq, Eq, Default, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct Cr {
-    pub cpu: u16,
-    pub memory: u16,
-    pub disk: u16,
 }
 
 /// 质押数据
@@ -148,18 +139,6 @@ pub mod pallet {
     pub type K8sClusterAccounts<T: Config> =
         StorageMap<_, Identity, T::AccountId, u64, OptionQuery>;
 
-    /// 集群工作量证明
-    /// K8sCluster proof of work
-    #[pallet::storage]
-    #[pallet::getter(fn proofs_of_cluster)]
-    pub type ProofOfClusters<T: Config> = StorageMap<_, Identity, u64, ProofOfCluster, OptionQuery>;
-
-    /// 工作任务工作量证明
-    /// proof of work of task
-    #[pallet::storage]
-    #[pallet::getter(fn proofs_of_work)]
-    pub type ProofsOfWorks<T: Config> = StorageMap<_, Identity, WorkerId, ProofOfWork, OptionQuery>;
-
     /// The id of the next cluster to be created.
     /// 获取下一个集群id
     #[pallet::storage]
@@ -171,6 +150,12 @@ pub mod pallet {
     #[pallet::getter(fn k8s_clusters)]
     pub type K8sClusters<T: Config> =
         StorageMap<_, Identity, u64, K8sCluster<T::AccountId, BlockNumberFor<T>>, OptionQuery>;
+
+    /// 集群工作量证明
+    /// K8sCluster proof of work
+    #[pallet::storage]
+    #[pallet::getter(fn proofs_of_cluster)]
+    pub type ProofOfClusters<T: Config> = StorageMap<_, Identity, u64, ProofOfCluster, OptionQuery>;
 
     /// 计算资源 抵押/使用
     /// computing resource
@@ -202,14 +187,13 @@ pub mod pallet {
     /// smart contract
     #[pallet::storage]
     #[pallet::getter(fn match_contract)]
-    pub type MatchContract<T: Config> = StorageMap<_, Identity, u64, (u8, u8), OptionQuery>;
+    pub type WorkContract<T: Config> = StorageMap<_, Identity, WorkerId, (u64, u64), OptionQuery>;
 
-    /// 智能合约工作证明
-    /// Contract proof of work
+    /// 工作任务工作量证明
+    /// proof of work of task
     #[pallet::storage]
-    #[pallet::getter(fn contract_proofs)]
-    pub type ContractProofs<T: Config> =
-        StorageDoubleMap<_, Identity, u64, Identity, BlockNumberFor<T>, ProofOfWork, OptionQuery>;
+    #[pallet::getter(fn proofs_of_work)]
+    pub type ProofsOfWork<T: Config> = StorageMap<_, Identity, WorkerId, ProofOfWork, OptionQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -228,6 +212,7 @@ pub mod pallet {
         ClusterCanNotStopped,
         TooManyApp,
         NoCluster,
+        AppNotExists,
     }
 
     #[pallet::call]
@@ -480,8 +465,8 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         pub fn match_app_deploy(
-            _account: T::AccountId,
-            msg_id: WorkerId,
+            account: T::AccountId,
+            work_id: WorkerId,
         ) -> result::Result<(), DispatchError> {
             // let num = NextClusterId::<T>::get();
             let num = 9999;
@@ -492,14 +477,14 @@ pub mod pallet {
             let mut scores = Vec::new();
             for i in 1..100 {
                 // 获取随机数
-                let random_number = Self::get_random(msg_id.id + i);
+                let random_number = Self::get_random(work_id.id + i);
                 // 必须保证数字在集群的范围内
                 let v = num - random_number % num;
                 if !randoms.contains(&v) {
                     let score = Scores::<T>::get(v).unwrap();
                     let cr = Crs::<T>::get(v).unwrap();
                     // 过滤掉已经没有计算资源的集群
-                    if msg_id.t <= score.0
+                    if work_id.t <= score.0
                         && cr.0.cpu - cr.1.cpu > 0
                         && cr.0.memory - cr.1.memory > 0
                         && cr.0.disk - cr.1.disk > 0
@@ -527,56 +512,29 @@ pub mod pallet {
                 randoms,id
             );
 
-            // 通过积分和类型选择最优集群
+            let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
+                .ok_or(Error::<T>::AppNotExists)?;
 
-            // let item_ids = Self::get_active_items(100);
+            if app.status == 0 {
+                // 更新抵押数据
+                Crs::<T>::try_mutate_exists(id, |c| -> result::Result<(), DispatchError> {
+                    let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
+                    let ccr = crs.1.clone();
 
-            // let tobedeploy_books = TobedeployBook::batch(item_ids);
+                    // 更新抵押参数
+                    crs.1 = Cr {
+                        cpu: ccr.cpu - app.cr.cpu,
+                        memory: ccr.memory - app.cr.memory,
+                        disk: ccr.disk - app.cr.disk,
+                    };
+                    Ok(())
+                })?;
 
-            // // 合并处理撮合
-            // let tobedeploys = Self::merge_and_match(tobedeploy_books);
+                WorkContract::<T>::insert(work_id.clone(), (id, 0));
+                app.status = 1;
+                wetee_app::TEEApps::<T>::insert(account, work_id.id.clone(), app);
+            }
 
-            // for item_id in item_ids {
-            //     TobedeployB
-            // ook::insert(item_id, tobedeploys[item_id]);
-            // }
-
-            // fn merge_and_match(books: BTreeMap<ItemId, Vec<Tobedeploy>>) -> BTreeMap<ItemId, Vec<Tobedeploy>> {
-            // // 合并订单并排序
-            // let mut tobedeploys = Vec::new();
-            // for book in books.values() {
-            //     tobedeploys.append(&mut book);
-            // }
-            // tobedeploys.sort_by(|a, b| b.price.cmp(&a.price));
-
-            // // 分块撮合
-            // let chunk_size = 1000;
-            // for chunk in tobedeploys.chunks(chunk_size) {
-            //     // 多线程分块处理
-            //     crossbeam::scope(|scope| {
-            //         // 并行撮合
-            //         let handles = chunk.iter().map(|buy| {
-            //             scope.spawn(move |_| {
-            //                 Self::match_tobedeploys_in_chunk(buy, &tobedeploys);
-            //             })
-            //         });
-            //         for handle in handles {
-            //             handle.join().unwrap();
-            //         }
-            //     })
-            //     .unwrap();
-            // }
-
-            // // 分拆回订单簿
-            // let mut books: BTreeMap<ItemId, Vec<Tobedeploy>> = BTreeMap::new();
-            // for tobedeploy in tobedeploys {
-            //     books
-            //         .entry(tobedeploy.item_id)
-            //         .or_insert_with(Vec::new)
-            //         .push(tobedeploy);
-            // }
-            // books
-            // }
             Ok(().into())
         }
 

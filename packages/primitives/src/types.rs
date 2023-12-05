@@ -45,3 +45,12 @@ pub struct WorkerId {
     pub t: u8,
     pub id: u64,
 }
+
+/// 计算资源
+/// computing resource
+#[derive(PartialEq, Eq, Default, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct Cr {
+    pub cpu: u16,
+    pub memory: u16,
+    pub disk: u16,
+}

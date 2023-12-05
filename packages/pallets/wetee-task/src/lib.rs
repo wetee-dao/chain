@@ -83,7 +83,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Worker cluster register
+        /// Task register
         #[pallet::call_index(001)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_register(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -99,7 +99,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Worker cluster upload proof of work data
+        /// Task upload proof of work data
         #[pallet::call_index(003)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_proof_upload(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -107,7 +107,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Worker cluster withdrawal
+        /// Task withdrawal
         #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_withdrawal(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -115,7 +115,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Worker cluster stop
+        /// Task stop
         #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_stop(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
