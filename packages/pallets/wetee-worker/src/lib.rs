@@ -1,11 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::traits::Randomness;
-use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::Randomness};
 use frame_system::pallet_prelude::*;
-use scale_info::prelude::vec::Vec;
-use scale_info::TypeInfo;
+use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
 use sp_std::result;
 
@@ -276,8 +274,9 @@ pub mod pallet {
             );
             // 初始化评级
             Scores::<T>::insert(cid, (1, 5));
-            Self::deposit_event(Event::ClusterCreated { creator });
+            <NextClusterId<T>>::mutate(|id| *id += 1);
 
+            Self::deposit_event(Event::ClusterCreated { creator });
             Ok(().into())
         }
 
@@ -468,52 +467,11 @@ pub mod pallet {
             account: T::AccountId,
             work_id: WorkerId,
         ) -> result::Result<(), DispatchError> {
-            // let num = NextClusterId::<T>::get();
-            let num = 9999;
-            ensure!(num > 0, Error::<T>::NoCluster);
-
-            // 随机选择集群
-            let mut randoms = Vec::new();
-            let mut scores = Vec::new();
-            for i in 1..100 {
-                // 获取随机数
-                let random_number = Self::get_random(work_id.id + i);
-                // 必须保证数字在集群的范围内
-                let v = num - random_number % num;
-                if !randoms.contains(&v) {
-                    let score = Scores::<T>::get(v).unwrap();
-                    let cr = Crs::<T>::get(v).unwrap();
-                    // 过滤掉已经没有计算资源的集群
-                    if work_id.t <= score.0
-                        && cr.0.cpu - cr.1.cpu > 0
-                        && cr.0.memory - cr.1.memory > 0
-                        && cr.0.disk - cr.1.disk > 0
-                    {
-                        randoms.push(v);
-                        scores.push(score);
-                    }
-                }
-            }
-
-            // 确认候选集群不为空
-            ensure!(!randoms.is_empty(), Error::<T>::NoCluster);
-
-            // 选择列表中最优的集群
-            let index = scores
-                .iter()
-                .enumerate()
-                .max_by_key(|(_idx, &val)| val)
-                .map(|(idx, _val)| idx)
-                .unwrap();
-
-            let id = randoms[index];
-            log::warn!(
-                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?} ===> {:?}",
-                randoms,id
-            );
-
+            // 获取app信息
             let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
                 .ok_or(Error::<T>::AppNotExists)?;
+            let app_cr = app.cr.clone();
+            let id = Self::get_random_cluster(work_id.clone(), app_cr)?;
 
             if app.status == 0 {
                 // 更新抵押数据
@@ -542,7 +500,58 @@ pub mod pallet {
             Ok(().into())
         }
 
-        fn get_random(seed: TeeAppId) -> u64 {
+        /// 获取随机节点
+        pub fn get_random_cluster(
+            work_id: WorkerId,
+            app_cr: Cr,
+        ) -> result::Result<u64, DispatchError> {
+            let num = NextClusterId::<T>::get();
+            ensure!(num > 0, Error::<T>::NoCluster);
+
+            // 随机选择集群
+            let mut randoms = Vec::new();
+            let mut scores = Vec::new();
+            for i in 1..100 {
+                // 获取随机数
+                let random_number = Self::get_random_number(work_id.id + i);
+                // 必须保证数字在集群的范围内
+                let v = num - random_number % num;
+                if !randoms.contains(&v) {
+                    let score = Scores::<T>::get(v).unwrap();
+                    let cr = Crs::<T>::get(v).unwrap();
+                    // 过滤掉已经没有计算资源的集群
+                    if work_id.t <= score.0
+                        && cr.0.cpu - cr.1.cpu > app_cr.cpu
+                        && cr.0.memory - cr.1.memory > app_cr.memory
+                        && cr.0.disk - cr.1.disk > app_cr.disk
+                    {
+                        randoms.push(v);
+                        scores.push(score);
+                    }
+                }
+            }
+
+            // 确认候选集群不为空
+            ensure!(!randoms.is_empty(), Error::<T>::NoCluster);
+
+            // 选择列表中最优的集群
+            let index = scores
+                .iter()
+                .enumerate()
+                .max_by_key(|(_idx, &val)| val)
+                .map(|(idx, _val)| idx)
+                .unwrap();
+
+            let id = randoms[index];
+            log::warn!(
+                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?} ===> {:?}",
+                randoms,id
+            );
+            return Ok(id);
+        }
+
+        /// 获取随机数
+        fn get_random_number(seed: TeeAppId) -> u64 {
             let (random_seed, _) = <pallet_insecure_randomness_collective_flip::Pallet<T>>::random(
                 &(T::PalletId::get(), seed).encode(),
             );

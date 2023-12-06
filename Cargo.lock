@@ -10232,6 +10232,8 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "orml-tokens",
+ "orml-traits",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
@@ -10239,6 +10241,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "wetee-assets",
  "wetee-org",
  "wetee-primitives",
 ]

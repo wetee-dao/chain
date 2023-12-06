@@ -4,10 +4,13 @@ use codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
 use scale_info::{prelude::vec::Vec, TypeInfo};
+use sp_std::result;
 use wetee_primitives::{
     traits::AfterCreate,
     types::{Cr, TeeAppId, WorkerId},
 };
+
+use orml_traits::MultiCurrency;
 
 #[cfg(test)]
 mod mock;
@@ -26,7 +29,7 @@ pub use pallet::*;
 /// App specific information
 /// 程序信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct TeeApp<AccountId, BlockNumber> {
+pub struct TeeApp<AccountId, BlockNumber, Balance> {
     pub id: TeeAppId,
     /// creator of app
     /// 创建者
@@ -49,14 +52,21 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// cpu memory disk
     /// cpu memory disk
     pub cr: Cr,
+    /// deposit of the App
+    /// 抵押金额
+    pub deposit: Balance,
 }
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
 
+    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
+        <T as frame_system::Config>::AccountId,
+    >>::Balance;
+
     #[pallet::config]
-    pub trait Config: frame_system::Config + wetee_org::Config {
+    pub trait Config: frame_system::Config + wetee_org::Config + wetee_assets::Config {
         /// pallet event
         /// 组件消息
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -82,9 +92,8 @@ pub mod pallet {
     #[pallet::getter(fn next_tee_id)]
     pub type NextTeeId<T: Config> = StorageValue<_, TeeAppId, ValueQuery>;
 
-    /// 任务
-    /// Those who have locked a deposit.
-    /// TWOX-NOTE: Safe, as increasing integer keys are safe.
+    /// App
+    /// 应用
     #[pallet::storage]
     #[pallet::getter(fn tee_apps)]
     pub type TEEApps<T: Config> = StorageDoubleMap<
@@ -93,14 +102,15 @@ pub mod pallet {
         T::AccountId,
         Identity,
         TeeAppId,
-        TeeApp<T::AccountId, BlockNumberFor<T>>,
+        TeeApp<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
     >;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         CreatedApp { creator: T::AccountId, id: u64 },
-        AppRuning { minter: T::AccountId, id: u64 },
+        AppRuning { creator: T::AccountId, id: u64 },
+        AppStop { creator: T::AccountId, id: u64 },
     }
 
     // Errors inform users that something went wrong.
@@ -109,7 +119,7 @@ pub mod pallet {
         /// App status mismatch.
         AppStatusMismatch,
         /// Root not exists.
-        RootNotExists,
+        AppNotExists,
         /// Too many app.
         TooManyApp,
     }
@@ -125,6 +135,10 @@ pub mod pallet {
             name: Vec<u8>,
             image: Vec<u8>,
             port: Vec<u32>,
+            cpu: u16,
+            memory: u16,
+            disk: u16,
+            #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -137,14 +151,12 @@ pub mod pallet {
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 status: 1,
-                cr: Cr {
-                    cpu: 0,
-                    memory: 0,
-                    disk: 0,
-                },
+                cr: Cr { cpu, memory, disk },
+                deposit,
             };
 
             <TEEApps<T>>::insert(who.clone(), id, app);
+            <NextTeeId<T>>::mutate(|id| *id += 1);
             Self::deposit_event(Event::<T>::CreatedApp {
                 id,
                 creator: who.clone(),
@@ -187,8 +199,24 @@ pub mod pallet {
         /// 停止任务
         #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn stop(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let who = ensure_signed(origin)?;
+        pub fn stop(origin: OriginFor<T>, app_id: TeeAppId) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            <TEEApps<T>>::try_mutate_exists(
+                who.clone(),
+                app_id,
+                |app_wrap| -> result::Result<(), DispatchError> {
+                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExists)?;
+                    app.status = 2;
+                    *app_wrap = Some(app);
+                    Ok(())
+                },
+            )?;
+
+            Self::deposit_event(Event::<T>::AppStop {
+                creator: who,
+                id: app_id,
+            });
             Ok(().into())
         }
     }

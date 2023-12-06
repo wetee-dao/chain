@@ -23,7 +23,10 @@ sp-runtime = { default-features = false, git = "https://github.com/paritytech/po
 sp-std = { git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false }
 pallet-balances = { git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false }
 
+orml-traits = { default-features = false, git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v1.1.0" }
+orml-tokens = { default-features = false, git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v1.1.0" }
 wetee-primitives = { path = "../../primitives", package = "wetee-primitives", default-features = false }
+wetee-assets = { path = "../wetee-assets", package = "wetee-assets", default-features = false }
 wetee-org = { path = "../wetee-org", package = "wetee-org", default-features = false }
 
 [dev-dependencies]
@@ -39,8 +42,11 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"scale-info/std",
+	
+	"pallet-balances/std",
 	"wetee-primitives/std",
 	"wetee-org/std",
+	"wetee-assets/std",
 ]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]
