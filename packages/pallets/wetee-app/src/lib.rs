@@ -1,7 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo, pallet_prelude::*,
+    sp_runtime::traits::AccountIdConversion, PalletId,
+};
 use frame_system::pallet_prelude::*;
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
@@ -105,12 +108,33 @@ pub mod pallet {
         TeeApp<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
     >;
 
+    /// App 对应账户
+    /// user's K8sCluster information
+    #[pallet::storage]
+    #[pallet::getter(fn k8s_cluster_accounts)]
+    pub type AppIdAccounts<T: Config> =
+        StorageMap<_, Identity, TeeAppId, T::AccountId, OptionQuery>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        CreatedApp { creator: T::AccountId, id: u64 },
-        AppRuning { creator: T::AccountId, id: u64 },
-        AppStop { creator: T::AccountId, id: u64 },
+        CreatedApp {
+            creator: T::AccountId,
+            id: u64,
+        },
+        AppRuning {
+            creator: T::AccountId,
+            id: u64,
+        },
+        AppStop {
+            creator: T::AccountId,
+            id: u64,
+        },
+        Charge {
+            from: T::AccountId,
+            to: T::AccountId,
+            amount: BalanceOf<T>,
+        },
     }
 
     // Errors inform users that something went wrong.
@@ -156,7 +180,16 @@ pub mod pallet {
             };
 
             <TEEApps<T>>::insert(who.clone(), id, app);
+            <AppIdAccounts<T>>::insert(id, who.clone());
             <NextTeeId<T>>::mutate(|id| *id += 1);
+
+            // 将抵押转移到目标账户
+            wetee_assets::Pallet::<T>::try_transfer(
+                0,
+                who.clone(),
+                Self::app_id_account(id),
+                deposit,
+            )?;
             Self::deposit_event(Event::<T>::CreatedApp {
                 id,
                 creator: who.clone(),
@@ -190,8 +223,27 @@ pub mod pallet {
         /// 任务充值
         #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn recharge(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let who = ensure_signed(origin)?;
+        pub fn recharge(
+            origin: OriginFor<T>,
+            id: TeeAppId,
+            deposit: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            // 将抵押转移到目标账户
+            wetee_assets::Pallet::<T>::try_transfer(
+                0,
+                who.clone(),
+                Self::app_id_account(id),
+                deposit,
+            )?;
+
+            Self::deposit_event(Event::<T>::Charge {
+                from: who.clone(),
+                to: Self::app_id_account(id),
+                amount: deposit,
+            });
+
             Ok(().into())
         }
 
@@ -201,9 +253,26 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn stop(origin: OriginFor<T>, app_id: TeeAppId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+            Self::try_stop(who.clone(), app_id)?;
+            Ok(().into())
+        }
+    }
 
+    impl<T: Config> Pallet<T> {
+        /// 获取 App 合约账户
+        pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
+            T::PalletId::get().into_sub_account_truncating(WorkerId { id: app_id, t: 1 })
+        }
+
+        /// 获取账户中合约信息
+        pub fn app_id_from_account(x: T::AccountId) -> WorkerId {
+            let (_, work) = PalletId::try_from_sub_account::<WorkerId>(&x).unwrap();
+            work
+        }
+
+        fn try_stop(account: T::AccountId, app_id: TeeAppId) -> result::Result<(), DispatchError> {
             <TEEApps<T>>::try_mutate_exists(
-                who.clone(),
+                account.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
                     let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExists)?;
@@ -214,10 +283,11 @@ pub mod pallet {
             )?;
 
             Self::deposit_event(Event::<T>::AppStop {
-                creator: who,
+                creator: account,
                 id: app_id,
             });
-            Ok(().into())
+
+            Ok(())
         }
     }
 }

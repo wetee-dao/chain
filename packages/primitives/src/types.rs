@@ -43,7 +43,7 @@ pub type TeeAppId = u64;
 #[derive(Default, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct WorkerId {
     pub t: u8,
-    pub id: u64,
+    pub id: TeeAppId,
 }
 
 /// 计算资源
