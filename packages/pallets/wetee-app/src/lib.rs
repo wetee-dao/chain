@@ -60,6 +60,26 @@ pub struct TeeApp<AccountId, BlockNumber, Balance> {
     pub deposit: Balance,
 }
 
+/// App setting
+/// 应用设置
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct AppSetting {
+    pub k: Vec<u8>,
+    pub v: Vec<u8>,
+}
+
+/// App setting
+/// 应用设置
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct AppSettingInput {
+    /// 1: insert, 1: update, 3: remove
+    pub t: u8,
+    /// index of the setting
+    pub index: u16,
+    pub k: Vec<u8>,
+    pub v: Vec<u8>,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -115,6 +135,13 @@ pub mod pallet {
     pub type AppIdAccounts<T: Config> =
         StorageMap<_, Identity, TeeAppId, T::AccountId, OptionQuery>;
 
+    /// App setting
+    /// App设置
+    #[pallet::storage]
+    #[pallet::getter(fn app_settings)]
+    pub type AppSettings<T: Config> =
+        StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, AppSetting, OptionQuery>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -146,6 +173,8 @@ pub mod pallet {
         AppNotExists,
         /// Too many app.
         TooManyApp,
+        /// App 403.
+        App403,
     }
 
     #[pallet::call]
@@ -179,9 +208,9 @@ pub mod pallet {
                 deposit,
             };
 
+            <NextTeeId<T>>::mutate(|id| *id += 1);
             <TEEApps<T>>::insert(who.clone(), id, app);
             <AppIdAccounts<T>>::insert(id, who.clone());
-            <NextTeeId<T>>::mutate(|id| *id += 1);
 
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
@@ -205,8 +234,34 @@ pub mod pallet {
         /// 更新任务
         #[pallet::call_index(002)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn update(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let who = ensure_signed(origin)?;
+        pub fn update(
+            origin: OriginFor<T>,
+            // App id
+            // 应用id
+            app_id: TeeAppId,
+            // name of the app.
+            // 程序名字
+            name: Vec<u8>,
+            // img of the App.
+            // image 目标宗旨
+            image: Vec<u8>,
+            // port of service
+            // 服务端口号
+            port: Vec<u32>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            <TEEApps<T>>::try_mutate_exists(
+                who.clone(),
+                app_id,
+                |app_wrap| -> result::Result<(), DispatchError> {
+                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExists)?;
+                    app.name = name;
+                    app.image = image;
+                    app.port = port;
+                    *app_wrap = Some(app);
+                    Ok(())
+                },
+            )?;
             Ok(().into())
         }
 
@@ -214,8 +269,61 @@ pub mod pallet {
         /// 任务设置
         #[pallet::call_index(003)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn set_settings(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let who = ensure_signed(origin)?;
+        pub fn set_settings(
+            origin: OriginFor<T>,
+            app_id: TeeAppId,
+            value: Vec<AppSettingInput>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let app_account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExists)?;
+            ensure!(who == app_account, Error::<T>::App403);
+
+            let mut iter = AppSettings::<T>::iter_prefix(app_id);
+            let mut id = 0;
+
+            // 解除所有的抵押
+            while let Some(setting) = iter.next() {
+                id = setting.0;
+                // 处理更新和删除设置
+                value.iter().for_each(|v| {
+                    if (v.t == 2 || v.t == 3) && v.index == setting.0 {
+                        match v.t {
+                            // 更新设置
+                            2 => {
+                                <AppSettings<T>>::insert(
+                                    app_id,
+                                    setting.0,
+                                    AppSetting {
+                                        k: v.k.clone(),
+                                        v: v.v.clone(),
+                                    },
+                                );
+                            }
+                            // 删除设置
+                            3 => {
+                                <AppSettings<T>>::remove(app_id, setting.0);
+                            }
+                            _ => {}
+                        };
+                    }
+                });
+            }
+
+            // 处理新增设置
+            value.iter().for_each(|v| {
+                if v.t == 1 {
+                    id = id + 1;
+                    <AppSettings<T>>::insert(
+                        app_id,
+                        id,
+                        AppSetting {
+                            k: v.k.clone(),
+                            v: v.v.clone(),
+                        },
+                    );
+                }
+            });
+
             Ok(().into())
         }
 
@@ -232,7 +340,7 @@ pub mod pallet {
 
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
-                0,
+                wetee_assets::NATIVE_ASSET_ID,
                 who.clone(),
                 Self::app_id_account(id),
                 deposit,
@@ -259,18 +367,24 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        /// Get app id account
         /// 获取 App 合约账户
         pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(WorkerId { id: app_id, t: 1 })
         }
 
+        /// Get app id from account
         /// 获取账户中合约信息
         pub fn app_id_from_account(x: T::AccountId) -> WorkerId {
             let (_, work) = PalletId::try_from_sub_account::<WorkerId>(&x).unwrap();
             work
         }
 
+        /// Stop app
+        /// 停止任务
+        /// 停止任务后,将任务状态设置为 2,并将抵押转移到目标账户
         fn try_stop(account: T::AccountId, app_id: TeeAppId) -> result::Result<(), DispatchError> {
+            // 停止任务后,将任务状态设置为 2
             <TEEApps<T>>::try_mutate_exists(
                 account.clone(),
                 app_id,
@@ -281,11 +395,27 @@ pub mod pallet {
                     Ok(())
                 },
             )?;
-
             Self::deposit_event(Event::<T>::AppStop {
-                creator: account,
+                creator: account.clone(),
                 id: app_id,
             });
+
+            // 将抵押转移到目标账户
+            if wetee_assets::Pallet::<T>::free_balance(
+                wetee_assets::NATIVE_ASSET_ID,
+                &Self::app_id_account(app_id),
+            ) > 0u32.into()
+            {
+                wetee_assets::Pallet::<T>::try_transfer(
+                    wetee_assets::NATIVE_ASSET_ID,
+                    Self::app_id_account(app_id),
+                    account,
+                    wetee_assets::Pallet::<T>::free_balance(
+                        wetee_assets::NATIVE_ASSET_ID,
+                        &Self::app_id_account(app_id),
+                    ),
+                )?;
+            }
 
             Ok(())
         }

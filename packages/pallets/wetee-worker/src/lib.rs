@@ -281,8 +281,7 @@ pub mod pallet {
         }
 
         /// Worker cluster mortgage
-        /// 质押
-        /// mortgage of computing resource
+        /// 质押硬件
         #[pallet::call_index(002)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_mortgage(
@@ -463,6 +462,8 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        /// Worker app deploy
+        /// 部署应用
         pub fn match_app_deploy(
             account: T::AccountId,
             work_id: WorkerId,
@@ -500,6 +501,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Get random cluster
         /// 获取随机节点
         pub fn get_random_cluster(
             work_id: WorkerId,
@@ -550,6 +552,7 @@ pub mod pallet {
             return Ok(id);
         }
 
+        /// Get random number
         /// 获取随机数
         fn get_random_number(seed: TeeAppId) -> u64 {
             let (random_seed, _) = <pallet_insecure_randomness_collective_flip::Pallet<T>>::random(

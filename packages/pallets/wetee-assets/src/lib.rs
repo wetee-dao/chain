@@ -396,14 +396,16 @@ pub mod pallet {
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             // 最低押金必须大于0
-            let zero: BalanceOf<T> = 0u32.into();
-            ensure!(existenial_deposit >= zero, Error::<T>::DepositNotZero);
+            ensure!(
+                existenial_deposit >= 0u32.into(),
+                Error::<T>::DepositNotZero
+            );
 
             // 获取链上资金池
             let treasury = wetee_org::Pallet::<T>::dao_treasury(dao_id);
             let treasury_total =
                 <Self as MultiCurrency<T::AccountId>>::total_balance(NATIVE_ASSET_ID, &treasury);
-            ensure!(treasury_total > zero, Error::<T>::DepositTooLow);
+            ensure!(treasury_total > 0u32.into(), Error::<T>::DepositTooLow);
 
             // 判断用户期望share是否符合当前汇率
             let share_expect_b: BalanceOf<T> = share_expect.into();
