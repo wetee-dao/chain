@@ -37,10 +37,14 @@ pub type TaskId = u64;
 /// 应用ID
 pub type TeeAppId = u64;
 
+/// TeeAppId
+/// 应用ID
+pub type ClusterId = u64;
+
 /// WorkerId (type 1 =》app / 2=》 task )
 /// 任务ID (类型 1 =》app / 2=》 task )
 /// (类型,任务id) (type,id)
-#[derive(Default, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct WorkerId {
     pub t: u8,
     pub id: TeeAppId,
@@ -48,7 +52,7 @@ pub struct WorkerId {
 
 /// 计算资源
 /// computing resource
-#[derive(PartialEq, Eq, Default, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Cr {
     pub cpu: u16,
     pub memory: u16,

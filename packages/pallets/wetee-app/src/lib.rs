@@ -58,13 +58,18 @@ pub struct TeeApp<AccountId, BlockNumber, Balance> {
     /// deposit of the App
     /// 抵押金额
     pub deposit: Balance,
+    /// min score of the App
+    /// 矿工最低评分
+    pub min_score: u8,
 }
 
 /// App setting
 /// 应用设置
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct AppSetting {
+    /// key
     pub k: Vec<u8>,
+    /// value
     pub v: Vec<u8>,
 }
 
@@ -76,7 +81,9 @@ pub struct AppSettingInput {
     pub t: u8,
     /// index of the setting
     pub index: u16,
+    /// key
     pub k: Vec<u8>,
+    /// value
     pub v: Vec<u8>,
 }
 
@@ -191,6 +198,7 @@ pub mod pallet {
             cpu: u16,
             memory: u16,
             disk: u16,
+            min_score: u8,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -206,6 +214,7 @@ pub mod pallet {
                 status: 1,
                 cr: Cr { cpu, memory, disk },
                 deposit,
+                min_score,
             };
 
             <NextTeeId<T>>::mutate(|id| *id += 1);
@@ -309,7 +318,7 @@ pub mod pallet {
                 });
             }
 
-            // 处理新增设置
+            // 新增设置
             value.iter().for_each(|v| {
                 if v.t == 1 {
                     id = id + 1;

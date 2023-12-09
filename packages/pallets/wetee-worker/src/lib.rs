@@ -9,7 +9,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::types::{Cr, TeeAppId, WorkerId};
+use wetee_primitives::types::{ClusterId, Cr, TeeAppId, WorkerId};
 
 #[cfg(test)]
 mod mock;
@@ -31,7 +31,7 @@ pub use pallet::*;
 pub struct K8sCluster<AccountId, BlockNumber> {
     /// 节点id
     /// 节点id
-    pub id: u64,
+    pub id: ClusterId,
     /// creator of K8sCluster
     /// 创建者
     pub account: AccountId,
@@ -82,20 +82,23 @@ pub struct ProofOfCluster {
 
 /// 工作证明
 /// proof of K8sCluster
-#[derive(Encode, Decode, Default, Clone, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct ProofOfWork {
-    /// 节点id
+    /// Cluster id
     /// 节点id
     pub cid: u64,
     /// worker id
-    /// worker id
+    /// 任务 id
     pub wid: WorkerId,
+    /// Task log address and hash
     /// 任务日志地址及hash
-    /// task log address and hash
-    pub logs: Vec<u8>,
-    /// 任务cpu 内存 占用
+    pub log_hash: Vec<u8>,
     /// task cpu memory usage
+    /// 任务cpu 内存 占用
     pub cr: Cr,
+    /// task cpu memory usage hash
+    /// 任务cpu 内存 占用监控hash
+    pub cr_hash: Vec<u8>,
 }
 
 #[frame_support::pallet]
@@ -135,7 +138,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn k8s_cluster_accounts)]
     pub type K8sClusterAccounts<T: Config> =
-        StorageMap<_, Identity, T::AccountId, u64, OptionQuery>;
+        StorageMap<_, Identity, T::AccountId, ClusterId, OptionQuery>;
 
     /// The id of the next cluster to be created.
     /// 获取下一个集群id
@@ -146,26 +149,32 @@ pub mod pallet {
     /// 集群信息
     #[pallet::storage]
     #[pallet::getter(fn k8s_clusters)]
-    pub type K8sClusters<T: Config> =
-        StorageMap<_, Identity, u64, K8sCluster<T::AccountId, BlockNumberFor<T>>, OptionQuery>;
+    pub type K8sClusters<T: Config> = StorageMap<
+        _,
+        Identity,
+        ClusterId,
+        K8sCluster<T::AccountId, BlockNumberFor<T>>,
+        OptionQuery,
+    >;
 
     /// 集群工作量证明
     /// K8sCluster proof of work
     #[pallet::storage]
     #[pallet::getter(fn proofs_of_cluster)]
-    pub type ProofOfClusters<T: Config> = StorageMap<_, Identity, u64, ProofOfCluster, OptionQuery>;
+    pub type ProofOfClusters<T: Config> =
+        StorageMap<_, Identity, ClusterId, ProofOfCluster, OptionQuery>;
 
     /// 计算资源 抵押/使用
     /// computing resource
     #[pallet::storage]
     #[pallet::getter(fn crs)]
-    pub type Crs<T: Config> = StorageMap<_, Identity, u64, (Cr, Cr), OptionQuery>;
+    pub type Crs<T: Config> = StorageMap<_, Identity, ClusterId, (Cr, Cr), OptionQuery>;
 
     /// 节点(评级,评分)
     /// computing resource
     #[pallet::storage]
     #[pallet::getter(fn scores)]
-    pub type Scores<T: Config> = StorageMap<_, Identity, u64, (u8, u8), OptionQuery>;
+    pub type Scores<T: Config> = StorageMap<_, Identity, ClusterId, (u8, u8), OptionQuery>;
 
     /// 抵押信息
     /// deposit of computing resource
@@ -174,43 +183,72 @@ pub mod pallet {
     pub type Deposits<T: Config> = StorageDoubleMap<
         _,
         Identity,
-        u64,
+        ClusterId,
         Identity,
         BlockNumberFor<T>,
         Deposit<BalanceOf<T>>,
         OptionQuery,
     >;
 
-    /// 程序使用的智能合同
+    /// 程序使用的智能合同 （节点id，解锁)
     /// smart contract
     #[pallet::storage]
     #[pallet::getter(fn match_contract)]
-    pub type WorkContract<T: Config> = StorageMap<_, Identity, WorkerId, (u64, u64), OptionQuery>;
+    pub type WorkContract<T: Config> = StorageMap<_, Identity, WorkerId, ClusterId, OptionQuery>;
 
     /// 工作任务工作量证明
     /// proof of work of task
     #[pallet::storage]
     #[pallet::getter(fn proofs_of_work)]
-    pub type ProofsOfWork<T: Config> = StorageMap<_, Identity, WorkerId, ProofOfWork, OptionQuery>;
+    pub type ProofsOfWork<T: Config> = StorageDoubleMap<
+        _,
+        Identity,
+        WorkerId,
+        Identity,
+        BlockNumberFor<T>,
+        ProofOfWork,
+        OptionQuery,
+    >;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// A new cluster has been created. [creator]
         ClusterCreated { creator: T::AccountId },
+        /// A new app has been runed. [minter]
         AppRuning { minter: T::AccountId, id: u64 },
     }
 
     // Errors inform users that something went wrong.
     #[pallet::error]
     pub enum Error<T> {
+        /// App status mismatch
+        /// 程序状态不匹配
         AppStatusMismatch,
+        /// Cluster is exists
+        /// 集群已存在
         ClusterIsExists,
+        /// Cluster is not exists
+        /// 集群不存在
         ClusterNotExists,
+        /// Cluster is not started
+        /// 集群未启动
         ClusterNotStarted,
+        /// Cluster can not stopped
+        /// 集群无法停止
         ClusterCanNotStopped,
+        /// Too many apps
+        /// 程序数量过多
         TooManyApp,
+        /// No cluster
+        /// 没有集群
         NoCluster,
+        /// App is not exists
+        /// 程序不存在
         AppNotExists,
+        /// Work is not exists
+        /// 工作不存在
+        WorkNotExists,
     }
 
     #[pallet::call]
@@ -286,7 +324,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_mortgage(
             origin: OriginFor<T>,
-            id: u64,
+            id: ClusterId,
             cpu: u16,
             mem: u16,
             disk: u16,
@@ -339,7 +377,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_unmortgage(
             origin: OriginFor<T>,
-            id: u64,
+            id: ClusterId,
             block_num: BlockNumberFor<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
@@ -392,9 +430,33 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Work proof of work data upload
+        /// 提交工作证明
+        #[pallet::call_index(005)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn work_proof_upload(
+            origin: OriginFor<T>,
+            worker_id: WorkerId,
+            proof: ProofOfWork,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let cluster_id =
+                K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
+            let contract_cluster_id =
+                WorkContract::<T>::get(worker_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
+
+            let number = <frame_system::Pallet<T>>::block_number();
+            ensure!(contract_cluster_id == cluster_id, Error::<T>::WorkNotExists);
+
+            // 保存工作证明
+            ProofsOfWork::<T>::insert(worker_id.clone(), number, proof);
+
+            Ok(().into())
+        }
+
         /// Worker cluster withdrawal
         /// 提现余额
-        #[pallet::call_index(005)]
+        #[pallet::call_index(006)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_withdrawal(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
@@ -403,7 +465,7 @@ pub mod pallet {
 
         /// Worker cluster stop
         /// 停止集群
-        #[pallet::call_index(006)]
+        #[pallet::call_index(007)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_stop(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -453,7 +515,7 @@ pub mod pallet {
 
         /// Worker cluster report
         /// 投诉集群
-        #[pallet::call_index(007)]
+        #[pallet::call_index(008)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_report(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // let creator = ensure_signed(origin)?;
@@ -472,7 +534,7 @@ pub mod pallet {
             let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
                 .ok_or(Error::<T>::AppNotExists)?;
             let app_cr = app.cr.clone();
-            let id = Self::get_random_cluster(work_id.clone(), app_cr)?;
+            let id = Self::get_random_cluster(work_id.clone(), app_cr, app.min_score)?;
 
             if app.status == 0 {
                 // 更新抵押数据
@@ -489,7 +551,7 @@ pub mod pallet {
                     Ok(())
                 })?;
 
-                WorkContract::<T>::insert(work_id.clone(), (id, 0));
+                WorkContract::<T>::insert(work_id.clone(), id);
                 app.status = 1;
                 wetee_app::TEEApps::<T>::insert(account, work_id.id.clone(), app);
             }
@@ -506,7 +568,8 @@ pub mod pallet {
         pub fn get_random_cluster(
             work_id: WorkerId,
             app_cr: Cr,
-        ) -> result::Result<u64, DispatchError> {
+            min_score: u8,
+        ) -> result::Result<ClusterId, DispatchError> {
             let num = NextClusterId::<T>::get();
             ensure!(num > 0, Error::<T>::NoCluster);
 
@@ -526,6 +589,7 @@ pub mod pallet {
                         && cr.0.cpu - cr.1.cpu > app_cr.cpu
                         && cr.0.memory - cr.1.memory > app_cr.memory
                         && cr.0.disk - cr.1.disk > app_cr.disk
+                        && score.1 > min_score
                     {
                         randoms.push(v);
                         scores.push(score);
@@ -544,12 +608,11 @@ pub mod pallet {
                 .map(|(idx, _val)| idx)
                 .unwrap();
 
-            let id = randoms[index];
             log::warn!(
                 "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?} ===> {:?}",
-                randoms,id
+                randoms,randoms[index]
             );
-            return Ok(id);
+            return Ok(randoms[index]);
         }
 
         /// Get random number
@@ -559,7 +622,7 @@ pub mod pallet {
                 &(T::PalletId::get(), seed).encode(),
             );
             let random_number = <u64>::decode(&mut random_seed.as_ref())
-                .expect("secure hashes should always be bigger than u32; qed");
+                .expect("secure hashes should always be bigger than u64; qed");
             random_number
         }
     }
