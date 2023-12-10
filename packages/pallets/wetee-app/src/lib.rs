@@ -10,7 +10,7 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{Cr, TeeAppId, WorkerId},
+    types::{ClusterId, Cr, MintId, TeeAppId, WorkerId},
 };
 
 use orml_traits::MultiCurrency;
@@ -165,6 +165,11 @@ pub mod pallet {
             id: u64,
         },
         Charge {
+            from: T::AccountId,
+            to: T::AccountId,
+            amount: BalanceOf<T>,
+        },
+        PayRunFee {
             from: T::AccountId,
             to: T::AccountId,
             amount: BalanceOf<T>,
@@ -382,6 +387,16 @@ pub mod pallet {
             T::PalletId::get().into_sub_account_truncating(WorkerId { id: app_id, t: 1 })
         }
 
+        /// Get minted app account
+        /// 获取应用挖矿账户
+        pub fn get_mint_account(work_id: WorkerId, cid: ClusterId) -> T::AccountId {
+            T::PalletId::get().into_sub_account_truncating(MintId {
+                id: work_id.id,
+                t: work_id.t,
+                cid,
+            })
+        }
+
         /// Get app id from account
         /// 获取账户中合约信息
         pub fn app_id_from_account(x: T::AccountId) -> WorkerId {
@@ -392,7 +407,10 @@ pub mod pallet {
         /// Stop app
         /// 停止任务
         /// 停止任务后,将任务状态设置为 2,并将抵押转移到目标账户
-        fn try_stop(account: T::AccountId, app_id: TeeAppId) -> result::Result<(), DispatchError> {
+        pub fn try_stop(
+            account: T::AccountId,
+            app_id: TeeAppId,
+        ) -> result::Result<(), DispatchError> {
             // 停止任务后,将任务状态设置为 2
             <TEEApps<T>>::try_mutate_exists(
                 account.clone(),
@@ -427,6 +445,29 @@ pub mod pallet {
             }
 
             Ok(())
+        }
+
+        /// Pay run fee
+        /// 支付运行费用
+        pub fn pay_run_fee(
+            wid: WorkerId,
+            cid: ClusterId,
+            fee: BalanceOf<T>,
+        ) -> result::Result<(), DispatchError> {
+            let to = Self::get_mint_account(wid.clone(), cid);
+            // 将抵押转移到目标账户
+            wetee_assets::Pallet::<T>::try_transfer(
+                0,
+                Self::app_id_account(wid.id),
+                to.clone(),
+                fee,
+            )?;
+            Self::deposit_event(Event::<T>::PayRunFee {
+                from: Self::app_id_account(wid.id),
+                to,
+                amount: fee,
+            });
+            return Ok(());
         }
     }
 }

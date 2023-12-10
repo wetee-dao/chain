@@ -50,6 +50,16 @@ pub struct WorkerId {
     pub id: TeeAppId,
 }
 
+/// WorkerId (type 1 =》app / 2=》 task )
+/// 任务ID (类型 1 =》app / 2=》 task )
+/// (类型,任务id) (type,id)
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct MintId {
+    pub t: u8,
+    pub cid: ClusterId,
+    pub id: TeeAppId,
+}
+
 /// 计算资源
 /// computing resource
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]

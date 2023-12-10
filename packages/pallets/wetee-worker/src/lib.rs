@@ -146,6 +146,24 @@ pub mod pallet {
     #[pallet::getter(fn next_cluster_id)]
     pub type NextClusterId<T: Config> = StorageValue<_, u64, ValueQuery>;
 
+    /// Price of cpu
+    /// cpu 价格
+    #[pallet::storage]
+    #[pallet::getter(fn cpu_prices)]
+    pub type CpuPrices<T: Config> = StorageMap<_, Identity, u8, u64, ValueQuery>;
+
+    /// Price of memory
+    /// memory 价格
+    #[pallet::storage]
+    #[pallet::getter(fn memory_prices)]
+    pub type MemoryPrices<T: Config> = StorageMap<_, Identity, u8, u64, ValueQuery>;
+
+    /// Price of disk
+    /// disk 价格
+    #[pallet::storage]
+    #[pallet::getter(fn disk_prices)]
+    pub type DiskPrices<T: Config> = StorageMap<_, Identity, u8, u64, ValueQuery>;
+
     /// 集群信息
     #[pallet::storage]
     #[pallet::getter(fn k8s_clusters)]
@@ -450,6 +468,19 @@ pub mod pallet {
 
             // 保存工作证明
             ProofsOfWork::<T>::insert(worker_id.clone(), number, proof);
+
+            // 支付费用
+            match worker_id.t {
+                1 => wetee_app::Pallet::<T>::pay_run_fee(
+                    worker_id,
+                    cluster_id,
+                    BalanceOf::<T>::from(10u32),
+                )?,
+                2 => {
+                    // 保存工作证明
+                }
+                _ => return Err(Error::<T>::WorkNotExists.into()),
+            }
 
             Ok(().into())
         }
