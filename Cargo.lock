@@ -10510,6 +10510,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "orml-tokens",
+ "orml-traits",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
@@ -10517,6 +10519,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "wetee-assets",
  "wetee-org",
  "wetee-primitives",
 ]

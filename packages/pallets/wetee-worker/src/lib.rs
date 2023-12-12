@@ -65,9 +65,17 @@ pub struct K8sCluster<AccountId, BlockNumber> {
 /// deposit of computing resource
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Deposit<Balance> {
+    /// Deposit amount
+    /// 质押金额
     pub deposit: Balance,
+    /// cpu
+    /// cpu
     pub cpu: u16,
+    /// memory
+    /// memory
     pub memory: u16,
+    /// disk
+    /// disk
     pub disk: u16,
 }
 
@@ -75,7 +83,7 @@ pub struct Deposit<Balance> {
 /// proof of K8sCluster
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct ProofOfCluster {
-    /// 节点id
+    /// Cluster  id
     /// 节点id
     pub cid: u64,
 }
@@ -99,6 +107,18 @@ pub struct ProofOfWork {
     /// task cpu memory usage hash
     /// 任务cpu 内存 占用监控hash
     pub cr_hash: Vec<u8>,
+}
+
+/// 合约日志
+/// Log of contract
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct ContractState<BlockNumber> {
+    /// block_number
+    /// 区块号
+    pub block_number: BlockNumber,
+    /// state
+    /// 状态
+    pub minted: u16,
 }
 
 #[frame_support::pallet]
@@ -145,24 +165,6 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn next_cluster_id)]
     pub type NextClusterId<T: Config> = StorageValue<_, u64, ValueQuery>;
-
-    /// Price of cpu
-    /// cpu 价格
-    #[pallet::storage]
-    #[pallet::getter(fn cpu_prices)]
-    pub type CpuPrices<T: Config> = StorageMap<_, Identity, u8, u64, ValueQuery>;
-
-    /// Price of memory
-    /// memory 价格
-    #[pallet::storage]
-    #[pallet::getter(fn memory_prices)]
-    pub type MemoryPrices<T: Config> = StorageMap<_, Identity, u8, u64, ValueQuery>;
-
-    /// Price of disk
-    /// disk 价格
-    #[pallet::storage]
-    #[pallet::getter(fn disk_prices)]
-    pub type DiskPrices<T: Config> = StorageMap<_, Identity, u8, u64, ValueQuery>;
 
     /// 集群信息
     #[pallet::storage]
@@ -211,8 +213,22 @@ pub mod pallet {
     /// 程序使用的智能合同 （节点id，解锁)
     /// smart contract
     #[pallet::storage]
-    #[pallet::getter(fn match_contract)]
+    #[pallet::getter(fn work_contract)]
     pub type WorkContract<T: Config> = StorageMap<_, Identity, WorkerId, ClusterId, OptionQuery>;
+
+    /// 程序使用的智能合同日志 （节点id，日志）
+    /// smart contract log
+    #[pallet::storage]
+    #[pallet::getter(fn work_contract_log)]
+    pub type WorkContractState<T: Config> = StorageDoubleMap<
+        _,
+        Identity,
+        WorkerId,
+        Identity,
+        ClusterId,
+        ContractState<BlockNumberFor<T>>,
+        OptionQuery,
+    >;
 
     /// 工作任务工作量证明
     /// proof of work of task
@@ -329,6 +345,7 @@ pub mod pallet {
                 ),
             );
             // 初始化评级
+            // initialize score
             Scores::<T>::insert(cid, (1, 5));
             <NextClusterId<T>>::mutate(|id| *id += 1);
 
@@ -463,22 +480,45 @@ pub mod pallet {
             let contract_cluster_id =
                 WorkContract::<T>::get(worker_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
 
-            let number = <frame_system::Pallet<T>>::block_number();
             ensure!(contract_cluster_id == cluster_id, Error::<T>::WorkNotExists);
+
+            let number = <frame_system::Pallet<T>>::block_number();
 
             // 保存工作证明
             ProofsOfWork::<T>::insert(worker_id.clone(), number, proof);
 
             // 支付费用
             match worker_id.t {
-                1 => wetee_app::Pallet::<T>::pay_run_fee(
-                    worker_id,
-                    cluster_id,
-                    BalanceOf::<T>::from(10u32),
-                )?,
-                2 => {
-                    // 保存工作证明
+                // 分阶段支付费用
+                1 => {
+                    let state = WorkContractState::<T>::get(worker_id.clone(), cluster_id)
+                        .ok_or(Error::<T>::WorkNotExists)?;
+                    // 检查是否是重复提交状态
+                    if number - state.block_number < 600u32.into() {
+                        return Err(Error::<T>::WorkNotExists.into());
+                    } else if number - state.block_number > 1200u32.into() {
+                        WorkContractState::<T>::insert(
+                            worker_id.clone(),
+                            cluster_id,
+                            ContractState {
+                                block_number: number,
+                                minted: 1,
+                            },
+                        );
+                    } else {
+                        WorkContractState::<T>::insert(
+                            worker_id.clone(),
+                            cluster_id,
+                            ContractState {
+                                block_number: number,
+                                minted: state.minted + 1,
+                            },
+                        );
+                    }
+                    let fee = wetee_app::Pallet::<T>::get_fee(worker_id.clone())?;
+                    wetee_app::Pallet::<T>::pay_run_fee(worker_id, cluster_id, fee)?;
                 }
+                2 => {}
                 _ => return Err(Error::<T>::WorkNotExists.into()),
             }
 
@@ -517,7 +557,12 @@ pub mod pallet {
             // 解除所有的抵押
             while let Some(value) = iter.next() {
                 Deposits::<T>::remove(cluster_id, value.0);
-                wetee_assets::Pallet::<T>::unreserve(0, who.clone(), value.1.deposit).unwrap();
+                wetee_assets::Pallet::<T>::unreserve(
+                    wetee_assets::NATIVE_ASSET_ID,
+                    who.clone(),
+                    value.1.deposit,
+                )
+                .unwrap();
             }
 
             // 重置抵押数据
@@ -565,7 +610,7 @@ pub mod pallet {
             let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
                 .ok_or(Error::<T>::AppNotExists)?;
             let app_cr = app.cr.clone();
-            let id = Self::get_random_cluster(work_id.clone(), app_cr, app.min_score)?;
+            let id = Self::get_random_cluster(work_id.clone(), app_cr, app.level)?;
 
             if app.status == 0 {
                 // 更新抵押数据
@@ -599,7 +644,7 @@ pub mod pallet {
         pub fn get_random_cluster(
             work_id: WorkerId,
             app_cr: Cr,
-            min_score: u8,
+            level: u8,
         ) -> result::Result<ClusterId, DispatchError> {
             let num = NextClusterId::<T>::get();
             ensure!(num > 0, Error::<T>::NoCluster);
@@ -607,7 +652,7 @@ pub mod pallet {
             // 随机选择集群
             let mut randoms = Vec::new();
             let mut scores = Vec::new();
-            for i in 1..100 {
+            for i in 1..1000 {
                 // 获取随机数
                 let random_number = Self::get_random_number(work_id.id + i);
                 // 必须保证数字在集群的范围内
@@ -620,7 +665,7 @@ pub mod pallet {
                         && cr.0.cpu - cr.1.cpu > app_cr.cpu
                         && cr.0.memory - cr.1.memory > app_cr.memory
                         && cr.0.disk - cr.1.disk > app_cr.disk
-                        && score.1 > min_score
+                        && score.1 == level
                     {
                         randoms.push(v);
                         scores.push(score);

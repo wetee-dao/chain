@@ -10,7 +10,7 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{ClusterId, Cr, MintId, TeeAppId, WorkerId},
+    types::{AppSetting, AppSettingInput, ClusterId, Cr, MintId, TeeAppId, WorkerId},
 };
 
 use orml_traits::MultiCurrency;
@@ -59,32 +59,20 @@ pub struct TeeApp<AccountId, BlockNumber, Balance> {
     /// 抵押金额
     pub deposit: Balance,
     /// min score of the App
-    /// 矿工最低评分
-    pub min_score: u8,
+    /// 矿工最低等级
+    pub level: u8,
 }
 
-/// App setting
-/// 应用设置
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct AppSetting {
-    /// key
-    pub k: Vec<u8>,
-    /// value
-    pub v: Vec<u8>,
-}
-
-/// App setting
-/// 应用设置
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct AppSettingInput {
-    /// 1: insert, 1: update, 3: remove
-    pub t: u8,
-    /// index of the setting
-    pub index: u16,
-    /// key
-    pub k: Vec<u8>,
-    /// value
-    pub v: Vec<u8>,
+/// 价格
+/// price of computing resource
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct Price {
+    /// cpu
+    pub cpu_per: u16,
+    /// memory
+    pub memory_per: u16,
+    /// disk
+    pub disk_per: u16,
 }
 
 #[frame_support::pallet]
@@ -135,6 +123,12 @@ pub mod pallet {
         TeeApp<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
     >;
 
+    /// Price of resource
+    /// 价格
+    #[pallet::storage]
+    #[pallet::getter(fn price)]
+    pub type Prices<T: Config> = StorageMap<_, Identity, u8, Price, OptionQuery>;
+
     /// App 对应账户
     /// user's K8sCluster information
     #[pallet::storage]
@@ -152,23 +146,19 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        CreatedApp {
-            creator: T::AccountId,
-            id: u64,
-        },
-        AppRuning {
-            creator: T::AccountId,
-            id: u64,
-        },
-        AppStop {
-            creator: T::AccountId,
-            id: u64,
-        },
+        /// App created.
+        CreatedApp { creator: T::AccountId, id: u64 },
+        /// App runing.
+        AppRuning { creator: T::AccountId, id: u64 },
+        /// App stop.
+        AppStop { creator: T::AccountId, id: u64 },
+        /// App charge.
         Charge {
             from: T::AccountId,
             to: T::AccountId,
             amount: BalanceOf<T>,
         },
+        /// App pay run fee.
         PayRunFee {
             from: T::AccountId,
             to: T::AccountId,
@@ -187,6 +177,8 @@ pub mod pallet {
         TooManyApp,
         /// App 403.
         App403,
+        /// Not enough balance.
+        NotEnoughBalance,
     }
 
     #[pallet::call]
@@ -203,7 +195,7 @@ pub mod pallet {
             cpu: u16,
             memory: u16,
             disk: u16,
-            min_score: u8,
+            level: u8,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -219,7 +211,7 @@ pub mod pallet {
                 status: 1,
                 cr: Cr { cpu, memory, disk },
                 deposit,
-                min_score,
+                level,
             };
 
             <NextTeeId<T>>::mutate(|id| *id += 1);
@@ -455,6 +447,20 @@ pub mod pallet {
             fee: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
             let to = Self::get_mint_account(wid.clone(), cid);
+            if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee + fee
+            {
+                let app_account =
+                    <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
+
+                // 余额不足支持下一个周期的费用，停止任务
+                Self::try_stop(app_account, wid.id)?;
+
+                // 不足以支付当前周期的费用
+                if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee {
+                    return Err(Error::<T>::NotEnoughBalance.into());
+                }
+            }
+
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
@@ -468,6 +474,20 @@ pub mod pallet {
                 amount: fee,
             });
             return Ok(());
+        }
+
+        pub fn get_fee(wid: WorkerId) -> result::Result<BalanceOf<T>, DispatchError> {
+            let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
+            let app =
+                <TEEApps<T>>::get(app_account.clone(), wid.id).ok_or(Error::<T>::AppNotExists)?;
+            let level = app.level;
+
+            // 获取费用
+            let p = <Prices<T>>::get(level).ok_or(Error::<T>::AppNotExists)?;
+
+            return Ok(BalanceOf::<T>::from(
+                p.cpu_per * app.cr.cpu + p.memory_per * app.cr.memory + p.disk_per * app.cr.disk,
+            ));
         }
     }
 }

@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
+use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
 
 /// Simple index type for proposal counting.
@@ -46,6 +46,8 @@ pub type ClusterId = u64;
 /// (类型,任务id) (type,id)
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct WorkerId {
+    // 1 =》app
+    // 2=》 task
     pub t: u8,
     pub id: TeeAppId,
 }
@@ -55,6 +57,8 @@ pub struct WorkerId {
 /// (类型,任务id) (type,id)
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct MintId {
+    // 1 =》app
+    // 2=》 task
     pub t: u8,
     pub cid: ClusterId,
     pub id: TeeAppId,
@@ -67,4 +71,28 @@ pub struct Cr {
     pub cpu: u16,
     pub memory: u16,
     pub disk: u16,
+}
+
+/// App setting
+/// 应用设置
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct AppSetting {
+    /// key
+    pub k: Vec<u8>,
+    /// value
+    pub v: Vec<u8>,
+}
+
+/// App setting
+/// 应用设置
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct AppSettingInput {
+    /// 1: insert, 1: update, 3: remove
+    pub t: u8,
+    /// index of the setting
+    pub index: u16,
+    /// key
+    pub k: Vec<u8>,
+    /// value
+    pub v: Vec<u8>,
 }
