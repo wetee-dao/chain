@@ -31,6 +31,7 @@ wetee-primitives = { path = "../../primitives", package = "wetee-primitives", de
 wetee-org = { path = "../wetee-org", package = "wetee-org", default-features = false }
 wetee-assets = { path = "../wetee-assets", package = "wetee-assets", default-features = false }
 wetee-app = { path = "../wetee-app", package = "wetee-app", default-features = false }
+wetee-task = { path = "../wetee-task", package = "wetee-task", default-features = false }
 
 [dev-dependencies]
 sp-core = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0" }
@@ -52,6 +53,7 @@ std = [
 	"wetee-org/std",
 	"wetee-assets/std",
 	"wetee-app/std",
+	"wetee-task/std"
 ]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]

@@ -68,15 +68,17 @@ pub struct TeeTask<AccountId, BlockNumber, Balance> {
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Price {
     /// cpu
-    pub cpu_per: u16,
+    pub cpu_per_block: u16,
     /// memory
-    pub memory_per: u16,
+    pub memory_per_block: u16,
     /// disk
-    pub disk_per: u16,
+    pub disk_per_block: u16,
 }
 
 #[frame_support::pallet]
 pub mod pallet {
+    use sp_runtime::SaturatedConversion;
+
     use super::*;
 
     pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
@@ -114,7 +116,7 @@ pub mod pallet {
     /// 应用
     #[pallet::storage]
     #[pallet::getter(fn tee_apps)]
-    pub type TEEApps<T: Config> = StorageDoubleMap<
+    pub type TEETasks<T: Config> = StorageDoubleMap<
         _,
         Identity,
         T::AccountId,
@@ -133,14 +135,14 @@ pub mod pallet {
     /// user's K8sCluster information
     #[pallet::storage]
     #[pallet::getter(fn k8s_cluster_accounts)]
-    pub type AppIdAccounts<T: Config> =
+    pub type TaskIdAccounts<T: Config> =
         StorageMap<_, Identity, TeeAppId, T::AccountId, OptionQuery>;
 
     /// App setting
     /// App设置
     #[pallet::storage]
     #[pallet::getter(fn app_settings)]
-    pub type AppSettings<T: Config> =
+    pub type TaskSettings<T: Config> =
         StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, AppSetting, OptionQuery>;
 
     #[pallet::event]
@@ -215,8 +217,8 @@ pub mod pallet {
             };
 
             <NextTeeId<T>>::mutate(|id| *id += 1);
-            <TEEApps<T>>::insert(who.clone(), id, app);
-            <AppIdAccounts<T>>::insert(id, who.clone());
+            <TEETasks<T>>::insert(who.clone(), id, app);
+            <TaskIdAccounts<T>>::insert(id, who.clone());
 
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
@@ -231,7 +233,7 @@ pub mod pallet {
             });
 
             // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(WorkerId { t: 1, id }, who);
+            <T as pallet::Config>::AfterCreate::run_hook(WorkerId { t: 2, id }, who);
 
             Ok(().into())
         }
@@ -256,7 +258,7 @@ pub mod pallet {
             port: Vec<u32>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            <TEEApps<T>>::try_mutate_exists(
+            <TEETasks<T>>::try_mutate_exists(
                 who.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
@@ -281,10 +283,10 @@ pub mod pallet {
             value: Vec<AppSettingInput>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            let app_account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExists)?;
+            let app_account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExists)?;
             ensure!(who == app_account, Error::<T>::App403);
 
-            let mut iter = AppSettings::<T>::iter_prefix(app_id);
+            let mut iter = TaskSettings::<T>::iter_prefix(app_id);
             let mut id = 0;
 
             // 解除所有的抵押
@@ -296,7 +298,7 @@ pub mod pallet {
                         match v.t {
                             // 更新设置
                             2 => {
-                                <AppSettings<T>>::insert(
+                                <TaskSettings<T>>::insert(
                                     app_id,
                                     setting.0,
                                     AppSetting {
@@ -307,7 +309,7 @@ pub mod pallet {
                             }
                             // 删除设置
                             3 => {
-                                <AppSettings<T>>::remove(app_id, setting.0);
+                                <TaskSettings<T>>::remove(app_id, setting.0);
                             }
                             _ => {}
                         };
@@ -319,7 +321,7 @@ pub mod pallet {
             value.iter().for_each(|v| {
                 if v.t == 1 {
                     id = id + 1;
-                    <AppSettings<T>>::insert(
+                    <TaskSettings<T>>::insert(
                         app_id,
                         id,
                         AppSetting {
@@ -404,7 +406,7 @@ pub mod pallet {
             app_id: TeeAppId,
         ) -> result::Result<(), DispatchError> {
             // 停止任务后,将任务状态设置为 2
-            <TEEApps<T>>::try_mutate_exists(
+            <TEETasks<T>>::try_mutate_exists(
                 account.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
@@ -450,7 +452,7 @@ pub mod pallet {
             if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee + fee
             {
                 let app_account =
-                    <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
+                    <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
 
                 // 余额不足支持下一个周期的费用，停止任务
                 Self::try_stop(app_account, wid.id)?;
@@ -477,16 +479,22 @@ pub mod pallet {
         }
 
         pub fn get_fee(wid: WorkerId) -> result::Result<BalanceOf<T>, DispatchError> {
-            let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
+            let app_account = <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
             let app =
-                <TEEApps<T>>::get(app_account.clone(), wid.id).ok_or(Error::<T>::AppNotExists)?;
+                <TEETasks<T>>::get(app_account.clone(), wid.id).ok_or(Error::<T>::AppNotExists)?;
             let level = app.level;
+
+            let number = <frame_system::Pallet<T>>::block_number();
 
             // 获取费用
             let p = <Prices<T>>::get(level).ok_or(Error::<T>::AppNotExists)?;
+            let cos: u32 = (number - app.start_block).saturated_into::<u32>();
 
             return Ok(BalanceOf::<T>::from(
-                p.cpu_per * app.cr.cpu + p.memory_per * app.cr.memory + p.disk_per * app.cr.disk,
+                (p.cpu_per_block * app.cr.cpu
+                    + p.memory_per_block * app.cr.memory
+                    + p.disk_per_block * app.cr.disk) as u32
+                    * cos,
             ));
         }
     }

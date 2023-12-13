@@ -62,6 +62,7 @@ wetee-guild = { path = "../../pallets/wetee-guild", default-features = false }
 wetee-project = { path = "../../pallets/wetee-project", default-features = false }
 wetee-worker = { path = "../../pallets/wetee-worker", default-features = false }
 wetee-app = { path = "../../pallets/wetee-app", default-features = false }
+wetee-task = { path = "../../pallets/wetee-task", default-features = false }
 wetee-treasury = { path = "../../pallets/wetee-treasury", default-features = false }
 wetee-runtime-api = { path = "../../pallets/wetee-rpc/runtime-api", default-features = false, optional = true }
 
@@ -115,6 +116,8 @@ std = [
 	"wetee-project/std",
 	"wetee-worker/std",
 	"wetee-app/std",
+	"wetee-task/std",
+	"wetee-treasury/std",
 	"wetee-runtime-api/std",
 ]
 runtime-benchmarks = [

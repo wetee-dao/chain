@@ -64,6 +64,7 @@ pub use wetee_guild::Call as WeteeGuildCall;
 pub use wetee_org::Call as WeteeOrgCall;
 pub use wetee_project::Call as WeteeProjectCall;
 pub use wetee_sudo::Call as WeteeSudoCall;
+pub use wetee_task::Call as WeteeTaskCall;
 pub use wetee_treasury::Call as WeteeTreasuryCall;
 pub use wetee_worker::Call as WeteeWorkerCall;
 // end WETEE pallet.
@@ -315,6 +316,7 @@ construct_runtime!(
         WeteeTreasury: wetee_treasury,
         WeteeApp: wetee_app,
         WeteeWorker: wetee_worker,
+        WeteeTask: wetee_task,
     }
 );
 

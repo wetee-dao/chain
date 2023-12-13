@@ -10471,6 +10471,7 @@ dependencies = [
  "wetee-project",
  "wetee-runtime-api",
  "wetee-sudo",
+ "wetee-task",
  "wetee-treasury",
  "wetee-worker",
 ]
@@ -10567,6 +10568,7 @@ dependencies = [
  "wetee-assets",
  "wetee-org",
  "wetee-primitives",
+ "wetee-task",
 ]
 
 [[package]]

@@ -135,6 +135,7 @@ pub mod pallet {
         + wetee_assets::Config
         + wetee_org::Config
         + wetee_app::Config
+        + wetee_task::Config
         + pallet_insecure_randomness_collective_flip::Config
     {
         /// pallet event
@@ -518,7 +519,10 @@ pub mod pallet {
                     let fee = wetee_app::Pallet::<T>::get_fee(worker_id.clone())?;
                     wetee_app::Pallet::<T>::pay_run_fee(worker_id, cluster_id, fee)?;
                 }
-                2 => {}
+                2 => {
+                    let fee = wetee_task::Pallet::<T>::get_fee(worker_id.clone())?;
+                    wetee_task::Pallet::<T>::pay_run_fee(worker_id, cluster_id, fee)?;
+                }
                 _ => return Err(Error::<T>::WorkNotExists.into()),
             }
 

@@ -48,6 +48,7 @@ frame_support::construct_runtime!(
         WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
         WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
         WeteeApp: wetee_app::{ Pallet, Call, Event<T>, Storage },
+        WeteeTask: wetee_task::{ Pallet, Call, Event<T>, Storage },
         WeteeWorker: wetee_worker::{ Pallet, Call, Event<T>, Storage },
     }
 );
@@ -142,6 +143,12 @@ impl wetee_app::Config for Test {
 impl wetee_worker::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+}
+
+impl wetee_task::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+    type AfterCreate = WorkerQueueHook;
 }
 
 parameter_types! {

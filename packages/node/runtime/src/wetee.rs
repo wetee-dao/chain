@@ -163,6 +163,12 @@ impl wetee_app::Config for Runtime {
     type AfterCreate = WorkerQueueHook;
 }
 
+impl wetee_task::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+    type AfterCreate = WorkerQueueHook;
+}
+
 impl wetee_worker::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
