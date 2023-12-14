@@ -4,12 +4,13 @@ use codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::Randomness};
 use frame_system::pallet_prelude::*;
 use scale_info::{prelude::vec::Vec, TypeInfo};
+use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::RuntimeDebug;
 use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::types::{ClusterId, Cr, TeeAppId, WorkerId};
+use wetee_primitives::types::{ClusterId, Cr, MintId, TeeAppId, WorkId};
 
 #[cfg(test)]
 mod mock;
@@ -97,7 +98,7 @@ pub struct ProofOfWork {
     pub cid: u64,
     /// worker id
     /// 任务 id
-    pub wid: WorkerId,
+    pub wid: WorkId,
     /// Task log address and hash
     /// 任务日志地址及hash
     pub log_hash: Vec<u8>,
@@ -211,20 +212,34 @@ pub mod pallet {
         OptionQuery,
     >;
 
+    /// 集群包含的智能合同
+    /// smart contract
+    #[pallet::storage]
+    #[pallet::getter(fn cluster_contracts)]
+    pub type ClusterContracts<T: Config> = StorageDoubleMap<
+        _,
+        Identity,
+        ClusterId,
+        Identity,
+        WorkId,
+        ContractState<BlockNumberFor<T>>,
+        OptionQuery,
+    >;
+
     /// 程序使用的智能合同 （节点id，解锁)
     /// smart contract
     #[pallet::storage]
-    #[pallet::getter(fn work_contract)]
-    pub type WorkContract<T: Config> = StorageMap<_, Identity, WorkerId, ClusterId, OptionQuery>;
+    #[pallet::getter(fn work_contracts)]
+    pub type WorkContracts<T: Config> = StorageMap<_, Identity, WorkId, ClusterId, OptionQuery>;
 
     /// 程序使用的智能合同日志 （节点id，日志）
     /// smart contract log
     #[pallet::storage]
-    #[pallet::getter(fn work_contract_log)]
+    #[pallet::getter(fn work_contract_state)]
     pub type WorkContractState<T: Config> = StorageDoubleMap<
         _,
         Identity,
-        WorkerId,
+        WorkId,
         Identity,
         ClusterId,
         ContractState<BlockNumberFor<T>>,
@@ -238,7 +253,7 @@ pub mod pallet {
     pub type ProofsOfWork<T: Config> = StorageDoubleMap<
         _,
         Identity,
-        WorkerId,
+        WorkId,
         Identity,
         BlockNumberFor<T>,
         ProofOfWork,
@@ -284,6 +299,9 @@ pub mod pallet {
         /// Work is not exists
         /// 工作不存在
         WorkNotExists,
+        /// Insufficient balance.
+        /// 余额不足
+        InsufficientBalance,
     }
 
     #[pallet::call]
@@ -472,34 +490,34 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn work_proof_upload(
             origin: OriginFor<T>,
-            worker_id: WorkerId,
+            work_id: WorkId,
             proof: ProofOfWork,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let cluster_id =
                 K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
             let contract_cluster_id =
-                WorkContract::<T>::get(worker_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
+                WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
 
             ensure!(contract_cluster_id == cluster_id, Error::<T>::WorkNotExists);
 
             let number = <frame_system::Pallet<T>>::block_number();
 
             // 保存工作证明
-            ProofsOfWork::<T>::insert(worker_id.clone(), number, proof);
+            ProofsOfWork::<T>::insert(work_id.clone(), number, proof);
 
             // 支付费用
-            match worker_id.t {
+            match work_id.t {
                 // 分阶段支付费用
                 1 => {
-                    let state = WorkContractState::<T>::get(worker_id.clone(), cluster_id)
+                    let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
                         .ok_or(Error::<T>::WorkNotExists)?;
                     // 检查是否是重复提交状态
                     if number - state.block_number < 600u32.into() {
                         return Err(Error::<T>::WorkNotExists.into());
                     } else if number - state.block_number > 1200u32.into() {
                         WorkContractState::<T>::insert(
-                            worker_id.clone(),
+                            work_id.clone(),
                             cluster_id,
                             ContractState {
                                 block_number: number,
@@ -508,7 +526,7 @@ pub mod pallet {
                         );
                     } else {
                         WorkContractState::<T>::insert(
-                            worker_id.clone(),
+                            work_id.clone(),
                             cluster_id,
                             ContractState {
                                 block_number: number,
@@ -516,12 +534,14 @@ pub mod pallet {
                             },
                         );
                     }
-                    let fee = wetee_app::Pallet::<T>::get_fee(worker_id.clone())?;
-                    wetee_app::Pallet::<T>::pay_run_fee(worker_id, cluster_id, fee)?;
+                    let fee = wetee_app::Pallet::<T>::get_fee(work_id.clone())?;
+                    let to = Self::get_mint_account(work_id.clone(), cluster_id);
+                    wetee_app::Pallet::<T>::pay_run_fee(work_id, fee, to)?;
                 }
                 2 => {
-                    let fee = wetee_task::Pallet::<T>::get_fee(worker_id.clone())?;
-                    wetee_task::Pallet::<T>::pay_run_fee(worker_id, cluster_id, fee)?;
+                    let fee = wetee_task::Pallet::<T>::get_fee(work_id.clone())?;
+                    let to = Self::get_mint_account(work_id.clone(), cluster_id);
+                    wetee_task::Pallet::<T>::pay_run_fee(work_id, fee, to)?;
                 }
                 _ => return Err(Error::<T>::WorkNotExists.into()),
             }
@@ -533,8 +553,24 @@ pub mod pallet {
         /// 提现余额
         #[pallet::call_index(006)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_withdrawal(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let creator = ensure_signed(origin)?;
+        pub fn cluster_withdrawal(
+            origin: OriginFor<T>,
+            work_id: WorkId,
+            amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let cluster_id =
+                K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
+
+            let mint_account = Self::get_mint_account(work_id.clone(), cluster_id);
+            ensure!(
+                wetee_assets::Pallet::<T>::free_balance(
+                    wetee_assets::NATIVE_ASSET_ID,
+                    &mint_account
+                ) >= amount,
+                Error::<T>::InsufficientBalance
+            );
+
             Ok(().into())
         }
 
@@ -608,7 +644,7 @@ pub mod pallet {
         /// 部署应用
         pub fn match_app_deploy(
             account: T::AccountId,
-            work_id: WorkerId,
+            work_id: WorkId,
         ) -> result::Result<(), DispatchError> {
             // 获取app信息
             let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
@@ -631,7 +667,31 @@ pub mod pallet {
                     Ok(())
                 })?;
 
-                WorkContract::<T>::insert(work_id.clone(), id);
+                WorkContracts::<T>::insert(work_id.clone(), id);
+
+                let number = <frame_system::Pallet<T>>::block_number();
+                // 如果没有集群挖矿记录，则插入记录
+                if !ClusterContracts::<T>::contains_key(id, work_id.clone()) {
+                    ClusterContracts::<T>::insert(
+                        id,
+                        work_id.clone(),
+                        ContractState {
+                            block_number: number,
+                            minted: 0,
+                        },
+                    );
+                }
+                if !WorkContractState::<T>::contains_key(work_id.clone(), id) {
+                    WorkContractState::<T>::insert(
+                        work_id.clone(),
+                        id,
+                        ContractState {
+                            block_number: number,
+                            minted: 0,
+                        },
+                    );
+                }
+
                 app.status = 1;
                 wetee_app::TEEApps::<T>::insert(account, work_id.id.clone(), app);
             }
@@ -646,7 +706,7 @@ pub mod pallet {
         /// Get random cluster
         /// 获取随机节点
         pub fn get_random_cluster(
-            work_id: WorkerId,
+            work_id: WorkId,
             app_cr: Cr,
             level: u8,
         ) -> result::Result<ClusterId, DispatchError> {
@@ -704,6 +764,16 @@ pub mod pallet {
             let random_number = <u64>::decode(&mut random_seed.as_ref())
                 .expect("secure hashes should always be bigger than u64; qed");
             random_number
+        }
+
+        /// Get minted app account
+        /// 获取应用挖矿账户
+        pub fn get_mint_account(work_id: WorkId, cid: ClusterId) -> T::AccountId {
+            T::PalletId::get().into_sub_account_truncating(MintId {
+                id: work_id.id,
+                t: work_id.t,
+                cid,
+            })
         }
     }
 }

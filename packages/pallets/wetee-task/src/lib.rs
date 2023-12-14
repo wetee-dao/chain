@@ -10,7 +10,7 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{AppSetting, AppSettingInput, ClusterId, Cr, MintId, TeeAppId, WorkerId},
+    types::{AppSetting, AppSettingInput, Cr, TeeAppId, WorkId},
 };
 
 use orml_traits::MultiCurrency;
@@ -93,7 +93,7 @@ pub mod pallet {
 
         /// Do some things after creating dao, such as setting up a sudo account.
         /// 创建部署任务后回调
-        type AfterCreate: AfterCreate<WorkerId, Self::AccountId>;
+        type AfterCreate: AfterCreate<WorkId, Self::AccountId>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -233,7 +233,7 @@ pub mod pallet {
             });
 
             // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(WorkerId { t: 2, id }, who);
+            <T as pallet::Config>::AfterCreate::run_hook(WorkId { t: 2, id }, who);
 
             Ok(().into())
         }
@@ -378,23 +378,13 @@ pub mod pallet {
         /// Get app id account
         /// 获取 App 合约账户
         pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
-            T::PalletId::get().into_sub_account_truncating(WorkerId { id: app_id, t: 1 })
-        }
-
-        /// Get minted app account
-        /// 获取应用挖矿账户
-        pub fn get_mint_account(work_id: WorkerId, cid: ClusterId) -> T::AccountId {
-            T::PalletId::get().into_sub_account_truncating(MintId {
-                id: work_id.id,
-                t: work_id.t,
-                cid,
-            })
+            T::PalletId::get().into_sub_account_truncating(WorkId { id: app_id, t: 1 })
         }
 
         /// Get app id from account
         /// 获取账户中合约信息
-        pub fn app_id_from_account(x: T::AccountId) -> WorkerId {
-            let (_, work) = PalletId::try_from_sub_account::<WorkerId>(&x).unwrap();
+        pub fn app_id_from_account(x: T::AccountId) -> WorkId {
+            let (_, work) = PalletId::try_from_sub_account::<WorkId>(&x).unwrap();
             work
         }
 
@@ -444,11 +434,10 @@ pub mod pallet {
         /// Pay run fee
         /// 支付运行费用
         pub fn pay_run_fee(
-            wid: WorkerId,
-            cid: ClusterId,
+            wid: WorkId,
             fee: BalanceOf<T>,
+            to: T::AccountId,
         ) -> result::Result<(), DispatchError> {
-            let to = Self::get_mint_account(wid.clone(), cid);
             if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee + fee
             {
                 let app_account =
@@ -478,7 +467,7 @@ pub mod pallet {
             return Ok(());
         }
 
-        pub fn get_fee(wid: WorkerId) -> result::Result<BalanceOf<T>, DispatchError> {
+        pub fn get_fee(wid: WorkId) -> result::Result<BalanceOf<T>, DispatchError> {
             let app_account = <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
             let app =
                 <TEETasks<T>>::get(app_account.clone(), wid.id).ok_or(Error::<T>::AppNotExists)?;

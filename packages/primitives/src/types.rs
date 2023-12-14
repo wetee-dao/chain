@@ -41,18 +41,18 @@ pub type TeeAppId = u64;
 /// 应用ID
 pub type ClusterId = u64;
 
-/// WorkerId (type 1 =》app / 2=》 task )
+/// WorkId (type 1 =》app / 2=》 task )
 /// 任务ID (类型 1 =》app / 2=》 task )
 /// (类型,任务id) (type,id)
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct WorkerId {
+pub struct WorkId {
     // 1 =》app
     // 2=》 task
     pub t: u8,
     pub id: TeeAppId,
 }
 
-/// WorkerId (type 1 =》app / 2=》 task )
+/// WorkId (type 1 =》app / 2=》 task )
 /// 任务ID (类型 1 =》app / 2=》 task )
 /// (类型,任务id) (type,id)
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]

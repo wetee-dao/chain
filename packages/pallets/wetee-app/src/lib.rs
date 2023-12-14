@@ -10,7 +10,7 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{AppSetting, AppSettingInput, ClusterId, Cr, MintId, TeeAppId, WorkerId},
+    types::{AppSetting, AppSettingInput, Cr, TeeAppId, WorkId},
 };
 
 use orml_traits::MultiCurrency;
@@ -91,7 +91,7 @@ pub mod pallet {
 
         /// Do some things after creating dao, such as setting up a sudo account.
         /// 创建部署任务后回调
-        type AfterCreate: AfterCreate<WorkerId, Self::AccountId>;
+        type AfterCreate: AfterCreate<WorkId, Self::AccountId>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -222,7 +222,7 @@ pub mod pallet {
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
                 who.clone(),
-                Self::app_id_account(id),
+                Self::task_id_account(id),
                 deposit,
             )?;
             Self::deposit_event(Event::<T>::CreatedApp {
@@ -231,7 +231,7 @@ pub mod pallet {
             });
 
             // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(WorkerId { t: 1, id }, who);
+            <T as pallet::Config>::AfterCreate::run_hook(WorkId { t: 1, id }, who);
 
             Ok(().into())
         }
@@ -348,13 +348,13 @@ pub mod pallet {
             wetee_assets::Pallet::<T>::try_transfer(
                 wetee_assets::NATIVE_ASSET_ID,
                 who.clone(),
-                Self::app_id_account(id),
+                Self::task_id_account(id),
                 deposit,
             )?;
 
             Self::deposit_event(Event::<T>::Charge {
                 from: who.clone(),
-                to: Self::app_id_account(id),
+                to: Self::task_id_account(id),
                 amount: deposit,
             });
 
@@ -375,24 +375,14 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Get app id account
         /// 获取 App 合约账户
-        pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
-            T::PalletId::get().into_sub_account_truncating(WorkerId { id: app_id, t: 1 })
-        }
-
-        /// Get minted app account
-        /// 获取应用挖矿账户
-        pub fn get_mint_account(work_id: WorkerId, cid: ClusterId) -> T::AccountId {
-            T::PalletId::get().into_sub_account_truncating(MintId {
-                id: work_id.id,
-                t: work_id.t,
-                cid,
-            })
+        pub fn task_id_account(app_id: TeeAppId) -> T::AccountId {
+            T::PalletId::get().into_sub_account_truncating(WorkId { id: app_id, t: 1 })
         }
 
         /// Get app id from account
         /// 获取账户中合约信息
-        pub fn app_id_from_account(x: T::AccountId) -> WorkerId {
-            let (_, work) = PalletId::try_from_sub_account::<WorkerId>(&x).unwrap();
+        pub fn task_id_from_account(x: T::AccountId) -> WorkId {
+            let (_, work) = PalletId::try_from_sub_account::<WorkId>(&x).unwrap();
             work
         }
 
@@ -422,16 +412,16 @@ pub mod pallet {
             // 将抵押转移到目标账户
             if wetee_assets::Pallet::<T>::free_balance(
                 wetee_assets::NATIVE_ASSET_ID,
-                &Self::app_id_account(app_id),
+                &Self::task_id_account(app_id),
             ) > 0u32.into()
             {
                 wetee_assets::Pallet::<T>::try_transfer(
                     wetee_assets::NATIVE_ASSET_ID,
-                    Self::app_id_account(app_id),
+                    Self::task_id_account(app_id),
                     account,
                     wetee_assets::Pallet::<T>::free_balance(
                         wetee_assets::NATIVE_ASSET_ID,
-                        &Self::app_id_account(app_id),
+                        &Self::task_id_account(app_id),
                     ),
                 )?;
             }
@@ -442,12 +432,12 @@ pub mod pallet {
         /// Pay run fee
         /// 支付运行费用
         pub fn pay_run_fee(
-            wid: WorkerId,
-            cid: ClusterId,
+            wid: WorkId,
             fee: BalanceOf<T>,
+            to: T::AccountId,
         ) -> result::Result<(), DispatchError> {
-            let to = Self::get_mint_account(wid.clone(), cid);
-            if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee + fee
+            if wetee_assets::Pallet::<T>::free_balance(0, &Self::task_id_account(wid.id))
+                < fee + fee
             {
                 let app_account =
                     <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
@@ -456,7 +446,8 @@ pub mod pallet {
                 Self::try_stop(app_account, wid.id)?;
 
                 // 不足以支付当前周期的费用
-                if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee {
+                if wetee_assets::Pallet::<T>::free_balance(0, &Self::task_id_account(wid.id)) < fee
+                {
                     return Err(Error::<T>::NotEnoughBalance.into());
                 }
             }
@@ -464,19 +455,19 @@ pub mod pallet {
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
-                Self::app_id_account(wid.id),
+                Self::task_id_account(wid.id),
                 to.clone(),
                 fee,
             )?;
             Self::deposit_event(Event::<T>::PayRunFee {
-                from: Self::app_id_account(wid.id),
+                from: Self::task_id_account(wid.id),
                 to,
                 amount: fee,
             });
             return Ok(());
         }
 
-        pub fn get_fee(wid: WorkerId) -> result::Result<BalanceOf<T>, DispatchError> {
+        pub fn get_fee(wid: WorkId) -> result::Result<BalanceOf<T>, DispatchError> {
             let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
             let app =
                 <TEEApps<T>>::get(app_account.clone(), wid.id).ok_or(Error::<T>::AppNotExists)?;

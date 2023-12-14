@@ -18,7 +18,7 @@ use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{DaoAssetId, WorkerId},
+    types::{DaoAssetId, WorkId},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -125,8 +125,8 @@ impl wetee_org::Config for Test {
 }
 
 pub struct WorkerQueueHook;
-impl AfterCreate<WorkerId, AccountId> for WorkerQueueHook {
-    fn run_hook(id: WorkerId, dao_id: DaoAssetId) {}
+impl AfterCreate<WorkId, AccountId> for WorkerQueueHook {
+    fn run_hook(id: WorkId, dao_id: DaoAssetId) {}
 }
 
 impl wetee_app::Config for Test {
