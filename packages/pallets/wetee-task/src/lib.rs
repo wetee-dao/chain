@@ -29,7 +29,7 @@ use weights::WeightInfo;
 
 pub use pallet::*;
 
-/// App specific information
+/// Task specific information
 /// 程序信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct TeeTask<AccountId, BlockNumber, Balance> {
@@ -37,28 +37,28 @@ pub struct TeeTask<AccountId, BlockNumber, Balance> {
     /// creator of app
     /// 创建者
     pub creator: AccountId,
-    /// The block that creates the App
-    /// App创建的区块
+    /// The block that creates the Task
+    /// Task创建的区块
     pub start_block: BlockNumber,
     /// name of the app.
     /// 程序名字
     pub name: Vec<u8>,
-    /// img of the App.
+    /// img of the Task.
     /// image 目标宗旨
     pub image: Vec<u8>,
     /// port of service
     /// 服务端口号
     pub port: Vec<u32>,
-    /// State of the App
-    /// App状态
+    /// State of the Task
+    /// Task状态
     pub status: u8,
     /// cpu memory disk
     /// cpu memory disk
     pub cr: Cr,
-    /// deposit of the App
+    /// deposit of the Task
     /// 抵押金额
     pub deposit: Balance,
-    /// min score of the App
+    /// min score of the Task
     /// 矿工最低等级
     pub level: u8,
 }
@@ -112,7 +112,7 @@ pub mod pallet {
     #[pallet::getter(fn next_tee_id)]
     pub type NextTeeId<T: Config> = StorageValue<_, TeeAppId, ValueQuery>;
 
-    /// App
+    /// Task
     /// 应用
     #[pallet::storage]
     #[pallet::getter(fn tee_apps)]
@@ -131,36 +131,36 @@ pub mod pallet {
     #[pallet::getter(fn price)]
     pub type Prices<T: Config> = StorageMap<_, Identity, u8, Price, OptionQuery>;
 
-    /// App 对应账户
+    /// Task 对应账户
     /// user's K8sCluster information
     #[pallet::storage]
     #[pallet::getter(fn k8s_cluster_accounts)]
     pub type TaskIdAccounts<T: Config> =
         StorageMap<_, Identity, TeeAppId, T::AccountId, OptionQuery>;
 
-    /// App setting
-    /// App设置
+    /// Task setting
+    /// Task设置
     #[pallet::storage]
     #[pallet::getter(fn app_settings)]
-    pub type TaskSettings<T: Config> =
+    pub type AppSettings<T: Config> =
         StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, AppSetting, OptionQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// App created.
-        CreatedApp { creator: T::AccountId, id: u64 },
-        /// App runing.
-        AppRuning { creator: T::AccountId, id: u64 },
-        /// App stop.
-        AppStop { creator: T::AccountId, id: u64 },
-        /// App charge.
+        /// Task created.
+        CreatedTask { creator: T::AccountId, id: u64 },
+        /// Task runing.
+        TaskRuning { creator: T::AccountId, id: u64 },
+        /// Task stop.
+        TaskStop { creator: T::AccountId, id: u64 },
+        /// Task charge.
         Charge {
             from: T::AccountId,
             to: T::AccountId,
             amount: BalanceOf<T>,
         },
-        /// App pay run fee.
+        /// Task pay run fee.
         PayRunFee {
             from: T::AccountId,
             to: T::AccountId,
@@ -171,21 +171,23 @@ pub mod pallet {
     // Errors inform users that something went wrong.
     #[pallet::error]
     pub enum Error<T> {
-        /// App status mismatch.
-        AppStatusMismatch,
+        /// Task status mismatch.
+        TaskStatusMismatch,
         /// Root not exists.
-        AppNotExists,
+        TaskNotExists,
         /// Too many app.
-        TooManyApp,
-        /// App 403.
-        App403,
+        TooManyTask,
+        /// Task 403.
+        Task403,
         /// Not enough balance.
         NotEnoughBalance,
+        /// Task is runing.
+        TaskIsRuning,
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// App create
+        /// Task create
         /// 注册任务
         #[pallet::call_index(001)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
@@ -227,30 +229,30 @@ pub mod pallet {
                 Self::app_id_account(id),
                 deposit,
             )?;
-            Self::deposit_event(Event::<T>::CreatedApp {
+            Self::deposit_event(Event::<T>::CreatedTask {
                 id,
                 creator: who.clone(),
             });
 
-            // 执行 App 创建后回调,部署任务添加到消息中间件
+            // 执行 Task 创建后回调,部署任务添加到消息中间件
             <T as pallet::Config>::AfterCreate::run_hook(WorkId { t: 2, id }, who);
 
             Ok(().into())
         }
 
-        /// App update
+        /// Task update
         /// 更新任务
         #[pallet::call_index(002)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn update(
             origin: OriginFor<T>,
-            // App id
+            // Task id
             // 应用id
             app_id: TeeAppId,
             // name of the app.
             // 程序名字
             name: Vec<u8>,
-            // img of the App.
+            // img of the Task.
             // image 目标宗旨
             image: Vec<u8>,
             // port of service
@@ -262,7 +264,7 @@ pub mod pallet {
                 who.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
-                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExists)?;
+                    let mut app = app_wrap.take().ok_or(Error::<T>::TaskNotExists)?;
                     app.name = name;
                     app.image = image;
                     app.port = port;
@@ -273,7 +275,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// App settings
+        /// Task settings
         /// 任务设置
         #[pallet::call_index(003)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
@@ -283,10 +285,10 @@ pub mod pallet {
             value: Vec<AppSettingInput>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            let app_account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExists)?;
-            ensure!(who == app_account, Error::<T>::App403);
+            let app_account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::TaskNotExists)?;
+            ensure!(who == app_account, Error::<T>::Task403);
 
-            let mut iter = TaskSettings::<T>::iter_prefix(app_id);
+            let mut iter = AppSettings::<T>::iter_prefix(app_id);
             let mut id = 0;
 
             // 解除所有的抵押
@@ -298,7 +300,7 @@ pub mod pallet {
                         match v.t {
                             // 更新设置
                             2 => {
-                                <TaskSettings<T>>::insert(
+                                <AppSettings<T>>::insert(
                                     app_id,
                                     setting.0,
                                     AppSetting {
@@ -309,7 +311,7 @@ pub mod pallet {
                             }
                             // 删除设置
                             3 => {
-                                <TaskSettings<T>>::remove(app_id, setting.0);
+                                <AppSettings<T>>::remove(app_id, setting.0);
                             }
                             _ => {}
                         };
@@ -321,7 +323,7 @@ pub mod pallet {
             value.iter().for_each(|v| {
                 if v.t == 1 {
                     id = id + 1;
-                    <TaskSettings<T>>::insert(
+                    <AppSettings<T>>::insert(
                         app_id,
                         id,
                         AppSetting {
@@ -335,7 +337,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// App charge
+        /// Task charge
         /// 任务充值
         #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
@@ -363,12 +365,19 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// App stop
+        /// Task stop
         /// 停止任务
         #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn stop(origin: OriginFor<T>, app_id: TeeAppId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+            let app_account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::TaskNotExists)?;
+            ensure!(who == app_account, Error::<T>::Task403);
+
+            let task = <TEETasks<T>>::get(app_account, app_id).ok_or(Error::<T>::TaskNotExists)?;
+
+            ensure!(task.status == 0, Error::<T>::TaskIsRuning);
+
             Self::try_stop(who.clone(), app_id)?;
             Ok(().into())
         }
@@ -376,7 +385,7 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         /// Get app id account
-        /// 获取 App 合约账户
+        /// 获取 Task 合约账户
         pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(WorkId { id: app_id, t: 1 })
         }
@@ -400,13 +409,13 @@ pub mod pallet {
                 account.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
-                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExists)?;
+                    let mut app = app_wrap.take().ok_or(Error::<T>::TaskNotExists)?;
                     app.status = 2;
                     *app_wrap = Some(app);
                     Ok(())
                 },
             )?;
-            Self::deposit_event(Event::<T>::AppStop {
+            Self::deposit_event(Event::<T>::TaskStop {
                 creator: account.clone(),
                 id: app_id,
             });
@@ -438,20 +447,6 @@ pub mod pallet {
             fee: BalanceOf<T>,
             to: T::AccountId,
         ) -> result::Result<(), DispatchError> {
-            if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee + fee
-            {
-                let app_account =
-                    <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
-
-                // 余额不足支持下一个周期的费用，停止任务
-                Self::try_stop(app_account, wid.id)?;
-
-                // 不足以支付当前周期的费用
-                if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee {
-                    return Err(Error::<T>::NotEnoughBalance.into());
-                }
-            }
-
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
@@ -468,15 +463,15 @@ pub mod pallet {
         }
 
         pub fn get_fee(wid: WorkId) -> result::Result<BalanceOf<T>, DispatchError> {
-            let app_account = <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
+            let app_account = <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::TaskNotExists)?;
             let app =
-                <TEETasks<T>>::get(app_account.clone(), wid.id).ok_or(Error::<T>::AppNotExists)?;
+                <TEETasks<T>>::get(app_account.clone(), wid.id).ok_or(Error::<T>::TaskNotExists)?;
             let level = app.level;
 
             let number = <frame_system::Pallet<T>>::block_number();
 
             // 获取费用
-            let p = <Prices<T>>::get(level).ok_or(Error::<T>::AppNotExists)?;
+            let p = <Prices<T>>::get(level).ok_or(Error::<T>::TaskNotExists)?;
             let cos: u32 = (number - app.start_block).saturated_into::<u32>();
 
             return Ok(BalanceOf::<T>::from(

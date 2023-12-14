@@ -467,6 +467,9 @@ pub mod pallet {
             return Ok(());
         }
 
+        /// Get fee
+        /// 获取费用
+        /// 费用 = cpu_per * cpu + memory_per * memory + disk_per * disk
         pub fn get_fee(wid: WorkId) -> result::Result<BalanceOf<T>, DispatchError> {
             let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
             let app =
@@ -479,6 +482,26 @@ pub mod pallet {
             return Ok(BalanceOf::<T>::from(
                 p.cpu_per * app.cr.cpu + p.memory_per * app.cr.memory + p.disk_per * app.cr.disk,
             ));
+        }
+
+        /// Get app
+        /// 获取任务信息
+        /// 任务信息包括:
+        /// 1. app id
+        /// 2. app creator
+        /// 3. app name
+        /// 4. app image
+        /// 5. app status
+        /// 6. app start block
+        /// 7. app stop block
+        /// 8. app terminal block
+        pub fn get_app(
+            id: TeeAppId,
+        ) -> result::Result<TeeApp<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>, DispatchError>
+        {
+            let app_account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExists)?;
+            let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExists)?;
+            Ok(app)
         }
     }
 }

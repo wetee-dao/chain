@@ -302,6 +302,9 @@ pub mod pallet {
         /// Insufficient balance.
         /// 余额不足
         InsufficientBalance,
+        /// Task is not exists
+        /// 任务不存在
+        TaskNotExists,
     }
 
     #[pallet::call]
@@ -536,7 +539,13 @@ pub mod pallet {
                     }
                     let fee = wetee_app::Pallet::<T>::get_fee(work_id.clone())?;
                     let to = Self::get_mint_account(work_id.clone(), cluster_id);
-                    wetee_app::Pallet::<T>::pay_run_fee(work_id, fee, to)?;
+                    wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
+
+                    let app = wetee_app::Pallet::<T>::get_app(work_id.id)?;
+                    // 如果app状态为已停止，则删除工作合约
+                    if app.status == 2 {
+                        WorkContracts::<T>::remove(work_id.clone());
+                    }
                 }
                 2 => {
                     let fee = wetee_task::Pallet::<T>::get_fee(work_id.clone())?;
@@ -650,7 +659,7 @@ pub mod pallet {
             let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
                 .ok_or(Error::<T>::AppNotExists)?;
             let app_cr = app.cr.clone();
-            let id = Self::get_random_cluster(work_id.clone(), app_cr, app.level)?;
+            let id = Self::get_random_cluster(work_id.clone(), app_cr.clone(), app.level)?;
 
             if app.status == 0 {
                 // 更新抵押数据
@@ -660,9 +669,9 @@ pub mod pallet {
 
                     // 更新抵押参数
                     crs.1 = Cr {
-                        cpu: ccr.cpu - app.cr.cpu,
-                        memory: ccr.memory - app.cr.memory,
-                        disk: ccr.disk - app.cr.disk,
+                        cpu: ccr.cpu - app_cr.cpu,
+                        memory: ccr.memory - app_cr.memory,
+                        disk: ccr.disk - app_cr.disk,
                     };
                     Ok(())
                 })?;
@@ -699,7 +708,36 @@ pub mod pallet {
             Ok(().into())
         }
 
-        pub fn match_app_task() -> result::Result<(), DispatchError> {
+        pub fn match_task_deploy(
+            account: T::AccountId,
+            work_id: WorkId,
+        ) -> result::Result<(), DispatchError> {
+            let mut task = wetee_task::TEETasks::<T>::get(account.clone(), work_id.clone().id)
+                .ok_or(Error::<T>::TaskNotExists)?;
+            let task_cr = task.cr.clone();
+            let id = Self::get_random_cluster(work_id.clone(), task_cr.clone(), task.level)?;
+
+            if task.status == 0 {
+                // 更新抵押数据
+                Crs::<T>::try_mutate_exists(id, |c| -> result::Result<(), DispatchError> {
+                    let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
+                    let ccr = crs.1.clone();
+
+                    // 更新抵押参数
+                    crs.1 = Cr {
+                        cpu: ccr.cpu - task_cr.cpu,
+                        memory: ccr.memory - task_cr.memory,
+                        disk: ccr.disk - task_cr.disk,
+                    };
+                    Ok(())
+                })?;
+
+                WorkContracts::<T>::insert(work_id.clone(), id);
+
+                task.status = 1;
+                wetee_task::TEETasks::<T>::insert(account, work_id.id.clone(), task);
+            }
+
             Ok(().into())
         }
 
