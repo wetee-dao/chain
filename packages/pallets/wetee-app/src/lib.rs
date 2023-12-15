@@ -218,11 +218,15 @@ pub mod pallet {
             <TEEApps<T>>::insert(who.clone(), id, app);
             <AppIdAccounts<T>>::insert(id, who.clone());
 
+            // 检查抵押金额是否足够
+            let fee_unit = Self::get_fee(id)?;
+            ensure!(fee_unit >= deposit, Error::<T>::NotEnoughBalance);
+
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
                 who.clone(),
-                Self::task_id_account(id),
+                Self::app_id_account(id),
                 deposit,
             )?;
             Self::deposit_event(Event::<T>::CreatedApp {
@@ -348,13 +352,13 @@ pub mod pallet {
             wetee_assets::Pallet::<T>::try_transfer(
                 wetee_assets::NATIVE_ASSET_ID,
                 who.clone(),
-                Self::task_id_account(id),
+                Self::app_id_account(id),
                 deposit,
             )?;
 
             Self::deposit_event(Event::<T>::Charge {
                 from: who.clone(),
-                to: Self::task_id_account(id),
+                to: Self::app_id_account(id),
                 amount: deposit,
             });
 
@@ -375,13 +379,13 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Get app id account
         /// 获取 App 合约账户
-        pub fn task_id_account(app_id: TeeAppId) -> T::AccountId {
+        pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(WorkId { id: app_id, t: 1 })
         }
 
         /// Get app id from account
         /// 获取账户中合约信息
-        pub fn task_id_from_account(x: T::AccountId) -> WorkId {
+        pub fn app_id_from_account(x: T::AccountId) -> WorkId {
             let (_, work) = PalletId::try_from_sub_account::<WorkId>(&x).unwrap();
             work
         }
@@ -412,16 +416,16 @@ pub mod pallet {
             // 将抵押转移到目标账户
             if wetee_assets::Pallet::<T>::free_balance(
                 wetee_assets::NATIVE_ASSET_ID,
-                &Self::task_id_account(app_id),
+                &Self::app_id_account(app_id),
             ) > 0u32.into()
             {
                 wetee_assets::Pallet::<T>::try_transfer(
                     wetee_assets::NATIVE_ASSET_ID,
-                    Self::task_id_account(app_id),
+                    Self::app_id_account(app_id),
                     account,
                     wetee_assets::Pallet::<T>::free_balance(
                         wetee_assets::NATIVE_ASSET_ID,
-                        &Self::task_id_account(app_id),
+                        &Self::app_id_account(app_id),
                     ),
                 )?;
             }
@@ -436,8 +440,7 @@ pub mod pallet {
             fee: BalanceOf<T>,
             to: T::AccountId,
         ) -> result::Result<(), DispatchError> {
-            if wetee_assets::Pallet::<T>::free_balance(0, &Self::task_id_account(wid.id))
-                < fee + fee
+            if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee + fee
             {
                 let app_account =
                     <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
@@ -446,8 +449,7 @@ pub mod pallet {
                 Self::try_stop(app_account, wid.id)?;
 
                 // 不足以支付当前周期的费用
-                if wetee_assets::Pallet::<T>::free_balance(0, &Self::task_id_account(wid.id)) < fee
-                {
+                if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee {
                     return Err(Error::<T>::NotEnoughBalance.into());
                 }
             }
@@ -455,12 +457,12 @@ pub mod pallet {
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
-                Self::task_id_account(wid.id),
+                Self::app_id_account(wid.id),
                 to.clone(),
                 fee,
             )?;
             Self::deposit_event(Event::<T>::PayRunFee {
-                from: Self::task_id_account(wid.id),
+                from: Self::app_id_account(wid.id),
                 to,
                 amount: fee,
             });
@@ -470,10 +472,9 @@ pub mod pallet {
         /// Get fee
         /// 获取费用
         /// 费用 = cpu_per * cpu + memory_per * memory + disk_per * disk
-        pub fn get_fee(wid: WorkId) -> result::Result<BalanceOf<T>, DispatchError> {
-            let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
-            let app =
-                <TEEApps<T>>::get(app_account.clone(), wid.id).ok_or(Error::<T>::AppNotExists)?;
+        pub fn get_fee(id: TeeAppId) -> result::Result<BalanceOf<T>, DispatchError> {
+            let app_account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExists)?;
+            let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExists)?;
             let level = app.level;
 
             // 获取费用

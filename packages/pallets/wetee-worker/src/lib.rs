@@ -260,6 +260,13 @@ pub mod pallet {
         OptionQuery,
     >;
 
+    /// 投诉信息
+    /// reports of work / cluster
+    #[pallet::storage]
+    #[pallet::getter(fn reports)]
+    pub type Reports<T: Config> =
+        StorageDoubleMap<_, Identity, ClusterId, Identity, WorkId, Vec<u8>, OptionQuery>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -305,6 +312,12 @@ pub mod pallet {
         /// Task is not exists
         /// 任务不存在
         TaskNotExists,
+        /// Work is not started
+        /// 工作未启动
+        WorkNotStarted,
+        /// Not allowed
+        /// 未允许
+        NotAllowed403,
     }
 
     #[pallet::call]
@@ -537,7 +550,7 @@ pub mod pallet {
                             },
                         );
                     }
-                    let fee = wetee_app::Pallet::<T>::get_fee(work_id.clone())?;
+                    let fee = wetee_app::Pallet::<T>::get_fee(work_id.id.clone())?;
                     let to = Self::get_mint_account(work_id.clone(), cluster_id);
                     wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
 
@@ -548,7 +561,7 @@ pub mod pallet {
                     }
                 }
                 2 => {
-                    let fee = wetee_task::Pallet::<T>::get_fee(work_id.clone())?;
+                    let fee = wetee_task::Pallet::<T>::get_fee(work_id.id.clone())?;
                     let to = Self::get_mint_account(work_id.clone(), cluster_id);
                     wetee_task::Pallet::<T>::pay_run_fee(work_id, fee, to)?;
                 }
@@ -642,8 +655,89 @@ pub mod pallet {
         /// 投诉集群
         #[pallet::call_index(008)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_report(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // let creator = ensure_signed(origin)?;
+        pub fn cluster_report(
+            origin: OriginFor<T>,
+            cluster_id: ClusterId,
+            work_id: WorkId,
+            reason: Vec<u8>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            if let Some(cluster) = K8sClusters::<T>::get(cluster_id) {
+                ensure!(cluster.status != 0, Error::<T>::ClusterNotStarted);
+            } else {
+                return Err(Error::<T>::ClusterNotExists.into());
+            }
+
+            match work_id.t {
+                1 => {
+                    let app_account = wetee_app::AppIdAccounts::<T>::get(work_id.id)
+                        .ok_or(Error::<T>::AppNotExists)?;
+                    ensure!(app_account == who, Error::<T>::NotAllowed403);
+                    if let Some(app) = wetee_app::TEEApps::<T>::get(who.clone(), work_id.id) {
+                        ensure!(app.status != 0, Error::<T>::WorkNotStarted);
+                    } else {
+                        return Err(Error::<T>::AppNotExists.into());
+                    }
+                }
+                2 => {
+                    let app_account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
+                        .ok_or(Error::<T>::AppNotExists)?;
+                    ensure!(app_account == who, Error::<T>::NotAllowed403);
+                    if let Some(task) = wetee_task::TEETasks::<T>::get(who.clone(), work_id.id) {
+                        ensure!(task.status != 0, Error::<T>::WorkNotStarted);
+                    } else {
+                        return Err(Error::<T>::AppNotExists.into());
+                    }
+                }
+                _ => return Err(Error::<T>::WorkNotExists.into()),
+            }
+
+            Reports::<T>::insert(cluster_id, work_id, reason);
+
+            Ok(().into())
+        }
+
+        /// Worker app stop
+        /// 停止应用
+        #[pallet::call_index(009)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn report_close(
+            origin: OriginFor<T>,
+            cluster_id: ClusterId,
+            work_id: WorkId,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            if let Some(cluster) = K8sClusters::<T>::get(cluster_id) {
+                ensure!(cluster.status != 0, Error::<T>::ClusterNotStarted);
+            } else {
+                return Err(Error::<T>::ClusterNotExists.into());
+            }
+
+            match work_id.t {
+                1 => {
+                    let app_account = wetee_app::AppIdAccounts::<T>::get(work_id.id)
+                        .ok_or(Error::<T>::AppNotExists)?;
+                    ensure!(app_account == who, Error::<T>::NotAllowed403);
+                    if let Some(app) = wetee_app::TEEApps::<T>::get(who.clone(), work_id.id) {
+                        ensure!(app.status != 0, Error::<T>::WorkNotStarted);
+                    } else {
+                        return Err(Error::<T>::AppNotExists.into());
+                    }
+                }
+                2 => {
+                    let app_account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
+                        .ok_or(Error::<T>::AppNotExists)?;
+                    ensure!(app_account == who, Error::<T>::NotAllowed403);
+                    if let Some(task) = wetee_task::TEETasks::<T>::get(who.clone(), work_id.id) {
+                        ensure!(task.status != 0, Error::<T>::WorkNotStarted);
+                    } else {
+                        return Err(Error::<T>::AppNotExists.into());
+                    }
+                }
+                _ => return Err(Error::<T>::WorkNotExists.into()),
+            }
+
+            Reports::<T>::remove(cluster_id, work_id);
             Ok(().into())
         }
     }

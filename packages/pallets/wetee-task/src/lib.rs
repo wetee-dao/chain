@@ -222,11 +222,15 @@ pub mod pallet {
             <TEETasks<T>>::insert(who.clone(), id, app);
             <TaskIdAccounts<T>>::insert(id, who.clone());
 
+            // 检查抵押金额是否足够
+            let fee_unit = Self::get_fee(id)?;
+            ensure!(fee_unit >= deposit, Error::<T>::NotEnoughBalance);
+
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
                 who.clone(),
-                Self::app_id_account(id),
+                Self::task_id_account(id),
                 deposit,
             )?;
             Self::deposit_event(Event::<T>::CreatedTask {
@@ -240,9 +244,45 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Rerun task
+        /// 重启任务
+        #[pallet::call_index(002)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn rerun(origin: OriginFor<T>, id: TeeAppId) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            let deposit = wetee_assets::Pallet::<T>::free_balance(
+                wetee_assets::NATIVE_ASSET_ID,
+                &Self::task_id_account(id),
+            );
+
+            // 检查抵押金额是否足够
+            let fee_unit = Self::get_fee(id)?;
+            ensure!(fee_unit >= deposit, Error::<T>::NotEnoughBalance);
+
+            <TEETasks<T>>::try_mutate_exists(
+                who.clone(),
+                id,
+                |app_wrap| -> result::Result<(), DispatchError> {
+                    let mut app = app_wrap.take().ok_or(Error::<T>::TaskNotExists)?;
+                    if app.status == 2 {
+                        app.status = 0;
+
+                        // 执行 Task 创建后回调,部署任务添加到消息中间件
+                        <T as pallet::Config>::AfterCreate::run_hook(WorkId { t: 2, id }, who);
+                    } else {
+                        return Err(Error::<T>::TaskStatusMismatch.into());
+                    }
+                    Ok(())
+                },
+            )?;
+
+            Ok(().into())
+        }
+
         /// Task update
         /// 更新任务
-        #[pallet::call_index(002)]
+        #[pallet::call_index(003)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn update(
             origin: OriginFor<T>,
@@ -277,7 +317,7 @@ pub mod pallet {
 
         /// Task settings
         /// 任务设置
-        #[pallet::call_index(003)]
+        #[pallet::call_index(004)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn set_settings(
             origin: OriginFor<T>,
@@ -339,7 +379,7 @@ pub mod pallet {
 
         /// Task charge
         /// 任务充值
-        #[pallet::call_index(004)]
+        #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn recharge(
             origin: OriginFor<T>,
@@ -352,13 +392,13 @@ pub mod pallet {
             wetee_assets::Pallet::<T>::try_transfer(
                 wetee_assets::NATIVE_ASSET_ID,
                 who.clone(),
-                Self::app_id_account(id),
+                Self::task_id_account(id),
                 deposit,
             )?;
 
             Self::deposit_event(Event::<T>::Charge {
                 from: who.clone(),
-                to: Self::app_id_account(id),
+                to: Self::task_id_account(id),
                 amount: deposit,
             });
 
@@ -367,7 +407,7 @@ pub mod pallet {
 
         /// Task stop
         /// 停止任务
-        #[pallet::call_index(005)]
+        #[pallet::call_index(006)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn stop(origin: OriginFor<T>, app_id: TeeAppId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -386,13 +426,13 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Get app id account
         /// 获取 Task 合约账户
-        pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
-            T::PalletId::get().into_sub_account_truncating(WorkId { id: app_id, t: 1 })
+        pub fn task_id_account(app_id: TeeAppId) -> T::AccountId {
+            T::PalletId::get().into_sub_account_truncating(WorkId { id: app_id, t: 2 })
         }
 
         /// Get app id from account
         /// 获取账户中合约信息
-        pub fn app_id_from_account(x: T::AccountId) -> WorkId {
+        pub fn task_id_from_account(x: T::AccountId) -> WorkId {
             let (_, work) = PalletId::try_from_sub_account::<WorkId>(&x).unwrap();
             work
         }
@@ -423,16 +463,16 @@ pub mod pallet {
             // 将抵押转移到目标账户
             if wetee_assets::Pallet::<T>::free_balance(
                 wetee_assets::NATIVE_ASSET_ID,
-                &Self::app_id_account(app_id),
+                &Self::task_id_account(app_id),
             ) > 0u32.into()
             {
                 wetee_assets::Pallet::<T>::try_transfer(
                     wetee_assets::NATIVE_ASSET_ID,
-                    Self::app_id_account(app_id),
+                    Self::task_id_account(app_id),
                     account,
                     wetee_assets::Pallet::<T>::free_balance(
                         wetee_assets::NATIVE_ASSET_ID,
-                        &Self::app_id_account(app_id),
+                        &Self::task_id_account(app_id),
                     ),
                 )?;
             }
@@ -450,22 +490,24 @@ pub mod pallet {
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
-                Self::app_id_account(wid.id),
+                Self::task_id_account(wid.id),
                 to.clone(),
                 fee,
             )?;
             Self::deposit_event(Event::<T>::PayRunFee {
-                from: Self::app_id_account(wid.id),
+                from: Self::task_id_account(wid.id),
                 to,
                 amount: fee,
             });
             return Ok(());
         }
 
-        pub fn get_fee(wid: WorkId) -> result::Result<BalanceOf<T>, DispatchError> {
-            let app_account = <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::TaskNotExists)?;
+        /// Get fee
+        /// 获取费用
+        pub fn get_fee(id: TeeAppId) -> result::Result<BalanceOf<T>, DispatchError> {
+            let app_account = <TaskIdAccounts<T>>::get(id).ok_or(Error::<T>::TaskNotExists)?;
             let app =
-                <TEETasks<T>>::get(app_account.clone(), wid.id).ok_or(Error::<T>::TaskNotExists)?;
+                <TEETasks<T>>::get(app_account.clone(), id).ok_or(Error::<T>::TaskNotExists)?;
             let level = app.level;
 
             let number = <frame_system::Pallet<T>>::block_number();
