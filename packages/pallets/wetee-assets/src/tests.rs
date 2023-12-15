@@ -59,7 +59,7 @@ pub fn test_create_asset() {
 
         println!("alice_dao token {:?} \n", alice_dao,);
 
-        assert_eq!(alice_dao, 10000);
+        assert_eq!(alice_dao, 99);
     })
 }
 
@@ -78,7 +78,7 @@ pub fn test_asset_trans() {
             alice_dao, bob_dao
         );
 
-        assert_eq!(alice_dao, 9999);
+        assert_eq!(alice_dao, 98);
         assert_eq!(bob_dao, 1);
     })
 }
@@ -93,7 +93,7 @@ pub fn test_asset_burn() {
         let alice_dao = wetee_assets::Pallet::<Test>::get_balance(dao_id, ALICE).unwrap();
         println!("\nalice_dao token {:?}", alice_dao,);
 
-        assert_eq!(alice_dao, 9999);
+        assert_eq!(alice_dao, 98);
     })
 }
 

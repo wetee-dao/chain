@@ -83,6 +83,26 @@ pub mod pallet {
         <T as frame_system::Config>::AccountId,
     >>::Balance;
 
+    #[derive(frame_support::DefaultNoBound)]
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config> {
+        pub _config: sp_std::marker::PhantomData<T>,
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+        fn build(&self) {
+            Prices::<T>::insert(
+                1,
+                Price {
+                    cpu_per: 100,
+                    memory_per: 100,
+                    disk_per: 100,
+                },
+            );
+        }
+    }
+
     #[pallet::config]
     pub trait Config: frame_system::Config + wetee_org::Config + wetee_assets::Config {
         /// pallet event
@@ -172,13 +192,15 @@ pub mod pallet {
         /// App status mismatch.
         AppStatusMismatch,
         /// Root not exists.
-        AppNotExists,
+        AppNotExist,
         /// Too many app.
         TooManyApp,
         /// App 403.
         App403,
         /// Not enough balance.
         NotEnoughBalance,
+        /// Level not exists.
+        LevelNotExist,
     }
 
     #[pallet::call]
@@ -189,13 +211,19 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn create(
             origin: OriginFor<T>,
+            // name of the App
             name: Vec<u8>,
+            // img of the App.
             image: Vec<u8>,
+            // port of service
             port: Vec<u32>,
+            // cpu memory disk
             cpu: u16,
             memory: u16,
             disk: u16,
+            // min score of the App
             level: u8,
+            // min deposit of the App
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -219,8 +247,11 @@ pub mod pallet {
             <AppIdAccounts<T>>::insert(id, who.clone());
 
             // 检查抵押金额是否足够
-            let fee_unit = Self::get_fee(id)?;
-            ensure!(fee_unit >= deposit, Error::<T>::NotEnoughBalance);
+            let p = <Prices<T>>::get(level).ok_or(Error::<T>::LevelNotExist)?;
+            let fee_unit =
+                BalanceOf::<T>::from(p.cpu_per * cpu + p.memory_per * memory + p.disk_per * disk);
+
+            ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
@@ -264,7 +295,7 @@ pub mod pallet {
                 who.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
-                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExists)?;
+                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExist)?;
                     app.name = name;
                     app.image = image;
                     app.port = port;
@@ -285,7 +316,7 @@ pub mod pallet {
             value: Vec<AppSettingInput>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            let app_account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExists)?;
+            let app_account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
             ensure!(who == app_account, Error::<T>::App403);
 
             let mut iter = AppSettings::<T>::iter_prefix(app_id);
@@ -347,6 +378,7 @@ pub mod pallet {
             deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+            let _account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExist)?;
 
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
@@ -402,7 +434,7 @@ pub mod pallet {
                 account.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
-                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExists)?;
+                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExist)?;
                     app.status = 2;
                     *app_wrap = Some(app);
                     Ok(())
@@ -442,8 +474,7 @@ pub mod pallet {
         ) -> result::Result<(), DispatchError> {
             if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee + fee
             {
-                let app_account =
-                    <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExists)?;
+                let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExist)?;
 
                 // 余额不足支持下一个周期的费用，停止任务
                 Self::try_stop(app_account, wid.id)?;
@@ -473,12 +504,12 @@ pub mod pallet {
         /// 获取费用
         /// 费用 = cpu_per * cpu + memory_per * memory + disk_per * disk
         pub fn get_fee(id: TeeAppId) -> result::Result<BalanceOf<T>, DispatchError> {
-            let app_account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExists)?;
-            let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExists)?;
+            let app_account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExist)?;
+            let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExist)?;
             let level = app.level;
 
             // 获取费用
-            let p = <Prices<T>>::get(level).ok_or(Error::<T>::AppNotExists)?;
+            let p = <Prices<T>>::get(level).ok_or(Error::<T>::AppNotExist)?;
 
             return Ok(BalanceOf::<T>::from(
                 p.cpu_per * app.cr.cpu + p.memory_per * app.cr.memory + p.disk_per * app.cr.disk,
@@ -500,8 +531,8 @@ pub mod pallet {
             id: TeeAppId,
         ) -> result::Result<TeeApp<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>, DispatchError>
         {
-            let app_account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExists)?;
-            let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExists)?;
+            let app_account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExist)?;
+            let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExist)?;
             Ok(app)
         }
     }
