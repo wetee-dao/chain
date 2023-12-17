@@ -11,7 +11,8 @@ use frame_support::{
 };
 use orml_traits::parameter_type_with_key;
 use scale_info::TypeInfo;
-use sp_core::H256;
+use serde::{Deserialize, Serialize};
+use sp_core::{RuntimeDebug, H256};
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup, Zero},
     BuildStorage, DispatchError,
@@ -26,12 +27,41 @@ use wetee_primitives::{
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;
 type Amount = i128;
-type Balance = u64;
+pub type Balance = u64;
 pub type BlockNumber = u64;
-pub type AccountId = u64;
 
-pub const ALICE: u64 = 1;
-pub const BOB: u64 = 2;
+#[derive(
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Clone,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    TypeInfo,
+    Copy,
+    MaxEncodedLen,
+    Serialize,
+    Deserialize,
+)]
+pub struct AccountId(pub [u8; 32]);
+
+impl Default for AccountId {
+    fn default() -> Self {
+        AccountId([0; 32])
+    }
+}
+
+impl std::fmt::Display for AccountId {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "ed25519: {}", self.to_string())
+    }
+}
+
+pub const ALICE: AccountId = AccountId([0; 32]);
+pub const BOB: AccountId = AccountId([1; 32]);
+
 pub const DAO_ID: u64 = 5000;
 pub const P_ID: u32 = 0;
 
@@ -70,7 +100,7 @@ impl frame_system::Config for Test {
     type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = u64;
+    type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Block = Block;
     type RuntimeEvent = RuntimeEvent;
@@ -199,7 +229,7 @@ impl wetee_assets::Config for Test {
     MaxEncodedLen,
     Default,
 )]
-pub struct Vote(pub AccountId);
+pub struct Vote(pub Balance);
 
 impl PledgeTrait<u64, AccountId, u64, u64, DispatchError> for Vote {
     fn try_vote(
@@ -225,7 +255,7 @@ impl GovIsJoin<RuntimeCall> for GovFunc {
 
 impl PalletGet<RuntimeCall> for GovFunc {
     fn get_pallet_id(call: RuntimeCall) -> u16 {
-        1
+        4
     }
 }
 
@@ -247,7 +277,7 @@ pub fn new_test_run() -> sp_io::TestExternalities {
         .unwrap();
 
     pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE, 100000), (BOB, 10000), (103, 10)],
+        balances: vec![(ALICE, 100000), (BOB, 10000)],
     }
     .assimilate_storage(&mut t)
     .unwrap();

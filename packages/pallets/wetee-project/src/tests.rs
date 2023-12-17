@@ -85,47 +85,14 @@ pub fn project_join_reques() -> DaoAssetId {
     });
 
     // 加入社区
-    wetee_assets::Pallet::<Test>::join(RuntimeOrigin::signed(BOB), dao_id, 100, 100).unwrap();
+    wetee_assets::Pallet::<Test>::join(RuntimeOrigin::signed(BOB), dao_id, 100, 10000).unwrap();
 
     // 加入社区后尝试提案
-    assert_ok!(wetee_gov::Pallet::<Test>::submit_proposal(
-        RuntimeOrigin::signed(BOB),
-        dao_id,
-        MemberData::GLOBAL,
-        Box::new(proposal),
-        0u32
-    ));
-
-    // 开始投票
-    frame_system::Pallet::<Test>::set_block_number(10000);
-    assert_ok!(wetee_gov::Pallet::<Test>::deposit_proposal(
+    assert_ok!(wetee_sudo::Pallet::<Test>::sudo(
         RuntimeOrigin::signed(ALICE),
         dao_id,
-        0u32,
-        100
+        Box::new(proposal)
     ));
-
-    // 投票
-    assert_ok!(wetee_gov::Pallet::<Test>::vote_for_prop(
-        RuntimeOrigin::signed(ALICE),
-        dao_id,
-        0u32,
-        Vote(100000),
-        wetee_gov::Opinion::YES,
-    ));
-
-    //
-    assert!(
-        wetee_gov::Pallet::<Test>::run_proposal(RuntimeOrigin::signed(ALICE), dao_id, 0u32)
-            .is_err()
-    );
-
-    frame_system::Pallet::<Test>::set_block_number(20000);
-
-    // 运行代码
-    assert!(
-        wetee_gov::Pallet::<Test>::run_proposal(RuntimeOrigin::signed(ALICE), dao_id, 0u32).is_ok()
-    );
 
     let ms = wetee_org::ProjectMembers::<Test>::get(dao_id, PROJECT_INDEX);
     println!("项目成员 => {:?}", ms);

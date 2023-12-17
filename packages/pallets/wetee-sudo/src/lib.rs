@@ -39,6 +39,7 @@ pub struct SudoTask<BlockNumber, Call> {
 
 #[frame_support::pallet]
 pub mod pallet {
+
     use super::*;
     use crate::Event::{CloseSudo, SetSudo, SudoDone};
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
@@ -109,6 +110,7 @@ pub mod pallet {
         /// Not a sudo account, nor a dao account.
         NotSudo,
         RootNotExists,
+        SudoRunError,
     }
 
     #[pallet::call]
@@ -148,6 +150,11 @@ pub mod pallet {
                 sudo,
                 sudo_result: res.map(|_| ()).map_err(|e| e.error),
             });
+
+            let err = res.map(|_| ()).map_err(|e| e);
+            if err.is_err() {
+                return Err(err.unwrap_err())?;
+            }
             Ok(().into())
         }
 

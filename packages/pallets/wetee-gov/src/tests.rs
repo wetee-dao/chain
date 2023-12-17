@@ -4,7 +4,7 @@
 use super::*;
 use frame_support::assert_ok;
 use mock::{RuntimeCall, RuntimeOrigin, *};
-use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::{traits::BlakeTwo256, BoundedVec};
 
 pub fn create_dao() {
     wetee_org::Pallet::<Test>::create_dao(
@@ -54,6 +54,49 @@ pub fn create_dao() {
 
     wetee_sudo::Pallet::<Test>::sudo(RuntimeOrigin::signed(ALICE), DAO_ID, Box::new(proposal))
         .unwrap();
+
+    let mut ps: Vec<Period<BlockNumber, Balance>> = Vec::new();
+    ps.push(Period {
+        name: "root".into(),
+        pallet_index: 4,
+        decision_deposit: 1u32.into(),
+        prepare_period: 10u32.into(),
+        max_deciding: 100u32.into(),
+        confirm_period: 10u32.into(),
+        decision_period: 10u32.into(),
+        min_enactment_period: 10u32.into(),
+        min_approval: 1,
+        min_support: 1,
+        max_balance: 0u32.into(),
+    });
+    ps.push(Period {
+        name: "gov".into(),
+        pallet_index: 4,
+        decision_deposit: 1u32.into(),
+        prepare_period: 10u32.into(),
+        max_deciding: 100u32.into(),
+        confirm_period: 10u32.into(),
+        decision_period: 10u32.into(),
+        min_enactment_period: 10u32.into(),
+        min_approval: 1,
+        min_support: 1,
+        max_balance: 0u32.into(),
+    });
+    ps.push(Period {
+        name: "treasury".into(),
+        pallet_index: 4,
+        decision_deposit: 1u32.into(),
+        prepare_period: 10u32.into(),
+        max_deciding: 100u32.into(),
+        confirm_period: 10u32.into(),
+        decision_period: 10u32.into(),
+        min_enactment_period: 10u32.into(),
+        min_approval: 1,
+        min_support: 1,
+        max_balance: 1000u32.into(),
+    });
+    let bps = BoundedVec::try_from(ps).unwrap();
+    DefaultPeriods::<Test>::set(bps)
 }
 
 pub fn proposal() {

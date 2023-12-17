@@ -32,35 +32,35 @@ frame_support::construct_runtime!(
 
 pub struct BlockEverything;
 impl Contains<RuntimeCall> for BlockEverything {
-	fn contains(_: &RuntimeCall) -> bool {
-		false
-	}
+    fn contains(_: &RuntimeCall) -> bool {
+        false
+    }
 }
 
 impl frame_system::Config for Test {
-	type BaseCallFilter = BlockEverything;
-	type BlockWeights = ();
-	type BlockLength = ();
-	type DbWeight = ();
-	type RuntimeOrigin = RuntimeOrigin;
-	type RuntimeCall = RuntimeCall;
-	type Nonce = u64;
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
-	type AccountId = u64;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type Block = Block;
-	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
-	type Version = ();
-	type PalletInfo = PalletInfo;
-	type AccountData = ();
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type SS58Prefix = ();
-	type OnSetCode = ();
-	type MaxConsumers = ConstU32<16>;
+    type BaseCallFilter = BlockEverything;
+    type BlockWeights = ();
+    type BlockLength = ();
+    type DbWeight = ();
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
+    type Nonce = u64;
+    type Hash = H256;
+    type Hashing = BlakeTwo256;
+    type AccountId = u64;
+    type Lookup = IdentityLookup<Self::AccountId>;
+    type Block = Block;
+    type RuntimeEvent = RuntimeEvent;
+    type BlockHashCount = ConstU64<250>;
+    type Version = ();
+    type PalletInfo = PalletInfo;
+    type AccountData = ();
+    type OnNewAccount = ();
+    type OnKilledAccount = ();
+    type SystemWeightInfo = ();
+    type SS58Prefix = ();
+    type OnSetCode = ();
+    type MaxConsumers = ConstU32<16>;
 }
 
 impl TryFrom<RuntimeCall> for u64 {
@@ -90,7 +90,7 @@ impl sudo::Config for Test {
 
 pub fn new_test_run() -> sp_io::TestExternalities {
     let t = frame_system::GenesisConfig::<Test>::default()
-    .build_storage()
-    .unwrap();
+        .build_storage()
+        .unwrap();
     t.into()
 }

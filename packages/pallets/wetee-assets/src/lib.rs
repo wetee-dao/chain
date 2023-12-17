@@ -392,8 +392,8 @@ pub mod pallet {
             #[pallet::compact] existenial_deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(who.clone())?;
-            ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
+            // let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(who.clone())?;
+            // ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             // 最低押金必须大于0
             ensure!(
@@ -402,15 +402,15 @@ pub mod pallet {
             );
 
             // 获取链上资金池
-            let treasury = wetee_org::Pallet::<T>::dao_treasury(dao_id);
-            let treasury_total =
-                <Self as MultiCurrency<T::AccountId>>::total_balance(NATIVE_ASSET_ID, &treasury);
-            ensure!(treasury_total > 0u32.into(), Error::<T>::DepositTooLow);
+            let daoroot = wetee_org::Pallet::<T>::dao_account(dao_id);
+            let daoroot_total =
+                <Self as MultiCurrency<T::AccountId>>::total_balance(NATIVE_ASSET_ID, &daoroot);
+            ensure!(daoroot_total > 0u32.into(), Error::<T>::DepositTooLow);
 
             // 判断用户期望share是否符合当前汇率
             let share_expect_b: BalanceOf<T> = share_expect.into();
             ensure!(
-                <Self as MultiCurrency<T::AccountId>>::total_issuance(dao_id) / treasury_total
+                <Self as MultiCurrency<T::AccountId>>::total_issuance(dao_id) / daoroot_total
                     >= share_expect_b / existenial_deposit,
                 Error::<T>::DepositRateError
             );
@@ -419,7 +419,7 @@ pub mod pallet {
             <Self as MultiCurrency<T::AccountId>>::transfer(
                 NATIVE_ASSET_ID,
                 &who,
-                &treasury,
+                &daoroot,
                 existenial_deposit,
             )?;
 
@@ -427,6 +427,7 @@ pub mod pallet {
             wetee_org::Pallet::<T>::try_add_member(dao_id, who.clone())?;
             <Self as MultiCurrency<T::AccountId>>::deposit(dao_id, &who, share_expect.into())?;
 
+            let treasury = wetee_org::Pallet::<T>::dao_treasury(dao_id);
             // 往国库产生 mint
             <Self as MultiCurrency<T::AccountId>>::deposit(dao_id, &treasury, share_expect.into())?;
 

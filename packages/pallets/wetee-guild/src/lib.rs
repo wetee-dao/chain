@@ -65,6 +65,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
             let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
+
+            log::info!("call by {:?}", daogov.1.id);
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             wetee_org::Pallet::<T>::try_add_guild_member(dao_id, guild_id, who.clone())?;

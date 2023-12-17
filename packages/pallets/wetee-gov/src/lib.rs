@@ -431,6 +431,8 @@ pub mod pallet {
         Gov403,
         /// 没有找到
         Gov404,
+        /// 无效的轨道
+        Period404,
         /// 错误的DAO组织
         BadDaoOrigin,
     }
@@ -502,15 +504,11 @@ pub mod pallet {
             proposal: Box<<T as wetee_org::Config>::RuntimeCall>,
             period_index: u32,
         ) -> DispatchResultWithPostInfo {
-            let ps = Periods::<T>::get(dao_id);
-            let uperiod_index: usize = period_index.try_into().unwrap();
-            let period = ps.get(uperiod_index).unwrap();
-
-            // 判断提案通道是否存在
-            ensure!(uperiod_index < ps.len(), wetee_org::Error::<T>::InVailCall);
+            let period = Self::get_period(dao_id, period_index)?;
 
             // 判断提案通道是否和提案匹配
             let pallet_id = T::GovFunc::get_pallet_id(*proposal.clone());
+            log::info!("pallet_id: {}", pallet_id);
             ensure!(
                 pallet_id == period.pallet_index,
                 wetee_org::Error::<T>::InVailCall
@@ -788,19 +786,30 @@ pub mod pallet {
                         ))
                         .into(),
                     );
+
                     Self::deposit_event(Event::EnactProposal {
                         dao_id,
                         index,
                         result: res.map(|_| ()).map_err(|e| e.error),
                     });
+
+                    let err = res.map(|_| ()).map_err(|e| e);
+                    if err.is_err() {
+                        return Err(err.unwrap_err())?;
+                    }
                 } else {
-                    let _res = state.proposal.dispatch_bypass_filter(
+                    let res = state.proposal.dispatch_bypass_filter(
                         frame_system::RawOrigin::Signed(wetee_org::Pallet::<T>::dao_reject(
                             dao_id,
                             state.period_index,
                         ))
                         .into(),
                     );
+
+                    let err = res.map(|_| ()).map_err(|e| e);
+                    if err.is_err() {
+                        return Err(err.unwrap_err())?;
+                    }
                 }
 
                 // 更新状态
@@ -1037,7 +1046,8 @@ pub mod pallet {
             let uperiod_index: usize = period_index.try_into().unwrap();
 
             // 判断提案通道是否存在
-            ensure!(uperiod_index < ps.len(), wetee_org::Error::<T>::InVailCall);
+            // ensure!(uperiod_index < ps.len(), wetee_org::Error::<T>::InVailCall);
+            ensure!(uperiod_index < ps.len(), Error::<T>::Period404);
 
             Ok(ps.get(uperiod_index).unwrap().clone())
         }

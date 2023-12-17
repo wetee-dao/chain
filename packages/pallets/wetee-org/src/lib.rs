@@ -191,8 +191,11 @@ pub struct DaoAssetAccount {
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct DaoGovAccount {
+    // 组织id
     pub id: DaoAssetId,
+    // 投票轨道
     pub p: u32,
+    // 是否同意
     pub s: u8,
 }
 
@@ -459,7 +462,13 @@ pub mod pallet {
         TooManyMembers,
         /// Wrong dao gov origin.
         /// 错误的dao组织账户
-        BadDaoOrigin,
+        BadDaoGovOrigin,
+        /// Wrong dao gov origin.
+        /// 错误的dao组织账户
+        BadGovOrigin,
+        /// Wrong dao gov 403.
+        /// 错误的dao组织账户
+        BadDaoGov403,
     }
 
     #[pallet::call]
@@ -570,7 +579,7 @@ pub mod pallet {
 
             // 只有提案的方式能更新组织信息
             let daogov = Pallet::<T>::ensrue_gov_approve_account(me)?;
-            ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
+            ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoGovOrigin);
 
             // 获取组织
             let mut dao = Daos::<T>::get(dao_id).ok_or(Error::<T>::DaoNotExists)?;
@@ -799,7 +808,7 @@ pub mod pallet {
             let me = ensure_signed(origin)?;
 
             let daogov = Pallet::<T>::ensrue_gov_approve_account(me)?;
-            ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
+            ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoGovOrigin);
 
             // 插入app
             let mut apps = <OrgApps<T>>::get(dao_id);
@@ -823,11 +832,6 @@ pub mod pallet {
         pub fn dao_account(dao_id: DaoAssetId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(dao_id)
         }
-
-        /// 获取DAO账户
-        // pub fn dao_asset(dao_id: DaoAssetId) -> T::AccountId {
-        //     T::PalletId::get().into_sub_account_truncating(DaoAssetAccount { dao_id, t: 1 })
-        // }
 
         /// 获取 DAO 账户
         pub fn dao_asset_pending(dao_id: DaoAssetId) -> T::AccountId {
@@ -867,7 +871,7 @@ pub mod pallet {
         /// 获取账户中携带的信息
         pub fn get_gov_account(id: T::AccountId) -> result::Result<DaoGovAccount, DispatchError> {
             let result = PalletId::try_from_sub_account::<DaoGovAccount>(&id);
-            ensure!(result.is_some(), Error::<T>::BadDaoOrigin);
+            ensure!(result.is_some(), Error::<T>::BadGovOrigin);
             Ok(result.unwrap().1)
         }
 
@@ -886,11 +890,10 @@ pub mod pallet {
             ));
 
             // 获取账户中的信息
-            let daogov = Self::get_gov_account(who.clone());
-            match daogov {
-                Ok(gov) => Ok((Self::dao_account(gov.id), gov)),
-                Err(_) => Ok((who, DaoGovAccount { id: 0, p: 0, s: 1 })),
-            }
+            let gov = Self::get_gov_account(who.clone())?;
+
+            ensure!(gov.s == 1, Error::<T>::BadDaoGov403);
+            return Ok((Self::dao_account(gov.id), gov));
         }
 
         /// 获取 DAO 项目 账户

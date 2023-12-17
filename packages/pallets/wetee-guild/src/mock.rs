@@ -4,6 +4,7 @@ use super::*;
 use crate as wetee_guild;
 use frame_support::{construct_runtime, parameter_types, traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
+use serde::{Deserialize, Serialize};
 use sp_core::{ConstU64, H256};
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup, Zero},
@@ -18,14 +19,42 @@ use wetee_primitives::{
 };
 
 type Amount = i128;
-type Balance = u64;
-pub type AccountId = u64;
+pub type Balance = u64;
 pub type BlockNumber = u64;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-pub const ALICE: AccountId = 101;
-pub const BOB: AccountId = 102;
+#[derive(
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Clone,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    TypeInfo,
+    Copy,
+    MaxEncodedLen,
+    Serialize,
+    Deserialize,
+)]
+pub struct AccountId(pub [u8; 32]);
+
+impl Default for AccountId {
+    fn default() -> Self {
+        AccountId([0; 32])
+    }
+}
+
+impl std::fmt::Display for AccountId {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "ed25519: {}", self.to_string())
+    }
+}
+
+pub const ALICE: AccountId = AccountId([0; 32]);
+pub const BOB: AccountId = AccountId([1; 32]);
 
 construct_runtime!(
     pub enum Test{
@@ -58,7 +87,7 @@ impl frame_system::Config for Test {
     type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = u64;
+    type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Block = Block;
     type RuntimeEvent = RuntimeEvent;
@@ -77,7 +106,7 @@ impl frame_system::Config for Test {
 #[derive(
     PartialEq, Eq, Encode, Decode, RuntimeDebug, Clone, TypeInfo, Copy, MaxEncodedLen, Default,
 )]
-pub struct Vote(pub AccountId);
+pub struct Vote(pub Balance);
 
 impl PledgeTrait<u64, AccountId, u64, u64, DispatchError> for Vote {
     fn try_vote(
@@ -103,7 +132,7 @@ impl GovIsJoin<RuntimeCall> for GovFunc {
 
 impl PalletGet<RuntimeCall> for GovFunc {
     fn get_pallet_id(_call: RuntimeCall) -> u16 {
-        1
+        4
     }
 }
 
@@ -248,7 +277,7 @@ pub(crate) fn new_test_run() -> sp_io::TestExternalities {
         .unwrap();
 
     pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(101, 100000), (102, 10000), (103, 10)],
+        balances: vec![(ALICE, 10000000), (BOB, 100000000)],
     }
     .assimilate_storage(&mut t)
     .unwrap();

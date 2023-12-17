@@ -6,9 +6,12 @@ edition = "2021"
 publish = false
 
 [package.metadata.docs.rs]
+log = "0.4.17"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+log = "0.4.17"
+serde = { version = "1.0.193", default-features = false, features = ["alloc", "derive"] }
 codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = [
 	"derive",
 ] }

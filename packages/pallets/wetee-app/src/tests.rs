@@ -125,7 +125,20 @@ pub fn set_settings() {
         assert_ok!(Pallet::<Test>::set_settings(
             OriginFor::<Test>::signed(ALICE),
             0,
-            vec![]
+            vec![
+                AppSettingInput {
+                    t: 1,
+                    index: 0,
+                    k: "test".as_bytes().to_vec(),
+                    v: "test".as_bytes().to_vec(),
+                },
+                AppSettingInput {
+                    t: 1,
+                    index: 1,
+                    k: "test".as_bytes().to_vec(),
+                    v: "test".as_bytes().to_vec(),
+                }
+            ]
         ));
     });
 }
