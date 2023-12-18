@@ -48,9 +48,6 @@ pub struct K8sCluster<AccountId, BlockNumber> {
     /// name of the K8sCluster.
     /// 集群名字
     pub name: Vec<u8>,
-    /// img of the K8sCluster.
-    /// image 目标宗旨
-    pub image: Vec<u8>,
     /// ip of service
     /// 服务端口号
     pub ip: Vec<Vec<u8>>,
@@ -74,7 +71,7 @@ pub struct Deposit<Balance> {
     pub cpu: u16,
     /// memory
     /// memory
-    pub memory: u16,
+    pub mem: u16,
     /// disk
     /// disk
     pub disk: u16,
@@ -120,6 +117,18 @@ pub struct ContractState<BlockNumber> {
     /// state
     /// 状态
     pub minted: u16,
+}
+
+/// 抵押
+/// DepositPrice
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct DepositPrice {
+    /// cpu
+    pub cpu_per: u16,
+    /// memory
+    pub memory_per: u16,
+    /// disk
+    pub disk_per: u16,
 }
 
 #[frame_support::pallet]
@@ -197,6 +206,12 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn scores)]
     pub type Scores<T: Config> = StorageMap<_, Identity, ClusterId, (u8, u8), OptionQuery>;
+
+    /// 抵押价格
+    /// deposit of computing resource
+    #[pallet::storage]
+    #[pallet::getter(fn deposit_price)]
+    pub type DepositPrices<T: Config> = StorageMap<_, Identity, u8, DepositPrice, OptionQuery>;
 
     /// 抵押信息
     /// deposit of computing resource
@@ -318,6 +333,21 @@ pub mod pallet {
         /// Not allowed
         /// 未允许
         NotAllowed403,
+        /// Cluster register miss ip
+        /// 集群注册缺少ip
+        ClusterRegisterMissIp,
+        /// Ip format error
+        /// ip格式错误
+        IpFormatError,
+        /// Insufficient deposit.
+        /// 抵押不足
+        InsufficientDeposit,
+        /// Duplicate deposit.
+        /// 重复抵押
+        DuplicateDeposit,
+        /// Level is not exists
+        /// 等级不存在
+        LevelNotExists,
     }
 
     #[pallet::call]
@@ -329,11 +359,17 @@ pub mod pallet {
         pub fn cluster_register(
             origin: OriginFor<T>,
             name: Vec<u8>,
-            image: Vec<u8>,
             ip: Vec<Vec<u8>>,
             port: Vec<u32>,
+            level: u8,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
+            // 检查ip
+            ensure!(ip.len() > 0, Error::<T>::ClusterRegisterMissIp);
+            for i in ip.iter() {
+                ensure!(i.len() == 4, Error::<T>::IpFormatError);
+            }
+            ensure!(port.len() > 0, Error::<T>::ClusterRegisterMissIp);
 
             // 检查集群是否存在
             ensure!(
@@ -352,7 +388,6 @@ pub mod pallet {
                 stop_block: None,
                 terminal_block: None,
                 name,
-                image,
                 ip,
                 port,
                 status: 1,
@@ -381,7 +416,7 @@ pub mod pallet {
             );
             // 初始化评级
             // initialize score
-            Scores::<T>::insert(cid, (1, 5));
+            Scores::<T>::insert(cid, (level, 5));
             <NextClusterId<T>>::mutate(|id| *id += 1);
 
             Self::deposit_event(Event::ClusterCreated { creator });
@@ -409,6 +444,18 @@ pub mod pallet {
                 Error::<T>::ClusterIsExists
             );
 
+            let score = Scores::<T>::get(id).ok_or(Error::<T>::LevelNotExists)?;
+            let price = Self::get_level_price(score.0, cpu, mem, disk)?;
+
+            // 检查抵押金额是否足够
+            ensure!(deposit >= price, Error::<T>::InsufficientDeposit);
+
+            // 检查是否已经抵押
+            ensure!(
+                Deposits::<T>::get(id, <frame_system::Pallet<T>>::block_number()).is_none(),
+                Error::<T>::DuplicateDeposit
+            );
+
             // 添加抵押历史
             Deposits::<T>::insert(
                 id,
@@ -416,7 +463,7 @@ pub mod pallet {
                 Deposit {
                     deposit,
                     cpu,
-                    memory: mem,
+                    mem,
                     disk,
                 },
             );
@@ -436,7 +483,7 @@ pub mod pallet {
             })?;
 
             // 质押保证金
-            wetee_assets::Pallet::<T>::reserve(0, creator, deposit).unwrap();
+            wetee_assets::Pallet::<T>::reserve(0, creator, deposit)?;
 
             Ok(().into())
         }
@@ -453,6 +500,14 @@ pub mod pallet {
             let creator = ensure_signed(origin)?;
             let d = Deposits::<T>::get(id, block_num).unwrap();
 
+            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
+
+            // 检查是否是集群的主人
+            ensure!(
+                cluster.account == creator.clone(),
+                Error::<T>::ClusterIsExists
+            );
+
             // 添加抵押历史
             Deposits::<T>::remove(id, block_num);
 
@@ -464,7 +519,7 @@ pub mod pallet {
                 // 更新抵押参数
                 crs.0 = Cr {
                     cpu: ccr.cpu - d.cpu,
-                    memory: ccr.memory - d.memory,
+                    memory: ccr.memory - d.mem,
                     disk: ccr.disk - d.disk,
                 };
                 Ok(())
@@ -906,6 +961,22 @@ pub mod pallet {
                 t: work_id.t,
                 cid,
             })
+        }
+
+        /// Get level price
+        /// 获取节点价格
+        pub fn get_level_price(
+            level: u8,
+            cpu: u16,
+            mem: u16,
+            disk: u16,
+        ) -> result::Result<BalanceOf<T>, DispatchError> {
+            let p = DepositPrices::<T>::get(level).ok_or(Error::<T>::ClusterNotExists)?;
+            return Ok(BalanceOf::<T>::from(
+                cpu as u32 * p.cpu_per as u32
+                    + mem as u32 * p.memory_per as u32
+                    + disk as u32 * p.disk_per as u32,
+            ));
         }
     }
 }

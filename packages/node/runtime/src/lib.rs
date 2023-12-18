@@ -315,8 +315,9 @@ construct_runtime!(
         WeteeGov: wetee_gov,
         WeteeTreasury: wetee_treasury,
         WeteeApp: wetee_app,
-        WeteeWorker: wetee_worker,
         WeteeTask: wetee_task,
+        WeteeWorker: wetee_worker,
+        // WETEE end
     }
 );
 
