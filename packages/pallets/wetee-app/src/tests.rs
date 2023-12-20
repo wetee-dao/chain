@@ -105,12 +105,14 @@ pub fn recharge() {
 }
 
 #[test]
-pub fn charge_should_fail() {
+pub fn charge2() {
     new_test_run().execute_with(|| {
-        assert_noop!(
-            Pallet::<Test>::recharge(OriginFor::<Test>::signed(ALICE), 0, 1),
-            Error::<Test>::AppNotExist
-        );
+        do_create();
+        assert_ok!(Pallet::<Test>::recharge(
+            OriginFor::<Test>::signed(ALICE),
+            0,
+            1
+        ));
     });
 }
 

@@ -46,7 +46,7 @@ frame_support::construct_runtime!(
         Tokens: orml_tokens::{Pallet, Call, Config<T>, Storage, Event<T>},
         WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
         WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
-        WeteeApp: wetee_task::{ Pallet, Call, Event<T>, Storage },
+        WeteeTask: wetee_task::{ Pallet, Call, Event<T>, Storage },
     }
 );
 
@@ -189,7 +189,7 @@ pub fn new_test_run() -> sp_io::TestExternalities {
         .unwrap();
 
     pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE, 100000), (BOB, 10000), (103, 10)],
+        balances: vec![(ALICE, 10000000), (BOB, 10000000)],
     }
     .assimilate_storage(&mut t)
     .unwrap();

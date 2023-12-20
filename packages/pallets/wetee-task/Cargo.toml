@@ -41,8 +41,11 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"scale-info/std",
+	
+	"pallet-balances/std",
 	"wetee-primitives/std",
 	"wetee-org/std",
+	"wetee-assets/std",
 ]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]

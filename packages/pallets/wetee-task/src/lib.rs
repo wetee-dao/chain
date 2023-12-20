@@ -224,7 +224,7 @@ pub mod pallet {
 
             // 检查抵押金额是否足够
             let fee_unit = Self::get_fee(id)?;
-            ensure!(fee_unit >= deposit, Error::<T>::NotEnoughBalance);
+            ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
