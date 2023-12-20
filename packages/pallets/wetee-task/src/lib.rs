@@ -212,7 +212,7 @@ pub mod pallet {
                 port,
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
-                status: 1,
+                status: 0,
                 cr: Cr { cpu, memory, disk },
                 deposit,
                 level,

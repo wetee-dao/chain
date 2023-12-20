@@ -64,10 +64,10 @@ impl ProcessMessage for WorkerMessageProcessor {
         match origin {
             MessageOrigin::Account(ref account) => match msg_id.t {
                 1 => {
-                    WeteeWorker::match_app_deploy(account.clone(), msg_id).unwrap();
+                    WeteeWorker::match_app_deploy(account.clone(), msg_id, None).unwrap();
                 }
                 2 => {
-                    WeteeWorker::match_task_deploy(account.clone(), msg_id).unwrap();
+                    WeteeWorker::match_task_deploy(account.clone(), msg_id, None).unwrap();
                 }
                 _ => {}
             },

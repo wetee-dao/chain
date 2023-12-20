@@ -81,21 +81,14 @@ pub struct Deposit<Balance> {
 /// proof of K8sCluster
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct ProofOfCluster {
-    /// Cluster  id
-    /// 节点id
-    pub cid: u64,
+    /// tee public key
+    pub public_key: Vec<u8>,
 }
 
 /// 工作证明
 /// proof of K8sCluster
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct ProofOfWork {
-    /// Cluster id
-    /// 节点id
-    pub cid: u64,
-    /// worker id
-    /// 任务 id
-    pub wid: WorkId,
     /// Task log address and hash
     /// 任务日志地址及hash
     pub log_hash: Vec<u8>,
@@ -105,6 +98,8 @@ pub struct ProofOfWork {
     /// task cpu memory usage hash
     /// 任务cpu 内存 占用监控hash
     pub cr_hash: Vec<u8>,
+    /// tee public key
+    pub public_key: Vec<u8>,
 }
 
 /// 合约日志
@@ -348,6 +343,12 @@ pub mod pallet {
         /// Level is not exists
         /// 等级不存在
         LevelNotExists,
+        /// No cluster found
+        /// 没有找到集群
+        NoClusterFound,
+        /// Work block number error
+        /// 工作块高度错误
+        WorkBlockNumberError,
     }
 
     #[pallet::call]
@@ -398,7 +399,6 @@ pub mod pallet {
             // 保存集群信息
             K8sClusters::<T>::insert(cid.clone(), cluster);
             // 初始化资源
-            // initialize resource
             Crs::<T>::insert(
                 cid.clone(),
                 (
@@ -479,6 +479,8 @@ pub mod pallet {
                     memory: ccr.memory + mem,
                     disk: ccr.disk + disk,
                 };
+
+                *c = Some(crs);
                 Ok(())
             })?;
 
@@ -498,7 +500,7 @@ pub mod pallet {
             block_num: BlockNumberFor<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
-            let d = Deposits::<T>::get(id, block_num).unwrap();
+            let d = Deposits::<T>::get(id, block_num).ok_or(Error::<T>::ClusterNotExists)?;
 
             let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
@@ -522,11 +524,12 @@ pub mod pallet {
                     memory: ccr.memory - d.mem,
                     disk: ccr.disk - d.disk,
                 };
+                *c = Some(crs);
                 Ok(())
             })?;
 
             // 释放质押保证金
-            wetee_assets::Pallet::<T>::unreserve(0, creator, d.deposit).unwrap();
+            wetee_assets::Pallet::<T>::unreserve(0, creator, d.deposit)?;
 
             Ok(().into())
         }
@@ -537,14 +540,19 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_proof_upload(
             origin: OriginFor<T>,
+            id: ClusterId,
             proof: ProofOfCluster,
         ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
+            let creator = ensure_signed(origin)?;
+            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
-            // 获取当前账户的集群
-            let cluster_id =
-                K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
-            let cluster = K8sClusters::<T>::get(cluster_id).ok_or(Error::<T>::ClusterNotExists)?;
+            // 检查是否是集群的主人
+            ensure!(
+                cluster.account == creator.clone(),
+                Error::<T>::ClusterIsExists
+            );
+
+            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
             // 检查集群是否已经开始
             ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
@@ -570,7 +578,7 @@ pub mod pallet {
             let contract_cluster_id =
                 WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
 
-            ensure!(contract_cluster_id == cluster_id, Error::<T>::WorkNotExists);
+            ensure!(contract_cluster_id == cluster_id, Error::<T>::NotAllowed403);
 
             let number = <frame_system::Pallet<T>>::block_number();
 
@@ -583,9 +591,10 @@ pub mod pallet {
                 1 => {
                     let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
                         .ok_or(Error::<T>::WorkNotExists)?;
+
                     // 检查是否是重复提交状态
                     if number - state.block_number < 600u32.into() {
-                        return Err(Error::<T>::WorkNotExists.into());
+                        return Err(Error::<T>::WorkBlockNumberError.into());
                     } else if number - state.block_number > 1200u32.into() {
                         WorkContractState::<T>::insert(
                             work_id.clone(),
@@ -613,6 +622,23 @@ pub mod pallet {
                     // 如果app状态为已停止，则删除工作合约
                     if app.status == 2 {
                         WorkContracts::<T>::remove(work_id.clone());
+                        // 更新抵押数据
+                        Crs::<T>::try_mutate_exists(
+                            cluster_id,
+                            |c| -> result::Result<(), DispatchError> {
+                                let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
+                                let ccr = crs.1.clone();
+
+                                // 更新抵押参数
+                                crs.1 = Cr {
+                                    cpu: ccr.cpu - app.cr.cpu,
+                                    memory: ccr.memory - app.cr.memory,
+                                    disk: ccr.disk - app.cr.disk,
+                                };
+                                *c = Some(crs);
+                                Ok(())
+                            },
+                        )?;
                     }
                 }
                 2 => {
@@ -655,11 +681,13 @@ pub mod pallet {
         /// 停止集群
         #[pallet::call_index(007)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_stop(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cluster_stop(origin: OriginFor<T>, id: ClusterId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             // 获取当前账户的集群
             let cluster_id =
                 K8sClusterAccounts::<T>::get(who.clone()).ok_or(Error::<T>::ClusterNotExists)?;
+            ensure!(cluster_id == id, Error::<T>::ClusterNotExists);
+
             let mut cluster =
                 K8sClusters::<T>::get(cluster_id).ok_or(Error::<T>::ClusterNotExists)?;
 
@@ -803,12 +831,16 @@ pub mod pallet {
         pub fn match_app_deploy(
             account: T::AccountId,
             work_id: WorkId,
+            match_id: Option<TeeAppId>,
         ) -> result::Result<(), DispatchError> {
             // 获取app信息
             let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
                 .ok_or(Error::<T>::AppNotExists)?;
             let app_cr = app.cr.clone();
-            let id = Self::get_random_cluster(work_id.clone(), app_cr.clone(), app.level)?;
+            let id = match match_id {
+                Some(mid) => mid,
+                None => Self::get_random_cluster(work_id.clone(), app_cr.clone(), app.level)?,
+            };
 
             if app.status == 0 {
                 // 更新抵押数据
@@ -818,10 +850,11 @@ pub mod pallet {
 
                     // 更新抵押参数
                     crs.1 = Cr {
-                        cpu: ccr.cpu - app_cr.cpu,
-                        memory: ccr.memory - app_cr.memory,
-                        disk: ccr.disk - app_cr.disk,
+                        cpu: ccr.cpu + app_cr.cpu,
+                        memory: ccr.memory + app_cr.memory,
+                        disk: ccr.disk + app_cr.disk,
                     };
+                    *c = Some(crs);
                     Ok(())
                 })?;
 
@@ -860,11 +893,15 @@ pub mod pallet {
         pub fn match_task_deploy(
             account: T::AccountId,
             work_id: WorkId,
+            match_id: Option<TeeAppId>,
         ) -> result::Result<(), DispatchError> {
             let mut task = wetee_task::TEETasks::<T>::get(account.clone(), work_id.clone().id)
                 .ok_or(Error::<T>::TaskNotExists)?;
             let task_cr = task.cr.clone();
-            let id = Self::get_random_cluster(work_id.clone(), task_cr.clone(), task.level)?;
+            let id = match match_id {
+                Some(mid) => mid,
+                None => Self::get_random_cluster(work_id.clone(), task_cr.clone(), task.level)?,
+            };
 
             if task.status == 0 {
                 // 更新抵押数据
@@ -874,10 +911,11 @@ pub mod pallet {
 
                     // 更新抵押参数
                     crs.1 = Cr {
-                        cpu: ccr.cpu - task_cr.cpu,
-                        memory: ccr.memory - task_cr.memory,
-                        disk: ccr.disk - task_cr.disk,
+                        cpu: ccr.cpu + task_cr.cpu,
+                        memory: ccr.memory + task_cr.memory,
+                        disk: ccr.disk + task_cr.disk,
                     };
+                    *c = Some(crs);
                     Ok(())
                 })?;
 
@@ -903,7 +941,7 @@ pub mod pallet {
             // 随机选择集群
             let mut randoms = Vec::new();
             let mut scores = Vec::new();
-            for i in 1..1000 {
+            for i in 1..100 {
                 // 获取随机数
                 let random_number = Self::get_random_number(work_id.id + i);
                 // 必须保证数字在集群的范围内

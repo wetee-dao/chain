@@ -25,6 +25,42 @@ pub fn create_cluster() {
     );
 }
 
+pub fn create_work() {
+    wetee_app::Prices::<Test>::insert(
+        1,
+        wetee_app::Price {
+            cpu_per: 1,
+            memory_per: 1,
+            disk_per: 1,
+        },
+    );
+    wetee_app::Pallet::<Test>::create(
+        OriginFor::<Test>::signed(ALICE),
+        "test".as_bytes().to_vec(),
+        "test".as_bytes().to_vec(),
+        vec![1, 2, 3],
+        1,
+        1,
+        1,
+        1,
+        1000,
+    )
+    .unwrap();
+}
+
+pub fn mortgage() {
+    // 质押
+    assert!(Pallet::<Test>::cluster_mortgage(
+        OriginFor::<Test>::signed(ALICE),
+        0,
+        10,
+        10,
+        10,
+        1000
+    )
+    .is_ok());
+}
+
 #[test]
 pub fn cluster_register() {
     new_test_run().execute_with(|| {
@@ -142,5 +178,205 @@ pub fn cluster_unmortgage() {
         assert!(
             Pallet::<Test>::cluster_unmortgage(OriginFor::<Test>::signed(ALICE), 0, 30).is_ok()
         );
+    });
+}
+
+// 非集群所有者
+#[test]
+pub fn cluster_unmortgage_should_fail() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        frame_system::Pallet::<Test>::set_block_number(30);
+        assert!(Pallet::<Test>::cluster_mortgage(
+            OriginFor::<Test>::signed(ALICE),
+            0,
+            1,
+            1,
+            1,
+            100
+        )
+        .is_ok());
+        frame_system::Pallet::<Test>::set_block_number(31);
+        assert!(Pallet::<Test>::cluster_unmortgage(OriginFor::<Test>::signed(BOB), 0, 30).is_err());
+    });
+}
+
+// id 错误
+#[test]
+pub fn cluster_unmortgage_should_fail2() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        frame_system::Pallet::<Test>::set_block_number(30);
+        assert!(Pallet::<Test>::cluster_mortgage(
+            OriginFor::<Test>::signed(ALICE),
+            0,
+            1,
+            1,
+            1,
+            100
+        )
+        .is_ok());
+        frame_system::Pallet::<Test>::set_block_number(31);
+        assert!(
+            Pallet::<Test>::cluster_unmortgage(OriginFor::<Test>::signed(ALICE), 1, 30).is_err()
+        );
+    });
+}
+
+// 块高度错误
+#[test]
+pub fn cluster_unmortgage_should_fail3() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        frame_system::Pallet::<Test>::set_block_number(30);
+        assert!(Pallet::<Test>::cluster_mortgage(
+            OriginFor::<Test>::signed(ALICE),
+            0,
+            1,
+            1,
+            1,
+            100
+        )
+        .is_ok());
+        frame_system::Pallet::<Test>::set_block_number(31);
+        assert!(
+            Pallet::<Test>::cluster_unmortgage(OriginFor::<Test>::signed(ALICE), 0, 10).is_err()
+        );
+    });
+}
+
+#[test]
+pub fn cluster_proof_upload() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        assert!(Pallet::<Test>::cluster_mortgage(
+            OriginFor::<Test>::signed(ALICE),
+            0,
+            1,
+            1,
+            1,
+            100
+        )
+        .is_ok());
+
+        assert!(Pallet::<Test>::cluster_proof_upload(
+            OriginFor::<Test>::signed(ALICE),
+            0,
+            ProofOfCluster {
+                public_key: "test".as_bytes().to_vec()
+            },
+        )
+        .is_ok());
+    });
+}
+
+#[test]
+pub fn cluster_proof_upload_should_fail() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        assert!(Pallet::<Test>::cluster_proof_upload(
+            OriginFor::<Test>::signed(BOB),
+            0,
+            ProofOfCluster {
+                public_key: "test".as_bytes().to_vec()
+            }
+        )
+        .is_err());
+    });
+}
+
+#[test]
+pub fn cluster_proof_upload_should_fail2() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        assert!(Pallet::<Test>::cluster_proof_upload(
+            OriginFor::<Test>::signed(ALICE),
+            1,
+            ProofOfCluster {
+                public_key: "test".as_bytes().to_vec()
+            }
+        )
+        .is_err());
+    });
+}
+
+#[test]
+pub fn cluster_stop() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        assert!(Pallet::<Test>::cluster_stop(OriginFor::<Test>::signed(ALICE), 0).is_ok());
+    });
+}
+
+#[test]
+pub fn cluster_stop_should_fail() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        assert!(Pallet::<Test>::cluster_stop(OriginFor::<Test>::signed(BOB), 0).is_err());
+    });
+}
+
+#[test]
+pub fn cluster_stop_should_fail2() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        assert!(Pallet::<Test>::cluster_stop(OriginFor::<Test>::signed(ALICE), 1).is_err());
+    });
+}
+
+#[test]
+pub fn work_proof_upload() {
+    new_test_run().execute_with(|| {
+        frame_system::Pallet::<Test>::set_block_number(1);
+        create_cluster();
+        create_work();
+        mortgage();
+        let work_id = WorkId { t: 1, id: 0 };
+        // let ccr = Crs::<Test>::get(0);
+        // println!("ccr {:?}", ccr);
+        Pallet::<Test>::match_app_deploy(ALICE.clone(), work_id.clone(), Some(0)).unwrap();
+        // let app = wetee_app::TEEApps::<Test>::get(ALICE, work_id.clone().id);
+        // println!("{:?}", app);
+        // let cid = WorkContracts::<Test>::get(work_id.clone());
+        // println!("{:?}", cid);
+        frame_system::Pallet::<Test>::set_block_number(631);
+        let res = Pallet::<Test>::work_proof_upload(
+            OriginFor::<Test>::signed(ALICE),
+            work_id,
+            ProofOfWork {
+                log_hash: "test".as_bytes().to_vec(),
+                cr: Cr {
+                    cpu: 1,
+                    memory: 1,
+                    disk: 1,
+                },
+                cr_hash: "test".as_bytes().to_vec(),
+                public_key: "test".as_bytes().to_vec(),
+            },
+        );
+        assert!(res.is_ok());
+    });
+}
+
+// 未开始的工作
+#[test]
+pub fn work_proof_upload_should_fail() {
+    new_test_run().execute_with(|| {
+        create_cluster();
+        assert!(Pallet::<Test>::work_proof_upload(
+            OriginFor::<Test>::signed(ALICE),
+            WorkId { t: 2, id: 0 },
+            ProofOfWork {
+                log_hash: "test".as_bytes().to_vec(),
+                cr: Cr {
+                    cpu: 1,
+                    memory: 1,
+                    disk: 1,
+                },
+                cr_hash: "test".as_bytes().to_vec(),
+                public_key: "test".as_bytes().to_vec(),
+            }
+        )
+        .is_err());
     });
 }

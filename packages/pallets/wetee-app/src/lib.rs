@@ -50,7 +50,7 @@ pub struct TeeApp<AccountId, BlockNumber, Balance> {
     /// 服务端口号
     pub port: Vec<u32>,
     /// State of the App
-    /// App状态
+    /// App状态 0: created, 1: running, 2: stop
     pub status: u8,
     /// cpu memory disk
     /// cpu memory disk
@@ -236,7 +236,7 @@ pub mod pallet {
                 port,
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
-                status: 1,
+                status: 0,
                 cr: Cr { cpu, memory, disk },
                 deposit,
                 level,
