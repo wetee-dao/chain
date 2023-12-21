@@ -5,8 +5,8 @@ Follow the steps below to get started with the example node.
 ### Rust Setup
 
 - [Linux development environment](https://docs.substrate.io/install/linux/).
-- [MacOS development environment](https://docs.substrate.io/install/linux/).
-- [Windows development environment](https://docs.substrate.io/install/linux/).
+- [MacOS development environment](https://docs.substrate.io/install/macos/).
+- [Windows development environment](https://docs.substrate.io/install/windows/).
 
 ### Run
 

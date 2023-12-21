@@ -85,6 +85,26 @@ pub mod pallet {
         <T as frame_system::Config>::AccountId,
     >>::Balance;
 
+    #[derive(frame_support::DefaultNoBound)]
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config> {
+        pub _config: sp_std::marker::PhantomData<T>,
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+        fn build(&self) {
+            Prices::<T>::insert(
+                1,
+                Price {
+                    cpu_per_block: 100,
+                    memory_per_block: 100,
+                    disk_per_block: 100,
+                },
+            );
+        }
+    }
+
     #[pallet::config]
     pub trait Config: frame_system::Config + wetee_org::Config + wetee_assets::Config {
         /// pallet event

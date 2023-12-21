@@ -165,5 +165,7 @@ fn testnet_genesis(
         tokens: Default::default(),
         wetee_gov: Default::default(),
         wetee_app: Default::default(),
+        wetee_task: Default::default(),
+        wetee_worker: Default::default(),
     }
 }

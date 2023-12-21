@@ -69,11 +69,34 @@ pub fn update() {
     });
 }
 
+// 应用不属于用户
+#[test]
+pub fn update_should_fail() {
+    new_test_run().execute_with(|| {
+        do_create();
+        assert!(Pallet::<Test>::update(
+            OriginFor::<Test>::signed(ALICE),
+            0,
+            "test".as_bytes().to_vec(),
+            vec![1, 2, 3],
+            vec![1, 2]
+        )
+        .is_ok(),);
+    });
+}
+
 #[test]
 pub fn stop() {
     new_test_run().execute_with(|| {
         do_create();
         assert!(Pallet::<Test>::stop(OriginFor::<Test>::signed(ALICE), 0).is_ok());
+    });
+}
+
+#[test]
+pub fn stop_should_fail() {
+    new_test_run().execute_with(|| {
+        assert!(Pallet::<Test>::stop(OriginFor::<Test>::signed(BOB), 0).is_err());
     });
 }
 
@@ -138,5 +161,31 @@ pub fn set_settings() {
                 }
             ]
         ));
+    });
+}
+
+#[test]
+pub fn set_settings_should_fail() {
+    new_test_run().execute_with(|| {
+        do_create();
+        assert!(Pallet::<Test>::set_settings(
+            OriginFor::<Test>::signed(BOB),
+            0,
+            vec![
+                AppSettingInput {
+                    t: 1,
+                    index: 0,
+                    k: "test".as_bytes().to_vec(),
+                    v: "test".as_bytes().to_vec(),
+                },
+                AppSettingInput {
+                    t: 1,
+                    index: 1,
+                    k: "test".as_bytes().to_vec(),
+                    v: "test".as_bytes().to_vec(),
+                }
+            ]
+        )
+        .is_err());
     });
 }

@@ -50,10 +50,10 @@ pub struct K8sCluster<AccountId, BlockNumber> {
     pub name: Vec<u8>,
     /// ip of service
     /// 服务端口号
-    pub ip: Vec<Vec<u8>>,
+    pub ip: Vec<Ip>,
     /// port of service
     /// 服务端口号
-    pub port: Vec<u32>,
+    pub port: u32,
     /// State of the App
     /// K8sCluster 状态
     pub status: u8,
@@ -124,6 +124,12 @@ pub struct DepositPrice {
     pub memory_per: u16,
     /// disk
     pub disk_per: u16,
+}
+
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct Ip {
+    pub ipv4: Option<u32>,
+    pub ipv6: Option<u128>,
 }
 
 #[frame_support::pallet]
@@ -349,6 +355,29 @@ pub mod pallet {
         /// Work block number error
         /// 工作块高度错误
         WorkBlockNumberError,
+        /// Reason too long
+        /// 理由太长
+        ReasonTooLong,
+    }
+
+    #[derive(frame_support::DefaultNoBound)]
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config> {
+        pub _config: sp_std::marker::PhantomData<T>,
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+        fn build(&self) {
+            DepositPrices::<T>::insert(
+                1,
+                DepositPrice {
+                    cpu_per: 10,
+                    memory_per: 10,
+                    disk_per: 10,
+                },
+            );
+        }
     }
 
     #[pallet::call]
@@ -360,23 +389,22 @@ pub mod pallet {
         pub fn cluster_register(
             origin: OriginFor<T>,
             name: Vec<u8>,
-            ip: Vec<Vec<u8>>,
-            port: Vec<u32>,
+            ip: Vec<Ip>,
+            port: u32,
             level: u8,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
             // 检查ip
             ensure!(ip.len() > 0, Error::<T>::ClusterRegisterMissIp);
-            for i in ip.iter() {
-                ensure!(i.len() == 4, Error::<T>::IpFormatError);
-            }
-            ensure!(port.len() > 0, Error::<T>::ClusterRegisterMissIp);
+            ensure!(port > 0, Error::<T>::ClusterRegisterMissIp);
 
             // 检查集群是否存在
             ensure!(
                 K8sClusterAccounts::<T>::contains_key(creator.clone()) == false,
                 Error::<T>::ClusterIsExists
             );
+
+            let _ = DepositPrices::<T>::get(level).ok_or(Error::<T>::LevelNotExists)?;
 
             // 插入app
             let cid = NextClusterId::<T>::get();
@@ -592,10 +620,11 @@ pub mod pallet {
                     let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
                         .ok_or(Error::<T>::WorkNotExists)?;
 
+                    let unit: u32 = 3;
                     // 检查是否是重复提交状态
-                    if number - state.block_number < 600u32.into() {
+                    if number - state.block_number < unit.into() {
                         return Err(Error::<T>::WorkBlockNumberError.into());
-                    } else if number - state.block_number > 1200u32.into() {
+                    } else if number - state.block_number > (unit * 2).into() {
                         WorkContractState::<T>::insert(
                             work_id.clone(),
                             cluster_id,
@@ -745,6 +774,9 @@ pub mod pallet {
             reason: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+
+            ensure!(reason.len() < 255, Error::<T>::ReasonTooLong);
+
             if let Some(cluster) = K8sClusters::<T>::get(cluster_id) {
                 ensure!(cluster.status != 0, Error::<T>::ClusterNotStarted);
             } else {
@@ -872,6 +904,7 @@ pub mod pallet {
                         },
                     );
                 }
+
                 if !WorkContractState::<T>::contains_key(work_id.clone(), id) {
                     WorkContractState::<T>::insert(
                         work_id.clone(),
@@ -945,16 +978,18 @@ pub mod pallet {
                 // 获取随机数
                 let random_number = Self::get_random_number(work_id.id + i);
                 // 必须保证数字在集群的范围内
-                let v = num - random_number % num;
+                let mut v = num - random_number % num;
+                if v >= 1 {
+                    v = v - 1
+                };
                 if !randoms.contains(&v) {
-                    let score = Scores::<T>::get(v).unwrap();
-                    let cr = Crs::<T>::get(v).unwrap();
+                    let score = Scores::<T>::get(v).ok_or(Error::<T>::ClusterNotExists)?;
+                    let cr = Crs::<T>::get(v).ok_or(Error::<T>::ClusterNotExists)?;
                     // 过滤掉已经没有计算资源的集群
-                    if work_id.t <= score.0
+                    if level <= score.1
                         && cr.0.cpu - cr.1.cpu > app_cr.cpu
                         && cr.0.memory - cr.1.memory > app_cr.memory
                         && cr.0.disk - cr.1.disk > app_cr.disk
-                        && score.1 == level
                     {
                         randoms.push(v);
                         scores.push(score);
@@ -1009,7 +1044,7 @@ pub mod pallet {
             mem: u16,
             disk: u16,
         ) -> result::Result<BalanceOf<T>, DispatchError> {
-            let p = DepositPrices::<T>::get(level).ok_or(Error::<T>::ClusterNotExists)?;
+            let p = DepositPrices::<T>::get(level).ok_or(Error::<T>::LevelNotExists)?;
             return Ok(BalanceOf::<T>::from(
                 cpu as u32 * p.cpu_per as u32
                     + mem as u32 * p.memory_per as u32

@@ -1,5 +1,5 @@
 
-# Dao-entrance Node Testing Guide
+# Node Testing Guide
 
 ## Create a DAO
 
