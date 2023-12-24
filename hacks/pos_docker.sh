@@ -24,5 +24,5 @@ fi
 
 # 编译
 
-docker build . -f pos_build.Dockerfile -t "asyoume/wetee-node:$TAG"
-docker push "asyoume/wetee-node:$TAG"
+docker build . -f pos_build.Dockerfile -t "wetee/wetee-node:$TAG"
+docker push "wetee/wetee-node:$TAG"
