@@ -22,14 +22,14 @@ use pallet_message_queue::OnQueueChanged;
 #[derive(Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen, TypeInfo, Debug)]
 pub enum MessageOrigin {
     /// 用户发起的任务
-    Account(AccountId),
+    Work,
 }
 
 pub struct WorkerQueueHook;
 impl AfterCreate<WorkId, AccountId> for WorkerQueueHook {
-    fn run_hook(id: WorkId, aid: AccountId) {
+    fn run_hook(id: WorkId, _: AccountId) {
         // 添加消息到队列
-        MessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::Account(aid));
+        MessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::Work);
     }
 }
 
@@ -37,7 +37,7 @@ impl AfterCreate<WorkId, AccountId> for WorkerQueueHook {
 pub struct WorkerQueueChangeHandler;
 impl OnQueueChanged<MessageOrigin> for WorkerQueueChangeHandler {
     fn on_queue_changed(_id: MessageOrigin, _items_count: u64, _items_size: u64) {
-        log::warn!("on_queue_changedon_queue_changedon_queue_changedon_queue_changedon_queue_changedon_queue_changed");
+        log::warn!("on_queue_changed on_queue_changed on_queue_changed on_queue_changed on_queue_changed on_queue_changed");
         // QueueChanges::mutate(|cs| cs.push((id, items_count, items_size)));
     }
 }
@@ -56,24 +56,20 @@ impl ProcessMessage for WorkerMessageProcessor {
         id: &mut [u8; 32],
     ) -> Result<bool, ProcessMessageError> {
         let msg_id = WorkId::decode(&mut message).unwrap();
-        let _required = Weight::from_parts(1, 1);
-        log::warn!(
-            "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",
-            id
-        );
-        match origin {
-            MessageOrigin::Account(ref account) => match msg_id.t {
-                1 => {
-                    WeteeWorker::match_app_deploy(account.clone(), msg_id, None).unwrap();
-                }
-                2 => {
-                    WeteeWorker::match_task_deploy(account.clone(), msg_id, None).unwrap();
-                }
-                _ => {}
+        log::warn!("process_message {:?}", id);
+        let ok: bool = match origin {
+            MessageOrigin::Work => match msg_id.t {
+                1 => WeteeWorker::match_app_deploy(msg_id, None).unwrap(),
+                2 => WeteeWorker::match_task_deploy(msg_id, None).unwrap(),
+                _ => false,
             },
         };
 
-        Ok(true)
+        if !ok {
+            return Err(ProcessMessageError::Yield);
+        };
+
+        Ok(ok)
     }
 }
 

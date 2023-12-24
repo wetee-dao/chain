@@ -172,11 +172,16 @@ pub mod pallet {
     pub type K8sClusterAccounts<T: Config> =
         StorageMap<_, Identity, T::AccountId, ClusterId, OptionQuery>;
 
+    #[pallet::type_value]
+    pub fn DefaultForm1() -> ClusterId {
+        1
+    }
+
     /// The id of the next cluster to be created.
     /// 获取下一个集群id
     #[pallet::storage]
     #[pallet::getter(fn next_cluster_id)]
-    pub type NextClusterId<T: Config> = StorageValue<_, u64, ValueQuery>;
+    pub type NextClusterId<T: Config> = StorageValue<_, ClusterId, ValueQuery, DefaultForm1>;
 
     /// 集群信息
     #[pallet::storage]
@@ -861,18 +866,22 @@ pub mod pallet {
         /// Worker app deploy
         /// 部署应用
         pub fn match_app_deploy(
-            account: T::AccountId,
             work_id: WorkId,
             match_id: Option<TeeAppId>,
-        ) -> result::Result<(), DispatchError> {
+        ) -> result::Result<bool, DispatchError> {
+            let account =
+                wetee_app::AppIdAccounts::<T>::get(work_id.id).ok_or(Error::<T>::AppNotExists)?;
             // 获取app信息
             let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
                 .ok_or(Error::<T>::AppNotExists)?;
             let app_cr = app.cr.clone();
-            let id = match match_id {
-                Some(mid) => mid,
-                None => Self::get_random_cluster(work_id.clone(), app_cr.clone(), app.level)?,
-            };
+            let id =
+                Self::get_random_cluster(work_id.clone(), app_cr.clone(), app.level, match_id)?;
+
+            // id 为 0 表示没有匹配的节点，放入下一个区块计算
+            if id == 0 {
+                return Ok(false);
+            }
 
             if app.status == 0 {
                 // 更新抵押数据
@@ -920,21 +929,25 @@ pub mod pallet {
                 wetee_app::TEEApps::<T>::insert(account, work_id.id.clone(), app);
             }
 
-            Ok(().into())
+            Ok(true)
         }
 
         pub fn match_task_deploy(
-            account: T::AccountId,
             work_id: WorkId,
             match_id: Option<TeeAppId>,
-        ) -> result::Result<(), DispatchError> {
+        ) -> result::Result<bool, DispatchError> {
+            let account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
+                .ok_or(Error::<T>::TaskNotExists)?;
             let mut task = wetee_task::TEETasks::<T>::get(account.clone(), work_id.clone().id)
                 .ok_or(Error::<T>::TaskNotExists)?;
             let task_cr = task.cr.clone();
-            let id = match match_id {
-                Some(mid) => mid,
-                None => Self::get_random_cluster(work_id.clone(), task_cr.clone(), task.level)?,
-            };
+            let id =
+                Self::get_random_cluster(work_id.clone(), task_cr.clone(), task.level, match_id)?;
+
+            // id 为 0 表示没有匹配的节点，放入下一个区块计算
+            if id == 0 {
+                return Ok(false);
+            }
 
             if task.status == 0 {
                 // 更新抵押数据
@@ -958,7 +971,7 @@ pub mod pallet {
                 wetee_task::TEETasks::<T>::insert(account, work_id.id.clone(), task);
             }
 
-            Ok(().into())
+            Ok(true)
         }
 
         /// Get random cluster
@@ -967,21 +980,26 @@ pub mod pallet {
             work_id: WorkId,
             app_cr: Cr,
             level: u8,
+            match_id: Option<ClusterId>,
         ) -> result::Result<ClusterId, DispatchError> {
             let num = NextClusterId::<T>::get();
-            ensure!(num > 0, Error::<T>::NoCluster);
+            if num == 1 {
+                return Ok(0);
+            }
+
+            if match_id.is_some() {
+                return Ok(match_id.unwrap());
+            }
 
             // 随机选择集群
             let mut randoms = Vec::new();
             let mut scores = Vec::new();
             for i in 1..100 {
                 // 获取随机数
-                let random_number = Self::get_random_number(work_id.id + i);
-                // 必须保证数字在集群的范围内
-                let mut v = num - random_number % num;
-                if v >= 1 {
-                    v = v - 1
-                };
+                let random_number = Self::get_random_number(work_id.id + i) + 1;
+
+                // 必须保证数字在集群的范围内 集群数字是从1开始的
+                let v = num - random_number % num;
                 if !randoms.contains(&v) {
                     let score = Scores::<T>::get(v).ok_or(Error::<T>::ClusterNotExists)?;
                     let cr = Crs::<T>::get(v).ok_or(Error::<T>::ClusterNotExists)?;
@@ -998,7 +1016,9 @@ pub mod pallet {
             }
 
             // 确认候选集群不为空
-            ensure!(!randoms.is_empty(), Error::<T>::NoCluster);
+            if randoms.is_empty() {
+                return Ok(0);
+            }
 
             // 选择列表中最优的集群
             let index = scores
@@ -1023,6 +1043,11 @@ pub mod pallet {
             );
             let random_number = <u64>::decode(&mut random_seed.as_ref())
                 .expect("secure hashes should always be bigger than u64; qed");
+
+            // 避免数字溢出
+            if random_number == 9223372036854775807 {
+                return random_number - 1;
+            }
             random_number
         }
 

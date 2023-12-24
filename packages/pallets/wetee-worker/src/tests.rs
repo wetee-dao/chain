@@ -66,7 +66,6 @@ pub fn mortgage() {
 
 pub fn start() {
     let work_id = WorkId { t: 1, id: 0 };
-    Pallet::<Test>::match_app_deploy(ALICE.clone(), work_id.clone(), None).unwrap();
     frame_system::Pallet::<Test>::set_block_number(631);
     let res = Pallet::<Test>::work_proof_upload(
         OriginFor::<Test>::signed(ALICE),
@@ -365,7 +364,7 @@ pub fn work_proof_upload() {
         create_work();
         mortgage();
         let work_id = WorkId { t: 1, id: 0 };
-        Pallet::<Test>::match_app_deploy(ALICE.clone(), work_id.clone(), None).unwrap();
+        Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         frame_system::Pallet::<Test>::set_block_number(631);
         let res = Pallet::<Test>::work_proof_upload(
             OriginFor::<Test>::signed(ALICE),
@@ -423,7 +422,7 @@ pub fn work_proof_upload_should_fail2() {
         create_work();
         mortgage();
         let work_id = WorkId { t: 1, id: 0 };
-        Pallet::<Test>::match_app_deploy(ALICE.clone(), work_id.clone(), None).unwrap();
+        Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         // frame_system::Pallet::<Test>::set_block_number(631);
         let res = Pallet::<Test>::work_proof_upload(
             OriginFor::<Test>::signed(ALICE),
