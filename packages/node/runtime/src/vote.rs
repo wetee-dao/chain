@@ -39,7 +39,6 @@ impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for
         };
         log::info!("try_vote amount {:?}", amount);
         Ok((amount, 100))
-        // Err(wetee_gov::Error::<Runtime>::PledgeNotEnough)?
     }
 
     fn vote_end_do(&self, who: &AccountId, dao_id: &DaoAssetId) -> Result<(), DispatchError> {
@@ -49,6 +48,5 @@ impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for
                 Ok(())
             }
         }
-        // Err(wetee_gov::Error::<Runtime>::PledgeNotEnough)?
     }
 }
