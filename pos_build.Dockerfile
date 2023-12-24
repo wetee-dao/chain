@@ -4,7 +4,7 @@ COPY . .
 RUN cargo build --locked --release
 
 
-FROM ubuntu:22.10
+FROM ubuntu:22.04
 
 ## copy bin from builder
 COPY  --from=builder  /target/release/wetee-node /usr/local/bin

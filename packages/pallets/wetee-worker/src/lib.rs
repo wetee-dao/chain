@@ -982,8 +982,8 @@ pub mod pallet {
             level: u8,
             match_id: Option<ClusterId>,
         ) -> result::Result<ClusterId, DispatchError> {
-            let num = NextClusterId::<T>::get();
-            if num == 1 {
+            let num = NextClusterId::<T>::get() - 1;
+            if num == 0 {
                 return Ok(0);
             }
 
@@ -994,17 +994,26 @@ pub mod pallet {
             // 随机选择集群
             let mut randoms = Vec::new();
             let mut scores = Vec::new();
-            for i in 1..100 {
+            // println!("+++++++++++++++++++++++++++ {:?}", app_cr);
+            for i in 1..2 {
                 // 获取随机数
-                let random_number = Self::get_random_number(work_id.id + i) + 1;
+                let random_number = Self::get_random_number(work_id.id + i);
 
                 // 必须保证数字在集群的范围内 集群数字是从1开始的
-                let v = num - random_number % num;
+                let mut v = random_number % num;
+                // 避免数字溢出
+                if v != 2 ^ 64 - 1 {
+                    v = v + 1;
+                }
                 if !randoms.contains(&v) {
                     let score = Scores::<T>::get(v).ok_or(Error::<T>::ClusterNotExists)?;
                     let cr = Crs::<T>::get(v).ok_or(Error::<T>::ClusterNotExists)?;
+                    // println!(
+                    //     "-------------------------------num {:?} v: {:?} score: {:?} cr: {:?}",
+                    //     num, v, score, cr
+                    // );
                     // 过滤掉已经没有计算资源的集群
-                    if level <= score.1
+                    if level == score.0
                         && cr.0.cpu - cr.1.cpu > app_cr.cpu
                         && cr.0.memory - cr.1.memory > app_cr.memory
                         && cr.0.disk - cr.1.disk > app_cr.disk
@@ -1014,6 +1023,11 @@ pub mod pallet {
                     }
                 }
             }
+
+            // println!(
+            //     "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ num: {:?} randoms: {:?}",
+            //     num,randoms
+            // );
 
             // 确认候选集群不为空
             if randoms.is_empty() {
@@ -1044,10 +1058,6 @@ pub mod pallet {
             let random_number = <u64>::decode(&mut random_seed.as_ref())
                 .expect("secure hashes should always be bigger than u64; qed");
 
-            // 避免数字溢出
-            if random_number == 9223372036854775807 {
-                return random_number - 1;
-            }
             random_number
         }
 
