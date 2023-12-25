@@ -12,7 +12,11 @@ use frame_support::{
 };
 use scale_info::TypeInfo;
 
-use wetee_primitives::{traits::AfterCreate, types::WorkId, vec2bytes};
+use wetee_primitives::{
+    traits::AfterCreate,
+    types::{WorkId, WorkType},
+    vec2bytes,
+};
 
 use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::EnqueueMessage;
 use crate::{AccountId, MessageQueue, WeteeWorker};
@@ -60,10 +64,9 @@ impl ProcessMessage for WorkerMessageProcessor {
         let msg_id = WorkId::decode(&mut message).unwrap();
         log::warn!("process_message {:?}", id);
         let ok: bool = match origin {
-            MessageOrigin::Work => match msg_id.t {
-                1 => WeteeWorker::match_app_deploy(msg_id, None).unwrap(),
-                2 => WeteeWorker::match_task_deploy(msg_id, None).unwrap(),
-                _ => false,
+            MessageOrigin::Work => match msg_id.wtype {
+                WorkType::APP => WeteeWorker::match_app_deploy(msg_id, None).unwrap(),
+                WorkType::TASK => WeteeWorker::match_task_deploy(msg_id, None).unwrap(),
             },
         };
 

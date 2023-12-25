@@ -10,7 +10,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::types::{ClusterId, Cr, MintId, TeeAppId, WorkId};
+use wetee_primitives::types::{ClusterId, Cr, MintId, TeeAppId, WorkId, WorkType};
 
 #[cfg(test)]
 mod mock;
@@ -368,6 +368,9 @@ pub mod pallet {
         /// Reason too long
         /// 理由太长
         ReasonTooLong,
+        /// Work type not exists
+        /// 工作类型不存在
+        WorkTypeNotExists,
     }
 
     #[derive(frame_support::DefaultNoBound)]
@@ -404,21 +407,27 @@ pub mod pallet {
             level: u8,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
+            // check ip
             // 检查ip
             ensure!(ip.len() > 0, Error::<T>::ClusterRegisterMissIp);
             ensure!(port > 0, Error::<T>::ClusterRegisterMissIp);
 
+            // check cluster
             // 检查集群是否存在
             ensure!(
                 K8sClusterAccounts::<T>::contains_key(creator.clone()) == false,
                 Error::<T>::ClusterIsExists
             );
 
+            // check level
+            // 检查等级是否存在
             let _ = DepositPrices::<T>::get(level).ok_or(Error::<T>::LevelNotExists)?;
 
-            // 插入app
+            // get new id
+            // 获取最新的id
             let cid = NextClusterId::<T>::get();
 
+            // cluster
             // 集群
             let cluster = K8sCluster {
                 id: cid.clone(),
@@ -432,22 +441,25 @@ pub mod pallet {
                 status: 1,
             };
 
+            // save cluster user info
             // 保存集群用户信息
             K8sClusterAccounts::<T>::insert(creator.clone(), cid.clone());
+            // save cluster info
             // 保存集群信息
             K8sClusters::<T>::insert(cid.clone(), cluster);
+            // initialize resource
             // 初始化资源
             Crs::<T>::insert(
                 cid.clone(),
                 (
                     Cr {
                         cpu: 0,
-                        memory: 0,
+                        mem: 0,
                         disk: 0,
                     },
                     Cr {
                         cpu: 0,
-                        memory: 0,
+                        mem: 0,
                         disk: 0,
                     },
                 ),
@@ -476,6 +488,7 @@ pub mod pallet {
             let creator = ensure_signed(origin)?;
             let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
+            // check user
             // 检查是否是集群的主人
             ensure!(
                 cluster.account == creator.clone(),
@@ -485,15 +498,18 @@ pub mod pallet {
             let score = Scores::<T>::get(id).ok_or(Error::<T>::LevelNotExists)?;
             let price = Self::get_level_price(score.0, cpu, mem, disk)?;
 
+            // check deposit
             // 检查抵押金额是否足够
             ensure!(deposit >= price, Error::<T>::InsufficientDeposit);
 
+            // check duplicate
             // 检查是否已经抵押
             ensure!(
                 Deposits::<T>::get(id, <frame_system::Pallet<T>>::block_number()).is_none(),
                 Error::<T>::DuplicateDeposit
             );
 
+            // add deposit
             // 添加抵押历史
             Deposits::<T>::insert(
                 id,
@@ -506,6 +522,7 @@ pub mod pallet {
                 },
             );
 
+            // add cpu mem disk
             // 更新抵押数据
             Crs::<T>::try_mutate_exists(id, |c| -> result::Result<(), DispatchError> {
                 let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
@@ -514,7 +531,7 @@ pub mod pallet {
                 // 更新抵押参数
                 crs.0 = Cr {
                     cpu: ccr.cpu + cpu,
-                    memory: ccr.memory + mem,
+                    mem: ccr.mem + mem,
                     disk: ccr.disk + disk,
                 };
 
@@ -522,6 +539,7 @@ pub mod pallet {
                 Ok(())
             })?;
 
+            // reserve assets
             // 质押保证金
             wetee_assets::Pallet::<T>::reserve(0, creator, deposit)?;
 
@@ -542,15 +560,18 @@ pub mod pallet {
 
             let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
+            // check user
             // 检查是否是集群的主人
             ensure!(
                 cluster.account == creator.clone(),
                 Error::<T>::ClusterIsExists
             );
 
+            // add deposit
             // 添加抵押历史
             Deposits::<T>::remove(id, block_num);
 
+            // add cpu mem disk
             // 更新抵押数据
             Crs::<T>::try_mutate_exists(id, |c| -> result::Result<(), DispatchError> {
                 let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
@@ -559,13 +580,14 @@ pub mod pallet {
                 // 更新抵押参数
                 crs.0 = Cr {
                     cpu: ccr.cpu - d.cpu,
-                    memory: ccr.memory - d.mem,
+                    mem: ccr.mem - d.mem,
                     disk: ccr.disk - d.disk,
                 };
                 *c = Some(crs);
                 Ok(())
             })?;
 
+            // release assets
             // 释放质押保证金
             wetee_assets::Pallet::<T>::unreserve(0, creator, d.deposit)?;
 
@@ -584,6 +606,7 @@ pub mod pallet {
             let creator = ensure_signed(origin)?;
             let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
+            // check user
             // 检查是否是集群的主人
             ensure!(
                 cluster.account == creator.clone(),
@@ -592,9 +615,11 @@ pub mod pallet {
 
             let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
+            // check status
             // 检查集群是否已经开始
             ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
 
+            // save proof
             // 保存工作证明
             ProofOfClusters::<T>::insert(cluster.id.clone(), proof);
 
@@ -620,22 +645,26 @@ pub mod pallet {
 
             let number = <frame_system::Pallet<T>>::block_number();
 
+            // check status
             // 保存工作证明
             ProofsOfWork::<T>::insert(work_id.clone(), number, proof);
 
+            // pay fee
             // 支付费用
-            match work_id.t {
+            match work_id.wtype {
+                // Pay fees in stages
                 // 分阶段支付费用
-                1 => {
+                WorkType::APP => {
                     let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
                         .ok_or(Error::<T>::WorkNotExists)?;
 
-                    let unit: u32 = 3;
+                    let stage: u32 = 3;
                     let fee = wetee_app::Pallet::<T>::get_fee(work_id.id.clone())?;
                     // 检查是否是重复提交状态
-                    if number - state.block_number < unit.into() {
+                    if number - state.block_number < stage.into() {
                         return Err(Error::<T>::WorkBlockNumberError.into());
-                    } else if number - state.block_number > (unit * 2).into() {
+                    } else if number - state.block_number > (stage * 2).into() {
+                        // More than 2 cycles, only pay once, TODO, reduce service points
                         // 超过2个周期，只支付一次费用，TODO，减少服务积分
                         WorkContractState::<T>::insert(
                             work_id.clone(),
@@ -662,6 +691,8 @@ pub mod pallet {
                     wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
 
                     let app = wetee_app::Pallet::<T>::get_app(work_id.id)?;
+
+                    // check app status
                     // 如果app状态为已停止，则删除工作合约
                     if app.status == 2 {
                         WorkContracts::<T>::remove(work_id.clone());
@@ -675,7 +706,7 @@ pub mod pallet {
                                 // 更新抵押参数
                                 crs.1 = Cr {
                                     cpu: ccr.cpu - app.cr.cpu,
-                                    memory: ccr.memory - app.cr.memory,
+                                    mem: ccr.mem - app.cr.mem,
                                     disk: ccr.disk - app.cr.disk,
                                 };
                                 *c = Some(crs);
@@ -684,12 +715,11 @@ pub mod pallet {
                         )?;
                     }
                 }
-                2 => {
+                WorkType::TASK => {
                     let fee = wetee_task::Pallet::<T>::get_fee(work_id.id.clone())?;
                     let to = Self::get_mint_account(work_id.clone(), cluster_id);
                     wetee_task::Pallet::<T>::pay_run_fee(work_id, fee, to)?;
                 }
-                _ => return Err(Error::<T>::WorkNotExists.into()),
             }
 
             Ok(().into())
@@ -726,6 +756,8 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn cluster_stop(origin: OriginFor<T>, id: ClusterId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+
+            // get user cluster
             // 获取当前账户的集群
             let cluster_id =
                 K8sClusterAccounts::<T>::get(who.clone()).ok_or(Error::<T>::ClusterNotExists)?;
@@ -734,14 +766,18 @@ pub mod pallet {
             let mut cluster =
                 K8sClusters::<T>::get(cluster_id).ok_or(Error::<T>::ClusterNotExists)?;
 
+            // Check if the cluster has started
             // 检查集群是否已经开始
             ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
 
+            // Check if all tasks have been processed
             // 检查是否已经处理完所有的任务
             let cr = Crs::<T>::get(cluster_id).unwrap();
             ensure!(cr.1.cpu == 0, Error::<T>::ClusterCanNotStopped);
 
             let mut iter = Deposits::<T>::iter_prefix(cluster_id);
+
+            // Release all mortgages
             // 解除所有的抵押
             while let Some(value) = iter.next() {
                 Deposits::<T>::remove(cluster_id, value.0);
@@ -753,23 +789,25 @@ pub mod pallet {
                 .unwrap();
             }
 
+            // Reset mortgage data
             // 重置抵押数据
             Crs::<T>::insert(
                 cluster_id,
                 (
                     Cr {
                         cpu: 0,
-                        memory: 0,
+                        mem: 0,
                         disk: 0,
                     },
                     Cr {
                         cpu: 0,
-                        memory: 0,
+                        mem: 0,
                         disk: 0,
                     },
                 ),
             );
 
+            // Stop the cluster
             // 保存集群信息
             cluster.status = 3;
             K8sClusters::<T>::insert(cluster_id, cluster);
@@ -797,8 +835,8 @@ pub mod pallet {
                 return Err(Error::<T>::ClusterNotExists.into());
             }
 
-            match work_id.t {
-                1 => {
+            match work_id.wtype {
+                WorkType::APP => {
                     let app_account = wetee_app::AppIdAccounts::<T>::get(work_id.id)
                         .ok_or(Error::<T>::AppNotExists)?;
                     ensure!(app_account == who, Error::<T>::NotAllowed403);
@@ -808,7 +846,7 @@ pub mod pallet {
                         return Err(Error::<T>::AppNotExists.into());
                     }
                 }
-                2 => {
+                WorkType::TASK => {
                     let app_account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
                         .ok_or(Error::<T>::AppNotExists)?;
                     ensure!(app_account == who, Error::<T>::NotAllowed403);
@@ -818,7 +856,6 @@ pub mod pallet {
                         return Err(Error::<T>::AppNotExists.into());
                     }
                 }
-                _ => return Err(Error::<T>::WorkNotExists.into()),
             }
 
             Reports::<T>::insert(cluster_id, work_id, reason);
@@ -842,8 +879,8 @@ pub mod pallet {
                 return Err(Error::<T>::ClusterNotExists.into());
             }
 
-            match work_id.t {
-                1 => {
+            match work_id.wtype {
+                WorkType::APP => {
                     let app_account = wetee_app::AppIdAccounts::<T>::get(work_id.id)
                         .ok_or(Error::<T>::AppNotExists)?;
                     ensure!(app_account == who, Error::<T>::NotAllowed403);
@@ -853,7 +890,7 @@ pub mod pallet {
                         return Err(Error::<T>::AppNotExists.into());
                     }
                 }
-                2 => {
+                WorkType::TASK => {
                     let app_account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
                         .ok_or(Error::<T>::AppNotExists)?;
                     ensure!(app_account == who, Error::<T>::NotAllowed403);
@@ -863,7 +900,6 @@ pub mod pallet {
                         return Err(Error::<T>::AppNotExists.into());
                     }
                 }
-                _ => return Err(Error::<T>::WorkNotExists.into()),
             }
 
             Reports::<T>::remove(cluster_id, work_id);
@@ -880,6 +916,8 @@ pub mod pallet {
         ) -> result::Result<bool, DispatchError> {
             let account =
                 wetee_app::AppIdAccounts::<T>::get(work_id.id).ok_or(Error::<T>::AppNotExists)?;
+
+            // get app info
             // 获取app信息
             let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
                 .ok_or(Error::<T>::AppNotExists)?;
@@ -887,12 +925,14 @@ pub mod pallet {
             let id =
                 Self::get_random_cluster(work_id.clone(), app_cr.clone(), app.level, match_id)?;
 
+            // If the id is 0, it means there is no matching node and it will be put into the next block calculation
             // id 为 0 表示没有匹配的节点，放入下一个区块计算
             if id == 0 {
                 return Ok(false);
             }
 
             if app.status == 0 {
+                // update app cr
                 // 更新抵押数据
                 Crs::<T>::try_mutate_exists(id, |c| -> result::Result<(), DispatchError> {
                     let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
@@ -901,7 +941,7 @@ pub mod pallet {
                     // 更新抵押参数
                     crs.1 = Cr {
                         cpu: ccr.cpu + app_cr.cpu,
-                        memory: ccr.memory + app_cr.memory,
+                        mem: ccr.mem + app_cr.mem,
                         disk: ccr.disk + app_cr.disk,
                     };
                     *c = Some(crs);
@@ -971,7 +1011,7 @@ pub mod pallet {
                     // 更新抵押参数
                     crs.1 = Cr {
                         cpu: ccr.cpu + task_cr.cpu,
-                        memory: ccr.memory + task_cr.memory,
+                        mem: ccr.mem + task_cr.mem,
                         disk: ccr.disk + task_cr.disk,
                     };
                     *c = Some(crs);
@@ -1030,7 +1070,7 @@ pub mod pallet {
                     // 过滤掉已经没有计算资源的集群
                     if level == score.0
                         && cr.0.cpu - cr.1.cpu > app_cr.cpu
-                        && cr.0.memory - cr.1.memory > app_cr.memory
+                        && cr.0.mem - cr.1.mem > app_cr.mem
                         && cr.0.disk - cr.1.disk > app_cr.disk
                     {
                         randoms.push(v);
@@ -1082,7 +1122,7 @@ pub mod pallet {
         pub fn get_mint_account(work_id: WorkId, cid: ClusterId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(MintId {
                 id: work_id.id,
-                t: work_id.t,
+                wtype: work_id.wtype,
                 cid,
             })
         }

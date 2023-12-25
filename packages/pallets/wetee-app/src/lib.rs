@@ -10,7 +10,7 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{AppSetting, AppSettingInput, Cr, TeeAppId, WorkId},
+    types::{AppSetting, AppSettingInput, Cr, EditType, TeeAppId, WorkId, WorkType},
 };
 
 use orml_traits::MultiCurrency;
@@ -167,18 +167,23 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// App created.
+        /// App创建
         CreatedApp { creator: T::AccountId, id: u64 },
         /// App runing.
+        /// App运行
         AppRuning { creator: T::AccountId, id: u64 },
         /// App stop.
+        /// App停止
         AppStop { creator: T::AccountId, id: u64 },
         /// App charge.
+        /// App充值
         Charge {
             from: T::AccountId,
             to: T::AccountId,
             amount: BalanceOf<T>,
         },
         /// App pay run fee.
+        /// App支付运行费
         PayRunFee {
             from: T::AccountId,
             to: T::AccountId,
@@ -190,16 +195,22 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         /// App status mismatch.
+        /// 状态不匹配
         AppStatusMismatch,
-        /// Root not exists.
+        /// App not exists.
+        /// App不存在
         AppNotExist,
         /// Too many app.
+        /// App 数量过多
         TooManyApp,
         /// App 403.
+        /// App 403
         App403,
         /// Not enough balance.
+        /// 余额不足
         NotEnoughBalance,
         /// Level not exists.
+        /// 等级不存在
         LevelNotExist,
     }
 
@@ -237,7 +248,11 @@ pub mod pallet {
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 status: 0,
-                cr: Cr { cpu, memory, disk },
+                cr: Cr {
+                    cpu,
+                    mem: memory,
+                    disk,
+                },
                 deposit,
                 level,
             };
@@ -246,6 +261,7 @@ pub mod pallet {
             <TEEApps<T>>::insert(who.clone(), id, app);
             <AppIdAccounts<T>>::insert(id, who.clone());
 
+            // check deposit
             // 检查抵押金额是否足够
             let p = <Prices<T>>::get(level).ok_or(Error::<T>::LevelNotExist)?;
             let fee_unit =
@@ -253,6 +269,7 @@ pub mod pallet {
 
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
+            // transfer deposit to target account
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
@@ -265,8 +282,15 @@ pub mod pallet {
                 creator: who.clone(),
             });
 
+            // run after create hook
             // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(WorkId { t: 1, id }, who);
+            <T as pallet::Config>::AfterCreate::run_hook(
+                WorkId {
+                    wtype: WorkType::APP,
+                    id,
+                },
+                who,
+            );
 
             Ok(().into())
         }
@@ -322,15 +346,15 @@ pub mod pallet {
             let mut iter = AppSettings::<T>::iter_prefix(app_id);
             let mut id = 0;
 
-            // 解除所有的抵押
+            // 遍历设置
             while let Some(setting) = iter.next() {
                 id = setting.0;
                 // 处理更新和删除设置
                 value.iter().for_each(|v| {
-                    if (v.t == 2 || v.t == 3) && v.index == setting.0 {
-                        match v.t {
-                            // 更新设置
-                            2 => {
+                    match v.etype {
+                        // 更新设置
+                        EditType::UPDATE(index) => {
+                            if index == setting.0 {
                                 <AppSettings<T>>::insert(
                                     app_id,
                                     setting.0,
@@ -340,19 +364,22 @@ pub mod pallet {
                                     },
                                 );
                             }
-                            // 删除设置
-                            3 => {
+                        }
+                        // 删除设置
+                        EditType::REMOVE(index) => {
+                            if index == setting.0 {
                                 <AppSettings<T>>::remove(app_id, setting.0);
                             }
-                            _ => {}
-                        };
-                    }
+                        }
+                        _ => {}
+                    };
                 });
             }
 
-            // 新增设置
+            // add all deposit
+            // 处理新增设置
             value.iter().for_each(|v| {
-                if v.t == 1 {
+                if v.etype == EditType::INSERT {
                     id = id + 1;
                     <AppSettings<T>>::insert(
                         app_id,
@@ -380,6 +407,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             let _account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExist)?;
 
+            // transfer deposit to target account
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 wetee_assets::NATIVE_ASSET_ID,
@@ -412,7 +440,10 @@ pub mod pallet {
         /// Get app id account
         /// 获取 App 合约账户
         pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
-            T::PalletId::get().into_sub_account_truncating(WorkId { id: app_id, t: 1 })
+            T::PalletId::get().into_sub_account_truncating(WorkId {
+                id: app_id,
+                wtype: WorkType::APP,
+            })
         }
 
         /// Get app id from account
@@ -445,6 +476,7 @@ pub mod pallet {
                 id: app_id,
             });
 
+            // transfer deposit to target account
             // 将抵押转移到目标账户
             if wetee_assets::Pallet::<T>::free_balance(
                 wetee_assets::NATIVE_ASSET_ID,
@@ -476,6 +508,7 @@ pub mod pallet {
             {
                 let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExist)?;
 
+                // 余额不足，停止任务
                 // 余额不足支持下一个周期的费用，停止任务
                 Self::try_stop(app_account, wid.id)?;
 
@@ -485,6 +518,7 @@ pub mod pallet {
                 }
             }
 
+            // transfer fee to target account
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
@@ -508,11 +542,12 @@ pub mod pallet {
             let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExist)?;
             let level = app.level;
 
+            // get price of level
             // 获取费用
             let p = <Prices<T>>::get(level).ok_or(Error::<T>::AppNotExist)?;
 
             return Ok(BalanceOf::<T>::from(
-                p.cpu_per * app.cr.cpu + p.memory_per * app.cr.memory + p.disk_per * app.cr.disk,
+                p.cpu_per * app.cr.cpu + p.memory_per * app.cr.mem + p.disk_per * app.cr.disk,
             ));
         }
 

@@ -10,7 +10,7 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{AppSetting, AppSettingInput, Cr, TeeAppId, WorkId},
+    types::{AppSetting, AppSettingInput, Cr, EditType, TeeAppId, WorkId},
 };
 
 use orml_traits::MultiCurrency;
@@ -78,6 +78,7 @@ pub struct Price {
 #[frame_support::pallet]
 pub mod pallet {
     use sp_runtime::SaturatedConversion;
+    use wetee_primitives::types::WorkType;
 
     use super::*;
 
@@ -233,7 +234,11 @@ pub mod pallet {
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 status: 0,
-                cr: Cr { cpu, memory, disk },
+                cr: Cr {
+                    cpu,
+                    mem: memory,
+                    disk,
+                },
                 deposit,
                 level,
             };
@@ -242,10 +247,12 @@ pub mod pallet {
             <TEETasks<T>>::insert(who.clone(), id, app);
             <TaskIdAccounts<T>>::insert(id, who.clone());
 
+            // Check deposit
             // 检查抵押金额是否足够
             let fee_unit = Self::get_fee(id)?;
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
+            // Transfer deposit
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
@@ -258,8 +265,15 @@ pub mod pallet {
                 creator: who.clone(),
             });
 
+            // Run AfterCreate hook
             // 执行 Task 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(WorkId { t: 2, id }, who);
+            <T as pallet::Config>::AfterCreate::run_hook(
+                WorkId {
+                    wtype: WorkType::TASK,
+                    id,
+                },
+                who,
+            );
 
             Ok(().into())
         }
@@ -276,6 +290,7 @@ pub mod pallet {
                 &Self::task_id_account(id),
             );
 
+            // Check deposit
             // 检查抵押金额是否足够
             let fee_unit = Self::get_fee(id)?;
             ensure!(fee_unit >= deposit, Error::<T>::NotEnoughBalance);
@@ -288,8 +303,15 @@ pub mod pallet {
                     if app.status == 2 {
                         app.status = 0;
 
+                        // Run AfterCreate hook
                         // 执行 Task 创建后回调,部署任务添加到消息中间件
-                        <T as pallet::Config>::AfterCreate::run_hook(WorkId { t: 2, id }, who);
+                        <T as pallet::Config>::AfterCreate::run_hook(
+                            WorkId {
+                                wtype: WorkType::TASK,
+                                id,
+                            },
+                            who,
+                        );
                     } else {
                         return Err(Error::<T>::TaskStatusMismatch.into());
                     }
@@ -351,15 +373,17 @@ pub mod pallet {
             let mut iter = AppSettings::<T>::iter_prefix(app_id);
             let mut id = 0;
 
-            // 解除所有的抵押
+            // 遍历设置
             while let Some(setting) = iter.next() {
                 id = setting.0;
+
                 // 处理更新和删除设置
                 value.iter().for_each(|v| {
-                    if (v.t == 2 || v.t == 3) && v.index == setting.0 {
-                        match v.t {
-                            // 更新设置
-                            2 => {
+                    match v.etype {
+                        // update
+                        // 更新设置
+                        EditType::UPDATE(index) => {
+                            if index == setting.0 {
                                 <AppSettings<T>>::insert(
                                     app_id,
                                     setting.0,
@@ -369,19 +393,23 @@ pub mod pallet {
                                     },
                                 );
                             }
-                            // 删除设置
-                            3 => {
+                        }
+                        // remove
+                        // 删除设置
+                        EditType::REMOVE(index) => {
+                            if index == setting.0 {
                                 <AppSettings<T>>::remove(app_id, setting.0);
                             }
-                            _ => {}
-                        };
-                    }
+                        }
+                        _ => {}
+                    };
                 });
             }
 
+            // inster
             // 新增设置
             value.iter().for_each(|v| {
-                if v.t == 1 {
+                if v.etype == EditType::INSERT {
                     id = id + 1;
                     <AppSettings<T>>::insert(
                         app_id,
@@ -408,6 +436,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
+            // Transfer fee to task account
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 wetee_assets::NATIVE_ASSET_ID,
@@ -447,7 +476,10 @@ pub mod pallet {
         /// Get app id account
         /// 获取 Task 合约账户
         pub fn task_id_account(app_id: TeeAppId) -> T::AccountId {
-            T::PalletId::get().into_sub_account_truncating(WorkId { id: app_id, t: 2 })
+            T::PalletId::get().into_sub_account_truncating(WorkId {
+                id: app_id,
+                wtype: WorkType::TASK,
+            })
         }
 
         /// Get app id from account
@@ -538,7 +570,7 @@ pub mod pallet {
 
             return Ok(BalanceOf::<T>::from(
                 (p.cpu_per_block * app.cr.cpu
-                    + p.memory_per_block * app.cr.memory
+                    + p.memory_per_block * app.cr.mem
                     + p.disk_per_block * app.cr.disk) as u32
                     * cos,
             ));

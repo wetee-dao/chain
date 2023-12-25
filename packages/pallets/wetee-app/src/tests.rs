@@ -148,14 +148,12 @@ pub fn set_settings() {
             0,
             vec![
                 AppSettingInput {
-                    t: 1,
-                    index: 0,
+                    etype: EditType::INSERT,
                     k: "test".as_bytes().to_vec(),
                     v: "test".as_bytes().to_vec(),
                 },
                 AppSettingInput {
-                    t: 1,
-                    index: 1,
+                    etype: EditType::INSERT,
                     k: "test".as_bytes().to_vec(),
                     v: "test".as_bytes().to_vec(),
                 }
@@ -173,14 +171,12 @@ pub fn set_settings_should_fail() {
             0,
             vec![
                 AppSettingInput {
-                    t: 1,
-                    index: 0,
+                    etype: EditType::INSERT,
                     k: "test".as_bytes().to_vec(),
                     v: "test".as_bytes().to_vec(),
                 },
                 AppSettingInput {
-                    t: 1,
-                    index: 1,
+                    etype: EditType::INSERT,
                     k: "test".as_bytes().to_vec(),
                     v: "test".as_bytes().to_vec(),
                 }

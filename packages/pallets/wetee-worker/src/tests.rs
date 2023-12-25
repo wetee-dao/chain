@@ -65,7 +65,10 @@ pub fn mortgage() {
 }
 
 pub fn start() {
-    let work_id = WorkId { t: 1, id: 0 };
+    let work_id = WorkId {
+        wtype: WorkType::APP,
+        id: 0,
+    };
     frame_system::Pallet::<Test>::set_block_number(631);
     Pallet::<Test>::work_proof_upload(
         OriginFor::<Test>::signed(ALICE),
@@ -74,7 +77,7 @@ pub fn start() {
             log_hash: "test".as_bytes().to_vec(),
             cr: Cr {
                 cpu: 1,
-                memory: 1,
+                mem: 1,
                 disk: 1,
             },
             cr_hash: "test".as_bytes().to_vec(),
@@ -353,7 +356,10 @@ pub fn work_proof_upload() {
         create_cluster();
         create_work();
         mortgage();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         frame_system::Pallet::<Test>::set_block_number(631);
         let res = Pallet::<Test>::work_proof_upload(
@@ -363,7 +369,7 @@ pub fn work_proof_upload() {
                 log_hash: "test".as_bytes().to_vec(),
                 cr: Cr {
                     cpu: 1,
-                    memory: 1,
+                    mem: 1,
                     disk: 1,
                 },
                 cr_hash: "test".as_bytes().to_vec(),
@@ -382,7 +388,10 @@ pub fn work_proof_upload_should_fail() {
         create_cluster();
         create_work();
         mortgage();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         // Pallet::<Test>::match_app_deploy(ALICE.clone(), work_id.clone(), None).unwrap();
         frame_system::Pallet::<Test>::set_block_number(631);
         let res = Pallet::<Test>::work_proof_upload(
@@ -392,7 +401,7 @@ pub fn work_proof_upload_should_fail() {
                 log_hash: "test".as_bytes().to_vec(),
                 cr: Cr {
                     cpu: 1,
-                    memory: 1,
+                    mem: 1,
                     disk: 1,
                 },
                 cr_hash: "test".as_bytes().to_vec(),
@@ -411,7 +420,10 @@ pub fn work_proof_upload_should_fail2() {
         create_cluster();
         create_work();
         mortgage();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         // frame_system::Pallet::<Test>::set_block_number(631);
         let res = Pallet::<Test>::work_proof_upload(
@@ -421,7 +433,7 @@ pub fn work_proof_upload_should_fail2() {
                 log_hash: "test".as_bytes().to_vec(),
                 cr: Cr {
                     cpu: 1,
-                    memory: 1,
+                    mem: 1,
                     disk: 1,
                 },
                 cr_hash: "test".as_bytes().to_vec(),
@@ -439,10 +451,16 @@ pub fn cluster_withdrawal() {
         create_cluster();
         create_work();
         mortgage();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         start();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         let res = Pallet::<Test>::cluster_withdrawal(OriginFor::<Test>::signed(ALICE), work_id, 10);
         assert!(res.is_ok());
     });
@@ -455,10 +473,16 @@ pub fn cluster_report() {
         create_cluster();
         create_work();
         mortgage();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         start();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         Pallet::<Test>::cluster_report(
             OriginFor::<Test>::signed(ALICE),
             1,
@@ -476,7 +500,10 @@ pub fn cluster_report_should_fail() {
         create_cluster();
         create_work();
         mortgage();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         start();
         let mut vec: Vec<u8> = Vec::with_capacity(256);
@@ -493,11 +520,17 @@ pub fn cluster_report_close() {
         create_cluster();
         create_work();
         mortgage();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         start();
 
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         let res = Pallet::<Test>::cluster_report(
             OriginFor::<Test>::signed(ALICE),
             1,
@@ -518,11 +551,17 @@ pub fn cluster_report_close_should_fail() {
         create_cluster();
         create_work();
         mortgage();
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         start();
 
-        let work_id = WorkId { t: 1, id: 0 };
+        let work_id = WorkId {
+            wtype: WorkType::APP,
+            id: 0,
+        };
         let res = Pallet::<Test>::cluster_report(
             OriginFor::<Test>::signed(ALICE),
             1,

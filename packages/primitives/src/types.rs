@@ -41,25 +41,28 @@ pub type TeeAppId = u64;
 /// 应用ID
 pub type ClusterId = u64;
 
-/// WorkId (type 1 =》app / 2=》 task )
-/// 任务ID (类型 1 =》app / 2=》 task )
-/// (类型,任务id) (type,id)
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum WorkType {
+    #[default]
+    /// APP
+    APP,
+    /// TASK
+    TASK,
+}
+
+/// WorkId
+/// 工作ID
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct WorkId {
-    // 1 =》app
-    // 2=》 task
-    pub t: u8,
+    pub wtype: WorkType,
     pub id: TeeAppId,
 }
 
-/// WorkId (type 1 =》app / 2=》 task )
-/// 任务ID (类型 1 =》app / 2=》 task )
-/// (类型,任务id) (type,id)
+/// MintId
+/// 挖矿ID
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct MintId {
-    // 1 =》app
-    // 2=》 task
-    pub t: u8,
+    pub wtype: WorkType,
     pub cid: ClusterId,
     pub id: TeeAppId,
 }
@@ -69,8 +72,19 @@ pub struct MintId {
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Cr {
     pub cpu: u16,
-    pub memory: u16,
+    pub mem: u16,
     pub disk: u16,
+}
+
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum EditType {
+    #[default]
+    /// INSERT
+    INSERT,
+    /// UPDATE
+    UPDATE(u16),
+    /// REMOVE
+    REMOVE(u16),
 }
 
 /// App setting
@@ -87,10 +101,8 @@ pub struct AppSetting {
 /// 应用设置
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct AppSettingInput {
-    /// 1: insert, 1: update, 3: remove
-    pub t: u8,
-    /// index of the setting
-    pub index: u16,
+    /// edit type
+    pub etype: EditType,
     /// key
     pub k: Vec<u8>,
     /// value
