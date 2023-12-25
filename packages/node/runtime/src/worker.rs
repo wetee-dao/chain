@@ -19,12 +19,14 @@ use crate::{AccountId, MessageQueue, WeteeWorker};
 use pallet_message_queue::OnQueueChanged;
 
 /// Mocked message origin for testing.
+/// 消息来源
 #[derive(Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen, TypeInfo, Debug)]
 pub enum MessageOrigin {
     /// 用户发起的任务
     Work,
 }
 
+/// 任务队列变化处理器
 pub struct WorkerQueueHook;
 impl AfterCreate<WorkId, AccountId> for WorkerQueueHook {
     fn run_hook(id: WorkId, _: AccountId) {
@@ -36,8 +38,8 @@ impl AfterCreate<WorkId, AccountId> for WorkerQueueHook {
 /// 消息队列变化处理器
 pub struct WorkerQueueChangeHandler;
 impl OnQueueChanged<MessageOrigin> for WorkerQueueChangeHandler {
-    fn on_queue_changed(_id: MessageOrigin, _items_count: u64, _items_size: u64) {
-        log::warn!("on_queue_changed on_queue_changed on_queue_changed on_queue_changed on_queue_changed on_queue_changed");
+    fn on_queue_changed(id: MessageOrigin, _items_count: u64, _items_size: u64) {
+        log::info!("on_queue_changed ===> {:?}", id);
         // QueueChanges::mutate(|cs| cs.push((id, items_count, items_size)));
     }
 }
@@ -76,8 +78,8 @@ impl ProcessMessage for WorkerMessageProcessor {
 /// 暂停的任务
 pub struct WorkerQueuePauser;
 impl QueuePausedQuery<MessageOrigin> for WorkerQueuePauser {
+    /// Check if a queue is paused.
     fn is_paused(_id: &MessageOrigin) -> bool {
-        // PausedQueues::get().contains(id)
         return false;
     }
 }

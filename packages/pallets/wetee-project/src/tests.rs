@@ -50,7 +50,6 @@ pub fn create_asset() -> DaoAssetId {
         Box::new(proposal)
     ));
 
-    println!("创建项目");
     let proposal2 = RuntimeCall::WETEEProject(wetee_project::Call::create_project {
         dao_id,
         name: "TestP".as_bytes().to_vec(),

@@ -105,13 +105,16 @@ pub struct ProofOfWork {
 /// 合约日志
 /// Log of contract
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct ContractState<BlockNumber> {
+pub struct ContractState<BlockNumber, Balance> {
     /// block_number
     /// 区块号
     pub block_number: BlockNumber,
     /// state
     /// 状态
-    pub minted: u16,
+    pub minted: Balance,
+    /// withdrawal
+    /// 取回
+    pub withdrawal: Balance,
 }
 
 /// 抵押
@@ -126,6 +129,8 @@ pub struct DepositPrice {
     pub disk_per: u16,
 }
 
+/// Ip 信息
+/// Ip
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Ip {
     pub ipv4: Option<u32>,
@@ -243,7 +248,7 @@ pub mod pallet {
         ClusterId,
         Identity,
         WorkId,
-        ContractState<BlockNumberFor<T>>,
+        ContractState<BlockNumberFor<T>, BalanceOf<T>>,
         OptionQuery,
     >;
 
@@ -263,7 +268,7 @@ pub mod pallet {
         WorkId,
         Identity,
         ClusterId,
-        ContractState<BlockNumberFor<T>>,
+        ContractState<BlockNumberFor<T>, BalanceOf<T>>,
         OptionQuery,
     >;
 
@@ -626,16 +631,19 @@ pub mod pallet {
                         .ok_or(Error::<T>::WorkNotExists)?;
 
                     let unit: u32 = 3;
+                    let fee = wetee_app::Pallet::<T>::get_fee(work_id.id.clone())?;
                     // 检查是否是重复提交状态
                     if number - state.block_number < unit.into() {
                         return Err(Error::<T>::WorkBlockNumberError.into());
                     } else if number - state.block_number > (unit * 2).into() {
+                        // 超过2个周期，只支付一次费用，TODO，减少服务积分
                         WorkContractState::<T>::insert(
                             work_id.clone(),
                             cluster_id,
                             ContractState {
                                 block_number: number,
-                                minted: 1,
+                                minted: state.minted + fee,
+                                withdrawal: state.withdrawal,
                             },
                         );
                     } else {
@@ -644,11 +652,12 @@ pub mod pallet {
                             cluster_id,
                             ContractState {
                                 block_number: number,
-                                minted: state.minted + 1,
+                                minted: state.minted + fee,
+                                withdrawal: state.withdrawal,
                             },
                         );
                     }
-                    let fee = wetee_app::Pallet::<T>::get_fee(work_id.id.clone())?;
+
                     let to = Self::get_mint_account(work_id.clone(), cluster_id);
                     wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
 
@@ -909,7 +918,8 @@ pub mod pallet {
                         work_id.clone(),
                         ContractState {
                             block_number: number,
-                            minted: 0,
+                            minted: 0u32.into(),
+                            withdrawal: 0u32.into(),
                         },
                     );
                 }
@@ -920,7 +930,8 @@ pub mod pallet {
                         id,
                         ContractState {
                             block_number: number,
-                            minted: 0,
+                            minted: 0u32.into(),
+                            withdrawal: 0u32.into(),
                         },
                     );
                 }
@@ -932,6 +943,8 @@ pub mod pallet {
             Ok(true)
         }
 
+        /// Worker task deploy
+        /// 部署任务
         pub fn match_task_deploy(
             work_id: WorkId,
             match_id: Option<TeeAppId>,
@@ -994,8 +1007,9 @@ pub mod pallet {
             // 随机选择集群
             let mut randoms = Vec::new();
             let mut scores = Vec::new();
-            // println!("+++++++++++++++++++++++++++ {:?}", app_cr);
-            for i in 1..2 {
+            #[cfg(test)]
+            println!("+++++++++++++++++++++++++++ {:?}", app_cr);
+            for i in 1..100 {
                 // 获取随机数
                 let random_number = Self::get_random_number(work_id.id + i);
 
@@ -1008,10 +1022,11 @@ pub mod pallet {
                 if !randoms.contains(&v) {
                     let score = Scores::<T>::get(v).ok_or(Error::<T>::ClusterNotExists)?;
                     let cr = Crs::<T>::get(v).ok_or(Error::<T>::ClusterNotExists)?;
-                    // println!(
-                    //     "-------------------------------num {:?} v: {:?} score: {:?} cr: {:?}",
-                    //     num, v, score, cr
-                    // );
+                    #[cfg(test)]
+                    println!(
+                        "--------------------------- num {:?} v: {:?} score: {:?} cr: {:?}",
+                        num, v, score, cr
+                    );
                     // 过滤掉已经没有计算资源的集群
                     if level == score.0
                         && cr.0.cpu - cr.1.cpu > app_cr.cpu
@@ -1024,10 +1039,11 @@ pub mod pallet {
                 }
             }
 
-            // println!(
-            //     "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ num: {:?} randoms: {:?}",
-            //     num,randoms
-            // );
+            #[cfg(test)]
+            println!(
+                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ num: {:?} randoms: {:?}",
+                num,randoms
+            );
 
             // 确认候选集群不为空
             if randoms.is_empty() {
