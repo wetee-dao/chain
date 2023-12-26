@@ -63,3 +63,5 @@ tmp
 **/keystore/**
 **/network/**
 **/node_modules/**
+/tools
+/native-nostd-hasher
