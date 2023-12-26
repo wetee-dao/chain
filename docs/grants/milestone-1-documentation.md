@@ -46,7 +46,7 @@
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeWorker` --> `unlockMortgage` callable
+- Select `weteeWorker` --> `clusterUnmortgage` callable
 
 <img src="./img/m1/m1-4.png" width="700" style="padding-left: 30px;">
 
@@ -116,7 +116,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeWorker` --> `workProofWithdraw` callable
+- Select `weteeWorker` --> `clusterWithdrawal` callable
 
 <img src="./img/m1/m1-10.png" width="700" style="padding-left: 30px;">
 
@@ -142,7 +142,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> `workProofWithdraw` callable
+- Select `weteeApp` --> `create` callable
 
 - Fill in the form
 
@@ -170,7 +170,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> set `settings`
+- Select `weteeApp` --> `setSettings`
 
 - Fill in the form
 
@@ -214,7 +214,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> `workProofWithdraw` callable
+- Select `weteeApp` --> `create` callable
 
 - Fill in the form
 
@@ -242,7 +242,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> set `settings`
+- Select `weteeApp` --> `setSettings`
 
 - Fill in the form
 
