@@ -12,7 +12,7 @@ A few useful ones are as follow:
 docker build -f ./pos_build.Dockerfile -t wetee/wetee-node:dev .
 
 # Run node without re-compiling
-docker run wetee/wetee-node:dev wetee-node --dev --ws-external
+docker run wetee/wetee-node:dev wetee-node --dev
 
 # Purge the local dev chain
 docker run wetee/wetee-node:dev wetee-node purge-chain --dev
