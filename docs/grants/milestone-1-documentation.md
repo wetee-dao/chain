@@ -1,8 +1,8 @@
 # Milestone 1 Documentation
 
-## 1. Use worker module
+## 1. Use Worker Module
 
-### 1.1. Register a cluster
+### 1.1. Cluster Registration
 
 - Open Polkadot JS UI
 
@@ -20,7 +20,7 @@
 
 - Submit `Transaction` --> `Cluster` successfully registered
 
-### 1.2. Mortgage to start service
+### 1.2. Start Service with a Mortgage
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -32,8 +32,7 @@
 
     To facilitate the testing of unmortgage operation below, we recommend performing **multiple mortgage operations**.  
 
-
-### 1.3. Unlock unused mortgage
+### 1.3. Unlock Unused Mortgage
 
 **Optional step, if unmortgage is performed here, the subsequent steps need to be carried out, and the mortgage operation mentioned earlier needs to be repeated.**  
 
@@ -53,7 +52,7 @@
 
 - Submit `Transaction`
 
-### 1.4. SGX key
+### 1.4. SGX Key
 
 Cluster uploads the SGX public key, proving that the entire control panel is operating in a secure and trusted environment.  
 
@@ -75,14 +74,13 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
     djfP0wPkD0UjN0GBcjOF7T3ARgQdvohNp1W34pbLeOmJ+Py8Ha4FsVkB4Dyudwz+
     5HOzL1C1i1fIrwADUHvKjuIFdJB70FaYrxlozhn9hl7bAgED
     -----END PUBLIC KEY-----
-
     ```
 
 <img src="./img/m1/m1-5.png" width="700" style="padding-left: 30px;">
 
 - Submit `Transaction`
 
-### 1.5. Submit test TEE program
+### 1.5. Submit TEE Test Program
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -94,7 +92,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Click `Submit Transaction`
 
-### 1.6. Check app status and mint token
+### 1.6. Check App Status and Generate Tokens
 
 - Go to `Developer` --> `Chain State`
 
@@ -114,7 +112,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 <img src="./img/m1/m1-9.png" width="700" style="padding-left: 30px;">
 
-### 1.7. Withdrawal of mint
+### 1.7. Withdraw Minted Tokens
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -124,7 +122,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Submit the request
 
-### 1.8. As User to report a problem
+### 1.8. Report a Problem as a User
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -138,9 +136,9 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The report will be reviewed by the clu and you will receive a response
 
-## 2. Use app module
+## 2. Use APP Module
 
-### 2.1. As User to create a new app
+### 2.1. New APP Creation
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -154,7 +152,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The app will be running
 
-### 2.2. Update the app
+### 2.2. APP Update
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -168,7 +166,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The app will be update
 
-### 2.3. set settings
+### 2.3. APP Settings
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -182,7 +180,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The app will be set settings to app run environment
 
-### 2.4. recharge
+### 2.4. APP Recharge
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -196,7 +194,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The app will be charged
 
-### 2.5. stop
+### 2.5. APP Stop
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -210,9 +208,9 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The app will be stop
 
-## 3. Use task module
+## 3. Use Task Module
 
-### 3.1. As User to create a new task
+### 3.1. New Task Creation
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -226,7 +224,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The task will be running
 
-### 3.2. Update the task
+### 3.2. Task Update
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -240,7 +238,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The task will be update
 
-#### 3. Task set settings
+### 3.3. Task Settings
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -254,7 +252,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The task will be set settings to app run environment
 
-#### 4. Recharge task
+### 3.4. Task Recharge
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -268,7 +266,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The task will be charged
 
-#### 5. Stop task
+### 3.5. Task Stop
 
 - Go to `Developer` --> `Extrinsics` section
 
@@ -282,7 +280,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - The task will be stop
 
-#### 6. Run task again
+### 3.6. Task Rerun
 
 - Go to `Developer` --> `Extrinsics` section
 
