@@ -214,7 +214,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> `create` callable
+- Select `weteeTask` --> `create` callable
 
 - Fill in the form
 
@@ -228,7 +228,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> `update` callable
+- Select `weteeTask` --> `update` callable
 
 - Fill in the form
 
@@ -242,7 +242,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> `setSettings`
+- Select `weteeTask` --> `setSettings`
 
 - Fill in the form
 
@@ -256,7 +256,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> `recharge`
+- Select `weteeTask` --> `recharge`
 
 - Fill in the form
 
@@ -270,7 +270,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> `stop`
+- Select `weteeTask` --> `stop`
 
 - Fill in the form
 
@@ -284,7 +284,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> `rerun`
+- Select `weteeTask` --> `rerun`
 
 - Fill in the form
 
