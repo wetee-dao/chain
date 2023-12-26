@@ -98,7 +98,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Select `weteeWorker` --> `workContractState` for state query input workId
 
-- App ID => `id=0` and work type => `t=1` , press `+` button
+- App ID => `id=0` and type => `wtype=APP` , press `+` button
 
 <img src="./img/m1/m1-7.png" width="700" style="padding-left: 30px;">
 
