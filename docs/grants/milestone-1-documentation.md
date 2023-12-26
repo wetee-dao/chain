@@ -10,7 +10,7 @@
 
 <img src="./img/m1/m1-0.png" width="700" style="padding-left: 30px;">
 
-- Open `Developer` --> `Extrinsics section`
+- Open `Developer` --> `Extrinsics` section
 
 - From the list of available extrinsics select `weteeWorker` --> `clusterRegister` callable
 
