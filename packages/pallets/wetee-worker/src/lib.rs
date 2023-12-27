@@ -473,6 +473,38 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Worker cluster upload proof of work data
+        /// 提交集群的工作证明
+        #[pallet::call_index(004)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn cluster_proof_upload(
+            origin: OriginFor<T>,
+            id: ClusterId,
+            proof: ProofOfCluster,
+        ) -> DispatchResultWithPostInfo {
+            let creator = ensure_signed(origin)?;
+            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
+
+            // check user
+            // 检查是否是集群的主人
+            ensure!(
+                cluster.account == creator.clone(),
+                Error::<T>::ClusterIsExists
+            );
+
+            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
+
+            // check status
+            // 检查集群是否已经开始
+            ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
+
+            // save proof
+            // 保存工作证明
+            ProofOfClusters::<T>::insert(cluster.id.clone(), proof);
+
+            Ok(().into())
+        }
+
         /// Worker cluster mortgage
         /// 质押硬件
         #[pallet::call_index(002)]
@@ -590,38 +622,6 @@ pub mod pallet {
             // release assets
             // 释放质押保证金
             wetee_assets::Pallet::<T>::unreserve(0, creator, d.deposit)?;
-
-            Ok(().into())
-        }
-
-        /// Worker cluster upload proof of work data
-        /// 提交集群的工作证明
-        #[pallet::call_index(004)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_proof_upload(
-            origin: OriginFor<T>,
-            id: ClusterId,
-            proof: ProofOfCluster,
-        ) -> DispatchResultWithPostInfo {
-            let creator = ensure_signed(origin)?;
-            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
-
-            // check user
-            // 检查是否是集群的主人
-            ensure!(
-                cluster.account == creator.clone(),
-                Error::<T>::ClusterIsExists
-            );
-
-            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
-
-            // check status
-            // 检查集群是否已经开始
-            ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
-
-            // save proof
-            // 保存工作证明
-            ProofOfClusters::<T>::insert(cluster.id.clone(), proof);
 
             Ok(().into())
         }
