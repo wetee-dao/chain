@@ -20,39 +20,7 @@
 
 - Submit `Transaction` --> `Cluster` successfully registered
 
-### 1.2. Start Service with a Mortgage
-
-- Go to `Developer` --> `Extrinsics` section
-
-- Select `weteeWorker` --> `clusterMortgage` callable
-
-<img src="./img/m1/m1-2.png" width="700" style="padding-left: 30px;">
-
-- Submit `Transaction` --> `Cluster` successfully started
-
-    To facilitate the testing of unmortgage operation below, we recommend performing **multiple mortgage operations**.  
-
-### 1.3. Unlock Unused Mortgage
-
-**Optional step, if unmortgage is performed here, the subsequent steps need to be carried out, and the mortgage operation mentioned earlier needs to be repeated.**  
-
-- Go to `Developer` --> `Chain State`
-
-- Select `weteeWorker` --> `deposits` for state query and press `+` button
-
-<img src="./img/m1/m1-3.png" width="700" style="padding-left: 30px;">
-
-- Get id and block number of the mortgage you want to unlock（ The value marked by the red frame in the above picture ）
-
-- Go to `Developer` --> `Extrinsics` section
-
-- Select `weteeWorker` --> `clusterUnmortgage` callable
-
-<img src="./img/m1/m1-4.png" width="700" style="padding-left: 30px;">
-
-- Submit `Transaction`
-
-### 1.4. SGX Key
+### 1.2. Upload Cluster SGX Key
 
 Cluster uploads the SGX public key, proving that the entire control panel is operating in a secure and trusted environment.  
 
@@ -77,6 +45,38 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
     ```
 
 <img src="./img/m1/m1-5.png" width="700" style="padding-left: 30px;">
+
+- Submit `Transaction`
+
+### 1.3. Start Service with a Mortgage
+
+- Go to `Developer` --> `Extrinsics` section
+
+- Select `weteeWorker` --> `clusterMortgage` callable
+
+<img src="./img/m1/m1-2.png" width="700" style="padding-left: 30px;">
+
+- Submit `Transaction` --> `Cluster` successfully started
+
+    To facilitate the testing of unmortgage operation below, we recommend performing **multiple mortgage operations**.  
+
+### 1.4. Unlock Unused Mortgage
+
+**Optional step, if unmortgage is performed here, the subsequent steps need to be carried out, and the mortgage operation mentioned earlier needs to be repeated.**  
+
+- Go to `Developer` --> `Chain State`
+
+- Select `weteeWorker` --> `deposits` for state query and press `+` button
+
+<img src="./img/m1/m1-3.png" width="700" style="padding-left: 30px;">
+
+- Get id and block number of the mortgage you want to unlock（ The value marked by the red frame in the above picture ）
+
+- Go to `Developer` --> `Extrinsics` section
+
+- Select `weteeWorker` --> `clusterUnmortgage` callable
+
+<img src="./img/m1/m1-4.png" width="700" style="padding-left: 30px;">
 
 - Submit `Transaction`
 
