@@ -1,5 +1,23 @@
 # Milestone 1 Documentation
 
+## Setup local enviroment
+
+### Rust Setup
+
+- [Linux development environment](https://docs.substrate.io/install/linux/).  
+
+- [MacOS development environment](https://docs.substrate.io/install/macos/).  
+
+- [Windows development environment](https://docs.substrate.io/install/windows/).  
+
+### Run Node
+If you want to started with the example node, please refer to [run node](../run-node.md) .  
+
+
+### Run Docker
+If you want to test the deploy enviroment, please refer to [run docker](../run-docker.md) .  
+
+
 ## 1. Use Worker Module
 
 ### 1.1. Cluster Registration
