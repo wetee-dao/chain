@@ -8,20 +8,9 @@ while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a syml
     [[ $SOURCE != /*  ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-cd "$DIR/../"
+cd "$DIR/"
 pwd
 
-current=`date "+%Y-%m-%d-%H_%M"`
-TAG="dev.$current"
-ENV=`git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3`
-
-if [ $# -gt 0 ]; then
-  TAG="$1.$current"
-  if [ $# -gt 1 ]; then
-    ENV=$2
-  fi
-fi
-
 # 编译
-docker build . -f builder.Dockerfile -t "wetee/wetee-node:$TAG"
-docker push "wetee/wetee-node:$TAG"
+docker build -f pos_build.Dockerfile -t wetee/wetee-builder:2023-08-22 . 
+docker push wetee/wetee-builder:2023-08-22

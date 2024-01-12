@@ -1,4 +1,3 @@
-# FROM docker.io/paritytech/ci-linux:production as builder
 FROM rust:buster as builder
 
 RUN apt-get update && apt-get install time cmake clang libclang-dev llvm protobuf-compiler -y
