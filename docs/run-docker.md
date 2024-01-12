@@ -12,8 +12,5 @@ A few useful ones are as follow:
 docker build -f ./pos_build.Dockerfile -t wetee/wetee-node:dev .
 
 # Run node without re-compiling
-docker run wetee/wetee-node:dev wetee-node --dev
-
-# Purge the local dev chain
-docker run wetee/wetee-node:dev wetee-node purge-chain --dev
+docker run -p 9944:9944 wetee/wetee-node:dev
 ```

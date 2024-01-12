@@ -2,4 +2,6 @@
 **/deps/
 **/incremental/
 **/build/
-**/target/
+**/target/**/deps
+**/target/**/build
+**/target/**/wbuild
