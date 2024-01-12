@@ -1,14 +1,12 @@
-FROM rust:buster as builder
-
-RUN apt-get update && apt-get install time cmake clang libclang-dev llvm protobuf-compiler -y
-RUN rustup toolchain install nightly-2023-08-22
-RUN rustup target add wasm32-unknown-unknown --toolchain nightly-2023-08-22
+# builder from hacks/builder.Dockerfile
+FROM wetee/wetee-builder:2023-08-22 as builder
 
 WORKDIR /
 COPY . .
 RUN cargo build --locked --release
 
 
+# wetee-node
 FROM ubuntu:22.04
 
 ## copy bin from builder
@@ -19,4 +17,4 @@ RUN apt-get update
 
 
 EXPOSE 30333 9933 9944 9615
-CMD ["/usr/local/bin/wetee-node" "--dev"]
+CMD ["/usr/local/bin/wetee-node","--dev","--unsafe-rpc-external","--rpc-cors","all"]

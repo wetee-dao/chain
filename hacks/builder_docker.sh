@@ -12,5 +12,5 @@ cd "$DIR/"
 pwd
 
 # 编译
-docker build -f pos_build.Dockerfile -t wetee/wetee-builder:2023-08-22 . 
+docker build -f builder.Dockerfile -t wetee/wetee-builder:2023-08-22 . 
 docker push wetee/wetee-builder:2023-08-22
