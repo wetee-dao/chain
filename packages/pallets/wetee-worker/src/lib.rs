@@ -117,6 +117,21 @@ pub struct ContractState<BlockNumber, Balance> {
     pub withdrawal: Balance,
 }
 
+/// 合同缓存
+/// Log of contract
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct ClusterContractState<BlockNumber, AccountId> {
+    /// start_number
+    /// 开始区块号
+    pub start_number: BlockNumber,
+    /// user
+    /// 用户
+    pub user: AccountId,
+    /// work_id
+    /// 取回
+    pub work_id: WorkId,
+}
+
 /// 抵押
 /// DepositPrice
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -248,7 +263,7 @@ pub mod pallet {
         ClusterId,
         Identity,
         WorkId,
-        ContractState<BlockNumberFor<T>, BalanceOf<T>>,
+        ClusterContractState<BlockNumberFor<T>, T::AccountId>,
         OptionQuery,
     >;
 
@@ -271,6 +286,16 @@ pub mod pallet {
         ContractState<BlockNumberFor<T>, BalanceOf<T>>,
         OptionQuery,
     >;
+
+    #[pallet::type_value]
+    pub fn DefaultForm3() -> u32 {
+        3
+    }
+    /// Work 结算周期
+    /// Work settle period
+    #[pallet::storage]
+    #[pallet::getter(fn stage)]
+    pub type Stage<T: Config> = StorageValue<_, u32, ValueQuery, DefaultForm3>;
 
     /// 工作任务工作量证明
     /// proof of work of task
@@ -298,8 +323,8 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// A new cluster has been created. [creator]
         ClusterCreated { creator: T::AccountId },
-        /// A new app has been runed. [minter]
-        AppRuning { minter: T::AccountId, id: u64 },
+        /// A new app has been runed. [user]
+        WorkRuning { user: T::AccountId, work_id: WorkId },
     }
 
     // Errors inform users that something went wrong.
@@ -658,7 +683,7 @@ pub mod pallet {
                     let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
                         .ok_or(Error::<T>::WorkNotExists)?;
 
-                    let stage: u32 = 3;
+                    let stage: u32 = Stage::<T>::get();
                     let fee = wetee_app::Pallet::<T>::get_fee(work_id.id.clone())?;
                     // 检查是否是重复提交状态
                     if number - state.block_number < stage.into() {
@@ -956,10 +981,10 @@ pub mod pallet {
                     ClusterContracts::<T>::insert(
                         id,
                         work_id.clone(),
-                        ContractState {
-                            block_number: number,
-                            minted: 0u32.into(),
-                            withdrawal: 0u32.into(),
+                        ClusterContractState {
+                            user: account.clone(),
+                            work_id: work_id.clone(),
+                            start_number: number,
                         },
                     );
                 }
@@ -977,7 +1002,14 @@ pub mod pallet {
                 }
 
                 app.status = 1;
-                wetee_app::TEEApps::<T>::insert(account, work_id.id.clone(), app);
+                wetee_app::TEEApps::<T>::insert(account.clone(), work_id.id.clone(), app);
+
+                // Runing event
+                // 运行事件
+                Self::deposit_event(Event::WorkRuning {
+                    user: account,
+                    work_id,
+                });
             }
 
             Ok(true)
@@ -1049,10 +1081,11 @@ pub mod pallet {
             let mut scores = Vec::new();
             #[cfg(test)]
             println!("+++++++++++++++++++++++++++ {:?}", app_cr);
-            for i in 1..100 {
-                // 获取随机数
-                let random_number = Self::get_random_number(work_id.id + i);
 
+            // 获取随机数
+            let random_base = Self::get_random_number(work_id.id);
+            for i in 1..1000 {
+                let random_number = random_base + i;
                 // 必须保证数字在集群的范围内 集群数字是从1开始的
                 let mut v = random_number % num;
                 // 避免数字溢出
@@ -1076,6 +1109,9 @@ pub mod pallet {
                         randoms.push(v);
                         scores.push(score);
                     }
+                }
+                if randoms.len() >= 10 {
+                    break;
                 }
             }
 

@@ -189,6 +189,10 @@ pub mod pallet {
             to: T::AccountId,
             amount: BalanceOf<T>,
         },
+        /// A app has been update. [user]
+        WorkUpdated { user: T::AccountId, work_id: WorkId },
+        /// A new app has been stopped. [user]
+        WorkStopped { user: T::AccountId, work_id: WorkId },
     }
 
     // Errors inform users that something went wrong.
@@ -315,6 +319,9 @@ pub mod pallet {
             port: Vec<u32>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+            let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
+            ensure!(who == account, Error::<T>::App403);
+
             <TEEApps<T>>::try_mutate_exists(
                 who.clone(),
                 app_id,
@@ -327,6 +334,13 @@ pub mod pallet {
                     Ok(())
                 },
             )?;
+            Self::deposit_event(Event::WorkUpdated {
+                user: account,
+                work_id: WorkId {
+                    wtype: WorkType::APP,
+                    id: app_id,
+                },
+            });
             Ok(().into())
         }
 
@@ -486,13 +500,21 @@ pub mod pallet {
                 wetee_assets::Pallet::<T>::try_transfer(
                     wetee_assets::NATIVE_ASSET_ID,
                     Self::app_id_account(app_id),
-                    account,
+                    account.clone(),
                     wetee_assets::Pallet::<T>::free_balance(
                         wetee_assets::NATIVE_ASSET_ID,
                         &Self::app_id_account(app_id),
                     ),
                 )?;
             }
+
+            Self::deposit_event(Event::WorkStopped {
+                user: account,
+                work_id: WorkId {
+                    wtype: WorkType::APP,
+                    id: app_id,
+                },
+            });
 
             Ok(())
         }
