@@ -448,6 +448,30 @@ pub mod pallet {
             Self::try_stop(who.clone(), app_id)?;
             Ok(().into())
         }
+
+        /// App restart
+        /// 更新任务
+        #[pallet::call_index(006)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn restart(
+            origin: OriginFor<T>,
+            // App id
+            // 应用id
+            app_id: TeeAppId,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
+            ensure!(who == account, Error::<T>::App403);
+
+            Self::deposit_event(Event::WorkUpdated {
+                user: account,
+                work_id: WorkId {
+                    wtype: WorkType::APP,
+                    id: app_id,
+                },
+            });
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
