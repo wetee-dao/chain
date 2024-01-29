@@ -163,6 +163,13 @@ pub mod pallet {
     pub type AppSettings<T: Config> =
         StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, AppSetting, OptionQuery>;
 
+    /// App version
+    /// App 版本
+    #[pallet::storage]
+    #[pallet::getter(fn app_version)]
+    pub type AppVersion<T: Config> =
+        StorageMap<_, Identity, TeeAppId, BlockNumberFor<T>, OptionQuery>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -189,6 +196,10 @@ pub mod pallet {
             to: T::AccountId,
             amount: BalanceOf<T>,
         },
+        /// A app has been update. [user]
+        WorkUpdated { user: T::AccountId, work_id: WorkId },
+        /// A new app has been stopped. [user]
+        WorkStopped { user: T::AccountId, work_id: WorkId },
     }
 
     // Errors inform users that something went wrong.
@@ -260,6 +271,7 @@ pub mod pallet {
             <NextTeeId<T>>::mutate(|id| *id += 1);
             <TEEApps<T>>::insert(who.clone(), id, app);
             <AppIdAccounts<T>>::insert(id, who.clone());
+            <AppVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
 
             // check deposit
             // 检查抵押金额是否足够
@@ -315,6 +327,9 @@ pub mod pallet {
             port: Vec<u32>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+            let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
+            ensure!(who == account, Error::<T>::App403);
+
             <TEEApps<T>>::try_mutate_exists(
                 who.clone(),
                 app_id,
@@ -327,6 +342,27 @@ pub mod pallet {
                     Ok(())
                 },
             )?;
+
+            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+
+            // run after create hook
+            // 执行 App 创建后回调,部署任务添加到消息中间件
+            <T as pallet::Config>::AfterCreate::run_hook(
+                WorkId {
+                    wtype: WorkType::APP,
+                    id: app_id,
+                },
+                who,
+            );
+
+            Self::deposit_event(Event::WorkUpdated {
+                user: account,
+                work_id: WorkId {
+                    wtype: WorkType::APP,
+                    id: app_id,
+                },
+            });
+
             Ok(().into())
         }
 
@@ -392,6 +428,15 @@ pub mod pallet {
                 }
             });
 
+            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            Self::deposit_event(Event::WorkUpdated {
+                user: app_account,
+                work_id: WorkId {
+                    wtype: WorkType::APP,
+                    id: app_id,
+                },
+            });
+
             Ok(().into())
         }
 
@@ -432,6 +477,43 @@ pub mod pallet {
         pub fn stop(origin: OriginFor<T>, app_id: TeeAppId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             Self::try_stop(who.clone(), app_id)?;
+            Ok(().into())
+        }
+
+        /// App restart
+        /// 更新任务
+        #[pallet::call_index(006)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn restart(
+            origin: OriginFor<T>,
+            // App id
+            // 应用id
+            app_id: TeeAppId,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
+            ensure!(who == account, Error::<T>::App403);
+
+            // 停止任务后,将任务状态设置为 2
+            <TEEApps<T>>::try_mutate_exists(
+                account.clone(),
+                app_id,
+                |app_wrap| -> result::Result<(), DispatchError> {
+                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExist)?;
+                    app.status = 0;
+                    *app_wrap = Some(app);
+                    Ok(())
+                },
+            )?;
+            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+
+            Self::deposit_event(Event::WorkUpdated {
+                user: account,
+                work_id: WorkId {
+                    wtype: WorkType::APP,
+                    id: app_id,
+                },
+            });
             Ok(().into())
         }
     }
@@ -486,13 +568,21 @@ pub mod pallet {
                 wetee_assets::Pallet::<T>::try_transfer(
                     wetee_assets::NATIVE_ASSET_ID,
                     Self::app_id_account(app_id),
-                    account,
+                    account.clone(),
                     wetee_assets::Pallet::<T>::free_balance(
                         wetee_assets::NATIVE_ASSET_ID,
                         &Self::app_id_account(app_id),
                     ),
                 )?;
             }
+
+            Self::deposit_event(Event::WorkStopped {
+                user: account,
+                work_id: WorkId {
+                    wtype: WorkType::APP,
+                    id: app_id,
+                },
+            });
 
             Ok(())
         }
@@ -504,8 +594,9 @@ pub mod pallet {
             fee: BalanceOf<T>,
             to: T::AccountId,
         ) -> result::Result<(), DispatchError> {
-            if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee + fee
-            {
+            let app_total =
+                wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id));
+            if app_total <= fee + fee {
                 let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExist)?;
 
                 // 余额不足，停止任务
@@ -513,8 +604,20 @@ pub mod pallet {
                 Self::try_stop(app_account, wid.id)?;
 
                 // 不足以支付当前周期的费用
-                if wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id)) < fee {
-                    return Err(Error::<T>::NotEnoughBalance.into());
+                if app_total < fee {
+                    // transfer fee to target account
+                    // 将抵押转移到目标账户
+                    wetee_assets::Pallet::<T>::try_transfer(
+                        0,
+                        Self::app_id_account(wid.id),
+                        to.clone(),
+                        app_total,
+                    )?;
+                    Self::deposit_event(Event::<T>::PayRunFee {
+                        from: Self::app_id_account(wid.id),
+                        to: to.clone(),
+                        amount: app_total,
+                    });
                 }
             }
 

@@ -166,15 +166,31 @@ pub mod pallet {
     pub type AppSettings<T: Config> =
         StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, AppSetting, OptionQuery>;
 
+    /// Task version
+    /// Task 版本
+    #[pallet::storage]
+    #[pallet::getter(fn task_version)]
+    pub type TaskVersion<T: Config> =
+        StorageMap<_, Identity, TeeAppId, BlockNumberFor<T>, OptionQuery>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Task created.
-        CreatedTask { creator: T::AccountId, id: u64 },
+        CreatedTask {
+            creator: T::AccountId,
+            id: u64,
+        },
         /// Task runing.
-        TaskRuning { creator: T::AccountId, id: u64 },
+        TaskRuning {
+            creator: T::AccountId,
+            id: u64,
+        },
         /// Task stop.
-        TaskStop { creator: T::AccountId, id: u64 },
+        TaskStop {
+            creator: T::AccountId,
+            id: u64,
+        },
         /// Task charge.
         Charge {
             from: T::AccountId,
@@ -186,6 +202,10 @@ pub mod pallet {
             from: T::AccountId,
             to: T::AccountId,
             amount: BalanceOf<T>,
+        },
+        WorkUpdated {
+            user: T::AccountId,
+            work_id: WorkId,
         },
     }
 
@@ -246,6 +266,7 @@ pub mod pallet {
             <NextTeeId<T>>::mutate(|id| *id += 1);
             <TEETasks<T>>::insert(who.clone(), id, app);
             <TaskIdAccounts<T>>::insert(id, who.clone());
+            <TaskVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
 
             // Check deposit
             // 检查抵押金额是否足够
@@ -342,6 +363,9 @@ pub mod pallet {
             port: Vec<u32>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+            let account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::TaskNotExists)?;
+            ensure!(who == account, Error::<T>::Task403);
+
             <TEETasks<T>>::try_mutate_exists(
                 who.clone(),
                 app_id,
@@ -354,6 +378,16 @@ pub mod pallet {
                     Ok(())
                 },
             )?;
+
+            <TaskVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            Self::deposit_event(Event::WorkUpdated {
+                user: account,
+                work_id: WorkId {
+                    wtype: WorkType::TASK,
+                    id: app_id,
+                },
+            });
+
             Ok(().into())
         }
 
@@ -420,6 +454,15 @@ pub mod pallet {
                         },
                     );
                 }
+            });
+
+            <TaskVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            Self::deposit_event(Event::WorkUpdated {
+                user: app_account,
+                work_id: WorkId {
+                    wtype: WorkType::TASK,
+                    id: app_id,
+                },
             });
 
             Ok(().into())
@@ -539,15 +582,14 @@ pub mod pallet {
             fee: BalanceOf<T>,
             to: T::AccountId,
         ) -> result::Result<(), DispatchError> {
+            let who = Self::task_id_account(wid.id);
             // 将抵押转移到目标账户
-            wetee_assets::Pallet::<T>::try_transfer(
-                0,
-                Self::task_id_account(wid.id),
-                to.clone(),
-                fee,
-            )?;
+            wetee_assets::Pallet::<T>::try_transfer(0, who.clone(), to.clone(), fee)?;
+
+            // 任务只执行一次，执行后停止
+            Self::try_stop(who.clone(), wid.id)?;
             Self::deposit_event(Event::<T>::PayRunFee {
-                from: Self::task_id_account(wid.id),
+                from: who,
                 to,
                 amount: fee,
             });

@@ -117,6 +117,21 @@ pub struct ContractState<BlockNumber, Balance> {
     pub withdrawal: Balance,
 }
 
+/// 合同缓存
+/// Log of contract
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct ClusterContractState<BlockNumber, AccountId> {
+    /// start_number
+    /// 开始区块号
+    pub start_number: BlockNumber,
+    /// user
+    /// 用户
+    pub user: AccountId,
+    /// work_id
+    /// 取回
+    pub work_id: WorkId,
+}
+
 /// 抵押
 /// DepositPrice
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -248,7 +263,7 @@ pub mod pallet {
         ClusterId,
         Identity,
         WorkId,
-        ContractState<BlockNumberFor<T>, BalanceOf<T>>,
+        ClusterContractState<BlockNumberFor<T>, T::AccountId>,
         OptionQuery,
     >;
 
@@ -271,6 +286,16 @@ pub mod pallet {
         ContractState<BlockNumberFor<T>, BalanceOf<T>>,
         OptionQuery,
     >;
+
+    #[pallet::type_value]
+    pub fn DefaultForm3() -> u32 {
+        3
+    }
+    /// Work 结算周期
+    /// Work settle period
+    #[pallet::storage]
+    #[pallet::getter(fn stage)]
+    pub type Stage<T: Config> = StorageValue<_, u32, ValueQuery, DefaultForm3>;
 
     /// 工作任务工作量证明
     /// proof of work of task
@@ -298,8 +323,12 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// A new cluster has been created. [creator]
         ClusterCreated { creator: T::AccountId },
-        /// A new app has been runed. [minter]
-        AppRuning { minter: T::AccountId, id: u64 },
+        /// A new app has been runed. [user]
+        WorkRuning { user: T::AccountId, work_id: WorkId },
+        /// Work contract has been updated. [user]
+        WorkContractUpdated { work_id: WorkId },
+        /// Work contract has been withdrawn. [user]
+        WorkContractWithdrawaled { work_id: WorkId },
     }
 
     // Errors inform users that something went wrong.
@@ -335,6 +364,9 @@ pub mod pallet {
         /// Insufficient balance.
         /// 余额不足
         InsufficientBalance,
+        /// Insufficient Minted Balance
+        /// 合约余额不足
+        InsufficientMintedBalance,
         /// Task is not exists
         /// 任务不存在
         TaskNotExists,
@@ -651,75 +683,92 @@ pub mod pallet {
 
             // pay fee
             // 支付费用
-            match work_id.wtype {
+            if work_id.wtype == WorkType::APP {
                 // Pay fees in stages
                 // 分阶段支付费用
-                WorkType::APP => {
-                    let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
-                        .ok_or(Error::<T>::WorkNotExists)?;
+                let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
+                    .ok_or(Error::<T>::WorkNotExists)?;
 
-                    let stage: u32 = 3;
-                    let fee = wetee_app::Pallet::<T>::get_fee(work_id.id.clone())?;
-                    // 检查是否是重复提交状态
-                    if number - state.block_number < stage.into() {
-                        return Err(Error::<T>::WorkBlockNumberError.into());
-                    } else if number - state.block_number > (stage * 2).into() {
-                        // More than 2 cycles, only pay once, TODO, reduce service points
-                        // 超过2个周期，只支付一次费用，TODO，减少服务积分
-                        WorkContractState::<T>::insert(
-                            work_id.clone(),
-                            cluster_id,
-                            ContractState {
-                                block_number: number,
-                                minted: state.minted + fee,
-                                withdrawal: state.withdrawal,
-                            },
-                        );
-                    } else {
-                        WorkContractState::<T>::insert(
-                            work_id.clone(),
-                            cluster_id,
-                            ContractState {
-                                block_number: number,
-                                minted: state.minted + fee,
-                                withdrawal: state.withdrawal,
-                            },
-                        );
-                    }
+                let stage: u32 = Stage::<T>::get();
+                let fee = wetee_app::Pallet::<T>::get_fee(work_id.id.clone())?;
 
-                    let to = Self::get_mint_account(work_id.clone(), cluster_id);
-                    wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
-
-                    let app = wetee_app::Pallet::<T>::get_app(work_id.id)?;
-
-                    // check app status
-                    // 如果app状态为已停止，则删除工作合约
-                    if app.status == 2 {
-                        WorkContracts::<T>::remove(work_id.clone());
-                        // 更新抵押数据
-                        Crs::<T>::try_mutate_exists(
-                            cluster_id,
-                            |c| -> result::Result<(), DispatchError> {
-                                let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
-                                let ccr = crs.1.clone();
-
-                                // 更新抵押参数
-                                crs.1 = Cr {
-                                    cpu: ccr.cpu - app.cr.cpu,
-                                    mem: ccr.mem - app.cr.mem,
-                                    disk: ccr.disk - app.cr.disk,
-                                };
-                                *c = Some(crs);
-                                Ok(())
-                            },
-                        )?;
-                    }
+                // 检查是否是重复提交状态
+                if number - state.block_number < stage.into() {
+                    return Err(Error::<T>::WorkBlockNumberError.into());
+                } else if number - state.block_number > (stage * 2).into() {
+                    // More than 2 cycles, only pay once, TODO, reduce service points
+                    // 超过2个周期，只支付一次费用，TODO，减少服务积分
+                    WorkContractState::<T>::insert(
+                        work_id.clone(),
+                        cluster_id,
+                        ContractState {
+                            block_number: number,
+                            minted: state.minted + fee,
+                            withdrawal: state.withdrawal,
+                        },
+                    );
+                } else {
+                    WorkContractState::<T>::insert(
+                        work_id.clone(),
+                        cluster_id,
+                        ContractState {
+                            block_number: number,
+                            minted: state.minted + fee,
+                            withdrawal: state.withdrawal,
+                        },
+                    );
                 }
-                WorkType::TASK => {
-                    let fee = wetee_task::Pallet::<T>::get_fee(work_id.id.clone())?;
-                    let to = Self::get_mint_account(work_id.clone(), cluster_id);
-                    wetee_task::Pallet::<T>::pay_run_fee(work_id, fee, to)?;
+
+                Self::deposit_event(Event::WorkContractUpdated {
+                    work_id: work_id.clone(),
+                });
+
+                log::warn!(
+                    "work_proof_upload++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",
+                    fee
+                );
+
+                let to = Self::get_mint_account(work_id.clone(), cluster_id);
+                wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
+
+                log::warn!(
+                    "work_proof_upload++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",
+                    6
+                );
+
+                let app = wetee_app::Pallet::<T>::get_app(work_id.id)?;
+
+                // check app status
+                // 如果app状态为已停止，则删除工作合约
+                if app.status == 2 {
+                    WorkContracts::<T>::remove(work_id.clone());
+                    // 更新抵押数据
+                    Crs::<T>::try_mutate_exists(
+                        cluster_id,
+                        |c| -> result::Result<(), DispatchError> {
+                            let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
+                            let ccr = crs.1.clone();
+
+                            // 更新抵押参数
+                            crs.1 = Cr {
+                                cpu: ccr.cpu - app.cr.cpu,
+                                mem: ccr.mem - app.cr.mem,
+                                disk: ccr.disk - app.cr.disk,
+                            };
+                            *c = Some(crs);
+                            Ok(())
+                        },
+                    )?;
                 }
+
+                log::warn!(
+                    "work_proof_upload++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",
+                    7
+                );
+            } else if work_id.wtype == WorkType::TASK {
+                let fee = wetee_task::Pallet::<T>::get_fee(work_id.id.clone())?;
+                let to = Self::get_mint_account(work_id.clone(), cluster_id);
+                wetee_task::Pallet::<T>::pay_run_fee(work_id, fee, to)?;
             }
 
             Ok(().into())
@@ -736,7 +785,11 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let cluster_id =
-                K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
+                K8sClusterAccounts::<T>::get(who.clone()).ok_or(Error::<T>::ClusterNotExists)?;
+            let contract_cluster_id =
+                WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
+
+            ensure!(contract_cluster_id == cluster_id, Error::<T>::NotAllowed403);
 
             let mint_account = Self::get_mint_account(work_id.clone(), cluster_id);
             ensure!(
@@ -746,6 +799,35 @@ pub mod pallet {
                 ) >= amount,
                 Error::<T>::InsufficientBalance
             );
+
+            let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
+                .ok_or(Error::<T>::WorkNotExists)?;
+            #[cfg(test)]
+            println!(
+                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ state.minted: {:?}",
+                state.minted 
+            );
+            ensure!(
+                state.minted >= amount,
+                Error::<T>::InsufficientMintedBalance
+            );
+
+            // 将抵押转移到目标账户
+            wetee_assets::Pallet::<T>::try_transfer(0, mint_account, who, amount)?;
+
+            WorkContractState::<T>::insert(
+                work_id.clone(),
+                cluster_id,
+                ContractState {
+                    block_number: state.block_number,
+                    minted: state.minted - amount,
+                    withdrawal: state.withdrawal + amount,
+                },
+            );
+
+            Self::deposit_event(Event::WorkContractWithdrawaled {
+                work_id: work_id.clone(),
+            });
 
             Ok(().into())
         }
@@ -956,10 +1038,10 @@ pub mod pallet {
                     ClusterContracts::<T>::insert(
                         id,
                         work_id.clone(),
-                        ContractState {
-                            block_number: number,
-                            minted: 0u32.into(),
-                            withdrawal: 0u32.into(),
+                        ClusterContractState {
+                            user: account.clone(),
+                            work_id: work_id.clone(),
+                            start_number: number,
                         },
                     );
                 }
@@ -977,7 +1059,14 @@ pub mod pallet {
                 }
 
                 app.status = 1;
-                wetee_app::TEEApps::<T>::insert(account, work_id.id.clone(), app);
+                wetee_app::TEEApps::<T>::insert(account.clone(), work_id.id.clone(), app);
+
+                // Runing event
+                // 运行事件
+                Self::deposit_event(Event::WorkRuning {
+                    user: account,
+                    work_id,
+                });
             }
 
             Ok(true)
@@ -1049,10 +1138,11 @@ pub mod pallet {
             let mut scores = Vec::new();
             #[cfg(test)]
             println!("+++++++++++++++++++++++++++ {:?}", app_cr);
-            for i in 1..100 {
-                // 获取随机数
-                let random_number = Self::get_random_number(work_id.id + i);
 
+            // 获取随机数
+            let random_base = Self::get_random_number(work_id.id);
+            for i in 1..1000 {
+                let random_number = random_base + i;
                 // 必须保证数字在集群的范围内 集群数字是从1开始的
                 let mut v = random_number % num;
                 // 避免数字溢出
@@ -1076,6 +1166,9 @@ pub mod pallet {
                         randoms.push(v);
                         scores.push(score);
                     }
+                }
+                if randoms.len() >= 10 {
+                    break;
                 }
             }
 
