@@ -223,6 +223,12 @@ pub mod pallet {
         /// Level not exists.
         /// 等级不存在
         LevelNotExist,
+        /// Cpu too Low
+        /// Cpu 过低
+        CpuTooLow,
+        /// Memory too Low
+        /// 内存过低
+        MemoryTooLow,
     }
 
     #[pallet::call]
@@ -249,6 +255,9 @@ pub mod pallet {
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+
+            ensure!(cpu >= 10, Error::<T>::CpuTooLow);
+            ensure!(memory >= 10, Error::<T>::MemoryTooLow);
 
             let id = Self::next_tee_id();
             let app = TeeApp {
@@ -558,24 +567,6 @@ pub mod pallet {
                 id: app_id,
             });
 
-            // transfer deposit to target account
-            // 将抵押转移到目标账户
-            if wetee_assets::Pallet::<T>::free_balance(
-                wetee_assets::NATIVE_ASSET_ID,
-                &Self::app_id_account(app_id),
-            ) > 0u32.into()
-            {
-                wetee_assets::Pallet::<T>::try_transfer(
-                    wetee_assets::NATIVE_ASSET_ID,
-                    Self::app_id_account(app_id),
-                    account.clone(),
-                    wetee_assets::Pallet::<T>::free_balance(
-                        wetee_assets::NATIVE_ASSET_ID,
-                        &Self::app_id_account(app_id),
-                    ),
-                )?;
-            }
-
             Self::deposit_event(Event::WorkStopped {
                 user: account,
                 work_id: WorkId {
@@ -596,9 +587,15 @@ pub mod pallet {
         ) -> result::Result<(), DispatchError> {
             let app_total =
                 wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id));
+            log::warn!(
+                "app_total ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",
+                app_total
+            );
+
             if app_total <= fee + fee {
                 let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExist)?;
 
+                log::warn!("余额不足，停止应用");
                 // 余额不足，停止任务
                 // 余额不足支持下一个周期的费用，停止任务
                 Self::try_stop(app_account, wid.id)?;
@@ -607,17 +604,7 @@ pub mod pallet {
                 if app_total < fee {
                     // transfer fee to target account
                     // 将抵押转移到目标账户
-                    wetee_assets::Pallet::<T>::try_transfer(
-                        0,
-                        Self::app_id_account(wid.id),
-                        to.clone(),
-                        app_total,
-                    )?;
-                    Self::deposit_event(Event::<T>::PayRunFee {
-                        from: Self::app_id_account(wid.id),
-                        to: to.clone(),
-                        amount: app_total,
-                    });
+                    return Ok(());
                 }
             }
 
@@ -629,6 +616,7 @@ pub mod pallet {
                 to.clone(),
                 fee,
             )?;
+
             Self::deposit_event(Event::<T>::PayRunFee {
                 from: Self::app_id_account(wid.id),
                 to,

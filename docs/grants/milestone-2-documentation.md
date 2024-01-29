@@ -37,13 +37,25 @@ curl -sfL https://get.k3s.io | sh -
 
 ### Start local test chain
 ```bash
-docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-01-27-23_26
+docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-01-29-16_04
 ```
 
 ## Link to test chain and cluster
 ```bash
 git clone  https://github.com/wetee-dao/worker && cd worker
+
+# 1.1 Setup SGX
+sh hack/sgx_device.sh
+
+# 1.2 run local worker
 sh hack/dev.sh
+
+# 1.3 run docker worker
+docker run --device /dev/sgx/enclave --device /dev/sgx/provision \        
+     --network host \
+     -e KUBECONFIG=/etc/kube/config \
+     -v /etc/rancher/k3s:/etc/rancher/k3s \
+     wetee/worker:dev
 ```
 
 
