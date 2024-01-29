@@ -3,11 +3,8 @@
 ## Setup local enviroment
 
 ### Rust Setup
-
 - [Linux development environment](https://docs.substrate.io/install/linux/).  
-
 - [MacOS development environment](https://docs.substrate.io/install/macos/).  
-
 - [Windows development environment](https://docs.substrate.io/install/windows/).  
 
 ### Run Node
