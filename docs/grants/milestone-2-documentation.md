@@ -42,7 +42,7 @@ docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-01-27-23_26
 
 ## Link to test chain and cluster
 ```bash
-git clone  https://github.com/integritee-network/worker && cd worker
+git clone  https://github.com/wetee-dao/worker && cd worker
 sh hack/dev.sh
 ```
 
