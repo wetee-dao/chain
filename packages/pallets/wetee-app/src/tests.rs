@@ -19,11 +19,11 @@ pub fn do_create() {
         "test".as_bytes().to_vec(),
         "test".as_bytes().to_vec(),
         vec![1, 2, 3],
+        10,
+        10,
         1,
         1,
-        1,
-        1,
-        1000,
+        100000,
     )
     .unwrap();
 }
@@ -44,11 +44,11 @@ pub fn create() {
             "test".as_bytes().to_vec(),
             "test".as_bytes().to_vec(),
             vec![1, 2, 3],
+            10,
+            10,
+            10,
             1,
-            1,
-            1,
-            1,
-            1000,
+            100000,
         )
         .is_ok());
     });
@@ -122,19 +122,7 @@ pub fn recharge() {
         assert_ok!(Pallet::<Test>::recharge(
             OriginFor::<Test>::signed(ALICE),
             0,
-            1
-        ));
-    });
-}
-
-#[test]
-pub fn charge2() {
-    new_test_run().execute_with(|| {
-        do_create();
-        assert_ok!(Pallet::<Test>::recharge(
-            OriginFor::<Test>::signed(ALICE),
-            0,
-            1
+            1000
         ));
     });
 }
