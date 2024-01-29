@@ -364,6 +364,9 @@ pub mod pallet {
         /// Insufficient balance.
         /// 余额不足
         InsufficientBalance,
+        /// Insufficient Minted Balance
+        /// 合约余额不足
+        InsufficientMintedBalance,
         /// Task is not exists
         /// 任务不存在
         TaskNotExists,
@@ -796,9 +799,18 @@ pub mod pallet {
                 ) >= amount,
                 Error::<T>::InsufficientBalance
             );
+
             let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
                 .ok_or(Error::<T>::WorkNotExists)?;
-            ensure!(state.minted >= amount, Error::<T>::InsufficientBalance);
+            #[cfg(test)]
+            println!(
+                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ state.minted: {:?}",
+                state.minted 
+            );
+            ensure!(
+                state.minted >= amount,
+                Error::<T>::InsufficientMintedBalance
+            );
 
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(0, mint_account, who, amount)?;

@@ -457,11 +457,13 @@ pub fn cluster_withdrawal() {
         };
         Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
         start();
+        frame_system::Pallet::<Test>::set_block_number(635);
         let work_id = WorkId {
             wtype: WorkType::APP,
             id: 0,
         };
-        let res = Pallet::<Test>::cluster_withdrawal(OriginFor::<Test>::signed(ALICE), work_id, 10);
+        let res = Pallet::<Test>::cluster_withdrawal(OriginFor::<Test>::signed(ALICE), work_id, 1);
+        println!("res: {:?}", res);
         assert!(res.is_ok());
     });
 }
