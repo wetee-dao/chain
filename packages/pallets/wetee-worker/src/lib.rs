@@ -324,7 +324,7 @@ pub mod pallet {
         /// A new cluster has been created. [creator]
         ClusterCreated { creator: T::AccountId },
         /// A new app has been runed. [user]
-        WorkRuning { user: T::AccountId, work_id: WorkId },
+        WorkRuning { user: T::AccountId, work_id: WorkId, cluster_id: ClusterId },
         /// Work contract has been updated. [user]
         WorkContractUpdated { work_id: WorkId },
         /// Work contract has been withdrawn. [user]
@@ -724,17 +724,12 @@ pub mod pallet {
                 });
 
                 log::warn!(
-                    "work_proof_upload++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",
-                    fee
+                    "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ID{:?} {:?}",
+                    work_id.id,fee
                 );
 
                 let to = Self::get_mint_account(work_id.clone(), cluster_id);
                 wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
-
-                log::warn!(
-                    "work_proof_upload++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",
-                    6
-                );
 
                 let app = wetee_app::Pallet::<T>::get_app(work_id.id)?;
 
@@ -760,11 +755,6 @@ pub mod pallet {
                         },
                     )?;
                 }
-
-                log::warn!(
-                    "work_proof_upload++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",
-                    7
-                );
             } else if work_id.wtype == WorkType::TASK {
                 let fee = wetee_task::Pallet::<T>::get_fee(work_id.id.clone())?;
                 let to = Self::get_mint_account(work_id.clone(), cluster_id);
@@ -1066,6 +1056,7 @@ pub mod pallet {
                 Self::deposit_event(Event::WorkRuning {
                     user: account,
                     work_id,
+                    cluster_id:id,
                 });
             }
 
