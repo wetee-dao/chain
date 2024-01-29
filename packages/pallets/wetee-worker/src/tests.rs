@@ -42,11 +42,11 @@ pub fn create_work() {
         "test".as_bytes().to_vec(),
         "test".as_bytes().to_vec(),
         vec![1, 2, 3],
+        10,
+        10,
         1,
         1,
-        1,
-        1,
-        1000,
+        100000,
     )
     .unwrap();
 }
@@ -56,10 +56,10 @@ pub fn mortgage() {
     assert!(Pallet::<Test>::cluster_mortgage(
         OriginFor::<Test>::signed(ALICE),
         1,
-        10,
-        10,
-        10,
-        1000
+        1000,
+        1000,
+        1000,
+        1000000
     )
     .is_ok());
 }
@@ -150,10 +150,10 @@ pub fn cluster_mortgage() {
         assert!(Pallet::<Test>::cluster_mortgage(
             OriginFor::<Test>::signed(ALICE),
             1,
-            1,
-            1,
-            1,
-            100
+            1000,
+            1000,
+            1000,
+            100000
         )
         .is_ok());
     });
