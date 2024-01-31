@@ -1145,7 +1145,7 @@ pub mod pallet {
                     let cr = Crs::<T>::get(v).ok_or(Error::<T>::ClusterNotExists)?;
                     #[cfg(test)]
                     println!(
-                        "--------------------------- num {:?} v: {:?} score: {:?} cr: {:?}",
+                        "---------------------------num {:?} v: {:?} score: {:?} cr: {:?}",
                         num, v, score, cr
                     );
                     // 过滤掉已经没有计算资源的集群
@@ -1165,7 +1165,7 @@ pub mod pallet {
 
             #[cfg(test)]
             println!(
-                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ num: {:?} randoms: {:?}",
+                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++get_random_cluster num: {:?} randoms: {:?}",
                 num,randoms
             );
 
@@ -1183,7 +1183,7 @@ pub mod pallet {
                 .unwrap();
 
             log::warn!(
-                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?} ===> {:?}",
+                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++get_random_cluster {:?} ===> {:?}",
                 randoms,randoms[index]
             );
             return Ok(randoms[index]);

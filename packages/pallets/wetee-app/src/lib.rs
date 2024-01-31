@@ -179,9 +179,6 @@ pub mod pallet {
         /// App runing.
         /// App运行
         AppRuning { creator: T::AccountId, id: u64 },
-        /// App stop.
-        /// App停止
-        AppStop { creator: T::AccountId, id: u64 },
         /// App charge.
         /// App充值
         Charge {
@@ -562,10 +559,6 @@ pub mod pallet {
                     Ok(())
                 },
             )?;
-            Self::deposit_event(Event::<T>::AppStop {
-                creator: account.clone(),
-                id: app_id,
-            });
 
             Self::deposit_event(Event::WorkStopped {
                 user: account,
@@ -588,7 +581,7 @@ pub mod pallet {
             let app_total =
                 wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id));
             log::warn!(
-                "app_total ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",
+                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++app_total {:?}",
                 app_total
             );
 
