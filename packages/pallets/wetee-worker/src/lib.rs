@@ -724,7 +724,7 @@ pub mod pallet {
                 });
 
                 log::warn!(
-                    "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ID{:?} {:?}",
+                    "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ APP {:?} {:?}",
                     work_id.id,fee
                 );
 
@@ -757,6 +757,12 @@ pub mod pallet {
                 }
             } else if work_id.wtype == WorkType::TASK {
                 let fee = wetee_task::Pallet::<T>::get_fee(work_id.id.clone())?;
+
+                log::warn!(
+                    "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ TASK {:?} {:?}",
+                    work_id.id,fee
+                );
+
                 let to = Self::get_mint_account(work_id.clone(), cluster_id);
                 wetee_task::Pallet::<T>::pay_run_fee(work_id, fee, to)?;
             }
@@ -767,7 +773,7 @@ pub mod pallet {
         /// Worker cluster withdrawal
         /// 提现余额
         #[pallet::call_index(006)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(T::DbWeight::get().reads_writes(10, 20)  + Weight::from_all(40_000))]
         pub fn cluster_withdrawal(
             origin: OriginFor<T>,
             work_id: WorkId,
@@ -1023,6 +1029,7 @@ pub mod pallet {
                 WorkContracts::<T>::insert(work_id.clone(), id);
 
                 let number = <frame_system::Pallet<T>>::block_number();
+
                 // 如果没有集群挖矿记录，则插入记录
                 if !ClusterContracts::<T>::contains_key(id, work_id.clone()) {
                     ClusterContracts::<T>::insert(
@@ -1099,6 +1106,33 @@ pub mod pallet {
                 })?;
 
                 WorkContracts::<T>::insert(work_id.clone(), id);
+
+                let number = <frame_system::Pallet<T>>::block_number();
+
+                // 如果没有集群挖矿记录，则插入记录
+                if !ClusterContracts::<T>::contains_key(id, work_id.clone()) {
+                    ClusterContracts::<T>::insert(
+                        id,
+                        work_id.clone(),
+                        ClusterContractState {
+                            user: account.clone(),
+                            work_id: work_id.clone(),
+                            start_number: number,
+                        },
+                    );
+                }
+
+                if !WorkContractState::<T>::contains_key(work_id.clone(), id) {
+                    WorkContractState::<T>::insert(
+                        work_id.clone(),
+                        id,
+                        ContractState {
+                            block_number: number,
+                            minted: 0u32.into(),
+                            withdrawal: 0u32.into(),
+                        },
+                    );
+                }
 
                 task.status = 1;
                 wetee_task::TEETasks::<T>::insert(account, work_id.id.clone(), task);

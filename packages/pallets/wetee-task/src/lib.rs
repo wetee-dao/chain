@@ -550,27 +550,11 @@ pub mod pallet {
                     Ok(())
                 },
             )?;
+
             Self::deposit_event(Event::<T>::TaskStop {
                 creator: account.clone(),
                 id: app_id,
             });
-
-            // 将抵押转移到目标账户
-            if wetee_assets::Pallet::<T>::free_balance(
-                wetee_assets::NATIVE_ASSET_ID,
-                &Self::task_id_account(app_id),
-            ) > 0u32.into()
-            {
-                wetee_assets::Pallet::<T>::try_transfer(
-                    wetee_assets::NATIVE_ASSET_ID,
-                    Self::task_id_account(app_id),
-                    account,
-                    wetee_assets::Pallet::<T>::free_balance(
-                        wetee_assets::NATIVE_ASSET_ID,
-                        &Self::task_id_account(app_id),
-                    ),
-                )?;
-            }
 
             Ok(())
         }
@@ -583,16 +567,25 @@ pub mod pallet {
             to: T::AccountId,
         ) -> result::Result<(), DispatchError> {
             let who = Self::task_id_account(wid.id);
+            let app_total = wetee_assets::Pallet::<T>::free_balance(0, &who);
+            log::warn!(
+                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++app_total {:?}",
+                app_total
+            );
+
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(0, who.clone(), to.clone(), fee)?;
 
-            // 任务只执行一次，执行后停止
-            Self::try_stop(who.clone(), wid.id)?;
             Self::deposit_event(Event::<T>::PayRunFee {
-                from: who,
+                from: who.clone(),
                 to,
                 amount: fee,
             });
+
+            let app_account = <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::TaskNotExists)?;
+
+            // 任务只执行一次，执行后停止
+            Self::try_stop(app_account, wid.id)?;
             return Ok(());
         }
 
