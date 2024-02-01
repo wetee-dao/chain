@@ -47,10 +47,15 @@ git clone  https://github.com/wetee-dao/worker && cd worker
 # 1.1 Setup SGX
 sh hack/sgx_device.sh
 
-# 1.2 run local worker
+# 1.2 Install CRD
+make install
+
+# 1.3 run local worker or docker worker
+
 sh hack/dev.sh
 
-# 1.3 run docker worker
+# OR
+
 docker run --device /dev/sgx/enclave --device /dev/sgx/provision \        
      --network host \
      -e KUBECONFIG=/etc/kube/config \

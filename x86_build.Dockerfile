@@ -17,4 +17,4 @@ RUN apt-get update
 
 
 EXPOSE 30333 9933 9944 9615
-CMD ["/usr/local/bin/wetee-node","--dev","--unsafe-rpc-external","--rpc-cors","all"]
+CMD ["/bin/sh", "-c" ,"/usr/local/bin/wetee-node --dev --rpc-external --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all"]
