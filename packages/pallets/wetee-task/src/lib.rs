@@ -224,6 +224,8 @@ pub mod pallet {
         NotEnoughBalance,
         /// Task is runing.
         TaskIsRuning,
+        /// Level not exists.
+        LevelNotExists,
     }
 
     #[pallet::call]
@@ -305,40 +307,42 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn rerun(origin: OriginFor<T>, id: TeeAppId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+            let account = <TaskIdAccounts<T>>::get(id).ok_or(Error::<T>::TaskNotExists)?;
+            ensure!(who == account, Error::<T>::Task403);
 
             let deposit = wetee_assets::Pallet::<T>::free_balance(
                 wetee_assets::NATIVE_ASSET_ID,
                 &Self::task_id_account(id),
             );
 
+            let task = Self::tee_apps(who.clone(), id).unwrap();
+            ensure!(task.status == 2, Error::<T>::TaskStatusMismatch);
+
             // Check deposit
             // 检查抵押金额是否足够
             let fee_unit = Self::get_fee(id)?;
-            ensure!(fee_unit >= deposit, Error::<T>::NotEnoughBalance);
+            ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
             <TEETasks<T>>::try_mutate_exists(
                 who.clone(),
                 id,
                 |app_wrap| -> result::Result<(), DispatchError> {
                     let mut app = app_wrap.take().ok_or(Error::<T>::TaskNotExists)?;
-                    if app.status == 2 {
-                        app.status = 0;
-
-                        // Run AfterCreate hook
-                        // 执行 Task 创建后回调,部署任务添加到消息中间件
-                        <T as pallet::Config>::AfterCreate::run_hook(
-                            WorkId {
-                                wtype: WorkType::TASK,
-                                id,
-                            },
-                            who,
-                        );
-                    } else {
-                        return Err(Error::<T>::TaskStatusMismatch.into());
-                    }
+                    app.status = 4;
+                    *app_wrap = Some(app);
                     Ok(())
                 },
             )?;
+
+            // Run AfterCreate hook
+            // 执行 Task 创建后回调,部署任务添加到消息中间件
+            <T as pallet::Config>::AfterCreate::run_hook(
+                WorkId {
+                    wtype: WorkType::TASK,
+                    id,
+                },
+                who,
+            );
 
             Ok(().into())
         }
@@ -600,7 +604,7 @@ pub mod pallet {
             let number = <frame_system::Pallet<T>>::block_number();
 
             // 获取费用
-            let p = <Prices<T>>::get(level).ok_or(Error::<T>::TaskNotExists)?;
+            let p = <Prices<T>>::get(level).ok_or(Error::<T>::LevelNotExists)?;
             let cos: u32 = (number - app.start_block).saturated_into::<u32>();
 
             return Ok(BalanceOf::<T>::from(
