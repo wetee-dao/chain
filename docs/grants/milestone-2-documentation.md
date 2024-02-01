@@ -223,7 +223,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 
 - Fill in the form
 
-<img src="./img/m1/m1-6.jpg" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-6.png" width="700" style="padding-left: 30px;">
 
 - Submit the request
 
@@ -256,11 +256,11 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 
 - Go to `Developer` --> `Extrinsics` section
 
-- Select `weteeApp` --> `recharge`
+- Select `weteeApp` --> `restart`
 
 - Fill in the form
 
-<img src="./img/m1/m1-15.png" width="700" style="padding-left: 30px;">
+<img src="./img/m2/m2-5.png" width="700" style="padding-left: 30px;">
 
 - Submit the request
 
@@ -302,4 +302,4 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 
 - Submit the request
 
-- The task will be update`
+- The task will be update

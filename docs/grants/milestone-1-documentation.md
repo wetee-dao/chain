@@ -103,7 +103,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Fill in the form
 
-<img src="./img/m1/m1-6.jpg" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-6.png" width="700" style="padding-left: 30px;">
 
 - Click `Submit Transaction`
 
@@ -161,7 +161,7 @@ Cluster uploads the SGX public key, proving that the entire control panel is ope
 
 - Fill in the form
 
-<img src="./img/m1/m1-6.jpg" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-6.png" width="700" style="padding-left: 30px;">
 
 - Submit the request
 
