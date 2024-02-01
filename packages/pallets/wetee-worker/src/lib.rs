@@ -1089,7 +1089,7 @@ pub mod pallet {
                 return Ok(false);
             }
 
-            if task.status == 0 {
+            if task.status == 0 || task.status == 4 {
                 // 更新抵押数据
                 Crs::<T>::try_mutate_exists(id, |c| -> result::Result<(), DispatchError> {
                     let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
