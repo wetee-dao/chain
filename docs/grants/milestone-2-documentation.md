@@ -72,7 +72,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 
 - Connect to `development node` --> `local node`
 
-<img src="./img/m1/m1-0.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-0.png" width="700" >
 
 - Open `Developer` --> `Sign and verify` section
 
@@ -83,7 +83,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 {"address":"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","timestamp":1706250781}
 ```
 
-<img src="./img/m1/m1-1.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-1.png" width="700" >
 
 - Submit `Sign message` successfully signed message
 
@@ -187,6 +187,13 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
   }
   ```
 
+- Input Header data (1.1 loginAndBindRoot result) in `Authorization` like this
+  ```json 
+  {
+    "Authorization": "0x7b2261646472657373223a223547727776614546357a58623236467a397263517044575335374374455248704e6568584350634e6f48474b75745159222c2274696d657374616d70223a313730363235303738312c226973526f6f74223a66616c73657d||0x00c4ba3a5e02c0ddb8396a2019aba79266e37554922f2995847d7a9067d5f87d7b3c9d90fde34137781086461bc43f2f17d97918174fd9142bc094c05f06cf8e"
+  }
+  ```
+
 - Click `Execute` button and check result has no error
   ```json
   {
@@ -222,8 +229,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeApp` --> `create` callable
 
 - Fill in the form
-
-<img src="./img/m1/m1-6.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-6.png" width="700" >
 
 - Submit the request
 
@@ -234,8 +240,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeApp` --> `update` callable
 
 - Fill in the form
-
-<img src="./img/m1/m1-13.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-13.png" width="700" >
 
 - Submit the request
 
@@ -246,8 +251,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeApp` --> `setSettings`
 
 - Fill in the form
-
-<img src="./img/m1/m1-14.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-14.png" width="700" >
 
 - Submit the request
 
@@ -259,8 +263,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeApp` --> `restart`
 
 - Fill in the form
-
-<img src="./img/m2/m2-5.png" width="700" style="padding-left: 30px;">
+<img src="./img/m2/m2-5.png" width="700" >
 
 - Submit the request
 
@@ -271,9 +274,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeApp` --> `stop`
 
 - Fill in the form
-
-<img src="./img/m1/m1-16.png" width="700" style="padding-left: 30px;">
-
+<img src="./img/m1/m1-16.png" width="700" >
 - Submit the request
 
 - The app will be stop
@@ -285,8 +286,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeTask` --> `create` callable
 
 - Fill in the form
-
-<img src="./img/m1/m1-17.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-17.png" width="700" >
 
 - Submit the request
 
@@ -297,8 +297,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeTask` --> `update` callable
 
 - Fill in the form
-
-<img src="./img/m1/m1-18.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-18.png" width="700" >
 
 - Submit the request
 
