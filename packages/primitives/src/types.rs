@@ -71,9 +71,9 @@ pub struct MintId {
 /// computing resource
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Cr {
-    pub cpu: u16,
-    pub mem: u16,
-    pub disk: u16,
+    pub cpu: u32,
+    pub mem: u32,
+    pub disk: u32,
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]

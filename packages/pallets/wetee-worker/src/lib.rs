@@ -68,13 +68,13 @@ pub struct Deposit<Balance> {
     pub deposit: Balance,
     /// cpu
     /// cpu
-    pub cpu: u16,
+    pub cpu: u32,
     /// memory
     /// memory
-    pub mem: u16,
+    pub mem: u32,
     /// disk
     /// disk
-    pub disk: u16,
+    pub disk: u32,
 }
 
 /// 集群证明
@@ -137,11 +137,11 @@ pub struct ClusterContractState<BlockNumber, AccountId> {
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct DepositPrice {
     /// cpu
-    pub cpu_per: u16,
+    pub cpu_per: u32,
     /// memory
-    pub memory_per: u16,
+    pub memory_per: u32,
     /// disk
-    pub disk_per: u16,
+    pub disk_per: u32,
 }
 
 /// Ip 信息
@@ -544,9 +544,9 @@ pub mod pallet {
         pub fn cluster_mortgage(
             origin: OriginFor<T>,
             id: ClusterId,
-            cpu: u16,
-            mem: u16,
-            disk: u16,
+            cpu: u32,
+            mem: u32,
+            disk: u32,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
@@ -1249,9 +1249,9 @@ pub mod pallet {
         /// 获取节点价格
         pub fn get_level_price(
             level: u8,
-            cpu: u16,
-            mem: u16,
-            disk: u16,
+            cpu: u32,
+            mem: u32,
+            disk: u32,
         ) -> result::Result<BalanceOf<T>, DispatchError> {
             let p = DepositPrices::<T>::get(level).ok_or(Error::<T>::LevelNotExists)?;
             return Ok(BalanceOf::<T>::from(

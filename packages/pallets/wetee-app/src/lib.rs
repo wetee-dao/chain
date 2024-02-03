@@ -68,11 +68,11 @@ pub struct TeeApp<AccountId, BlockNumber, Balance> {
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Price {
     /// cpu
-    pub cpu_per: u16,
+    pub cpu_per: u32,
     /// memory
-    pub memory_per: u16,
+    pub memory_per: u32,
     /// disk
-    pub disk_per: u16,
+    pub disk_per: u32,
 }
 
 #[frame_support::pallet]
@@ -243,9 +243,9 @@ pub mod pallet {
             // port of service
             port: Vec<u32>,
             // cpu memory disk
-            cpu: u16,
-            memory: u16,
-            disk: u16,
+            cpu: u32,
+            memory: u32,
+            disk: u32,
             // min score of the App
             level: u8,
             // min deposit of the App

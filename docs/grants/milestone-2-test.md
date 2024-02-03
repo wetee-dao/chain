@@ -1,6 +1,6 @@
 # Milestone 1 Test Guide
   
-### Go Setup on Ubuntu 20.04/Ubuntu 22.04 and Ego Setup
+### Go Setup on Ubuntu 20.04/Ubuntu 22.04
 ```
 sudo apt install golang-1.20
 ```
@@ -11,4 +11,3 @@ sudo apt install golang-1.20
 git clone  https://github.com/integritee-network/worker && cd worker
 go test ./...
 ```
-
