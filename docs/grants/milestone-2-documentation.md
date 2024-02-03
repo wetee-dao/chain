@@ -37,7 +37,7 @@ curl -sfL https://get.k3s.io | sh -
 
 ### Start local test chain
 ```bash
-docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-01-29-16_04
+docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-02-03-22_03
 ```
 
 ## Link to test chain and cluster

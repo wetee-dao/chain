@@ -1,4 +1,4 @@
-FROM ubuntu:22.10
+FROM ubuntu:22.04
 
 ## shell json解析包
 RUN apt-get update
