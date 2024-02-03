@@ -83,7 +83,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 {"address":"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","timestamp":1706250781}
 ```
 
-<img src="./img/m1/m1-1.png" width="700" >
+<img src="./img/m2/m2-0.png" width="700" >
 
 - Submit `Sign message` successfully signed message
 
