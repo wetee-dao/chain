@@ -23,5 +23,5 @@ if [ $# -gt 0 ]; then
 fi
 
 # 编译
-docker build . -f builder.Dockerfile -t "wetee/wetee-node:$TAG"
+docker build -f ./x86_build.Dockerfile -t "wetee/wetee-node:$TAG"  . 
 docker push "wetee/wetee-node:$TAG"
