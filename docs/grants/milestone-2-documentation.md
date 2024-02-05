@@ -302,3 +302,45 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The task will be update
+
+### 3.3. Task Settings
+
+- Go to `Developer` --> `Extrinsics` section
+
+- Select `weteeTask` --> `setSettings`
+
+- Fill in the form
+
+<img src="./img/m1/m1-19.png" width="700" style="padding-left: 30px;">
+
+- Submit the request
+
+- The task will be set settings to app run environment
+
+### 3.4. Task Recharge
+
+- Go to `Developer` --> `Extrinsics` section
+
+- Select `weteeTask` --> `recharge`
+
+- Fill in the form
+
+<img src="./img/m1/m1-20.png" width="700" style="padding-left: 30px;">
+
+- Submit the request
+
+- The task will be charged
+
+### 3.5. Task Stop
+
+- Go to `Developer` --> `Extrinsics` section
+
+- Select `weteeTask` --> `stop`
+
+- Fill in the form
+
+<img src="./img/m1/m1-21.png" width="700" style="padding-left: 30px;">
+
+- Submit the request
+
+- The task will be stop
