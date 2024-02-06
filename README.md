@@ -1,5 +1,14 @@
 # Wetee
 
+
+<img align="right" width="400" src="https://raw.githubusercontent.com/w3f/Grants-Program/00855ef70bc503433dc9fccc057c2f66a426a82b/static/img/badge_black.svg" />
+
+WeTEE is a decentralized application deployment platform integrated with a Trusted Execution Environment (TEE).
+
+WeTEE consists of blockchain networks and multiple confidential computing clusters, collectively providing an efficient decentralised solution for confidential computing.
+
+This project is funded by [Web3 Foundation](https://web3.foundation) via their [Open Grants Program](https://github.com/w3f/Open-Grants-Program)
+
 ## Introduction
 
 WeTEE is a decentralized application deployment platform integrated with a Trusted Execution Environment (TEE).  
