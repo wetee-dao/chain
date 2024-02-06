@@ -1,4 +1,4 @@
-# Wetee
+# WeTEE
 
 
 <img align="right" width="400" src="https://raw.githubusercontent.com/w3f/Grants-Program/00855ef70bc503433dc9fccc057c2f66a426a82b/static/img/badge_black.svg" />
