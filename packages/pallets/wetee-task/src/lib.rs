@@ -512,7 +512,7 @@ pub mod pallet {
 
             let task = <TEETasks<T>>::get(app_account, app_id).ok_or(Error::<T>::TaskNotExists)?;
 
-            ensure!(task.status == 0, Error::<T>::TaskIsRuning);
+            // ensure!(task.status == 0, Error::<T>::TaskIsRuning);
 
             Self::try_stop(who.clone(), app_id)?;
             Ok(().into())
