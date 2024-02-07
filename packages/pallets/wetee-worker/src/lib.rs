@@ -68,13 +68,13 @@ pub struct Deposit<Balance> {
     pub deposit: Balance,
     /// cpu
     /// cpu
-    pub cpu: u16,
+    pub cpu: u32,
     /// memory
     /// memory
-    pub mem: u16,
+    pub mem: u32,
     /// disk
     /// disk
-    pub disk: u16,
+    pub disk: u32,
 }
 
 /// 集群证明
@@ -128,7 +128,7 @@ pub struct ClusterContractState<BlockNumber, AccountId> {
     /// 用户
     pub user: AccountId,
     /// work_id
-    /// 取回
+    /// 工作id
     pub work_id: WorkId,
 }
 
@@ -137,11 +137,11 @@ pub struct ClusterContractState<BlockNumber, AccountId> {
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct DepositPrice {
     /// cpu
-    pub cpu_per: u16,
+    pub cpu_per: u32,
     /// memory
-    pub memory_per: u16,
+    pub memory_per: u32,
     /// disk
-    pub disk_per: u16,
+    pub disk_per: u32,
 }
 
 /// Ip 信息
@@ -329,6 +329,8 @@ pub mod pallet {
         WorkContractUpdated { work_id: WorkId },
         /// Work contract has been withdrawn. [user]
         WorkContractWithdrawaled { work_id: WorkId },
+        /// Work stoped
+        WorkStoped { work_id: WorkId, cluster_id: ClusterId },
     }
 
     // Errors inform users that something went wrong.
@@ -544,9 +546,9 @@ pub mod pallet {
         pub fn cluster_mortgage(
             origin: OriginFor<T>,
             id: ClusterId,
-            cpu: u16,
-            mem: u16,
-            disk: u16,
+            cpu: u32,
+            mem: u32,
+            disk: u32,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
@@ -872,16 +874,8 @@ pub mod pallet {
             Crs::<T>::insert(
                 cluster_id,
                 (
-                    Cr {
-                        cpu: 0,
-                        mem: 0,
-                        disk: 0,
-                    },
-                    Cr {
-                        cpu: 0,
-                        mem: 0,
-                        disk: 0,
-                    },
+                    Cr {cpu: 0,mem: 0,disk: 0},
+                    Cr {cpu: 0,mem: 0,disk: 0},
                 ),
             );
 
@@ -941,8 +935,8 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Worker app stop
-        /// 停止应用
+        /// Worker report stop
+        /// 停止投诉
         #[pallet::call_index(009)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn report_close(
@@ -981,6 +975,45 @@ pub mod pallet {
             }
 
             Reports::<T>::remove(cluster_id, work_id);
+            Ok(().into())
+        }
+    
+        /// Work stop
+        /// 停止应用
+        #[pallet::call_index(010)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn work_stop(
+            origin: OriginFor<T>,
+            work_id: WorkId,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            // 停止任务
+            match work_id.wtype {
+                WorkType::APP => {
+                    let app_account = wetee_app::AppIdAccounts::<T>::get(work_id.id)
+                        .ok_or(Error::<T>::AppNotExists)?;
+                    ensure!(app_account == who, Error::<T>::NotAllowed403);
+                    wetee_app::Pallet::<T>::try_stop(app_account,work_id.id.clone())?;
+                }
+                WorkType::TASK => {
+                    let app_account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
+                        .ok_or(Error::<T>::AppNotExists)?;
+                    ensure!(app_account == who, Error::<T>::NotAllowed403);
+                    wetee_task::Pallet::<T>::try_stop(app_account,work_id.id.clone())?;
+                }
+            }
+
+            // 删除合约
+            let cid = WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
+            WorkContracts::<T>::remove(work_id.clone());
+            ClusterContracts::<T>::remove(cid,work_id.clone());
+
+            Self::deposit_event(Event::WorkStoped {
+                work_id: work_id.clone(),
+                cluster_id: cid,
+            });
+
             Ok(().into())
         }
     }
@@ -1166,7 +1199,7 @@ pub mod pallet {
 
             // 获取随机数
             let random_base = Self::get_random_number(work_id.id);
-            for i in 1..1000 {
+            for i in 1..100 {
                 let random_number = random_base + i;
                 // 必须保证数字在集群的范围内 集群数字是从1开始的
                 let mut v = random_number % num;
@@ -1249,9 +1282,9 @@ pub mod pallet {
         /// 获取节点价格
         pub fn get_level_price(
             level: u8,
-            cpu: u16,
-            mem: u16,
-            disk: u16,
+            cpu: u32,
+            mem: u32,
+            disk: u32,
         ) -> result::Result<BalanceOf<T>, DispatchError> {
             let p = DepositPrices::<T>::get(level).ok_or(Error::<T>::LevelNotExists)?;
             return Ok(BalanceOf::<T>::from(

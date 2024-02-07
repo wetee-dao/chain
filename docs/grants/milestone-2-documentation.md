@@ -37,7 +37,7 @@ curl -sfL https://get.k3s.io | sh -
 
 ### Start local test chain
 ```bash
-docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-01-29-16_04
+docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-02-03-22_03
 ```
 
 ## Link to test chain and cluster
@@ -72,7 +72,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 
 - Connect to `development node` --> `local node`
 
-<img src="./img/m1/m1-0.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-0.png" width="700" >
 
 - Open `Developer` --> `Sign and verify` section
 
@@ -83,7 +83,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 {"address":"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","timestamp":1706250781}
 ```
 
-<img src="./img/m1/m1-1.png" width="700" style="padding-left: 30px;">
+<img src="./img/m2/m2-0.png" width="700" >
 
 - Submit `Sign message` successfully signed message
 
@@ -187,6 +187,13 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
   }
   ```
 
+- Input Header data (1.1 loginAndBindRoot result) in `Authorization` like this
+  ```json 
+  {
+    "Authorization": "0x7b2261646472657373223a223547727776614546357a58623236467a397263517044575335374374455248704e6568584350634e6f48474b75745159222c2274696d657374616d70223a313730363235303738312c226973526f6f74223a66616c73657d||0x00c4ba3a5e02c0ddb8396a2019aba79266e37554922f2995847d7a9067d5f87d7b3c9d90fde34137781086461bc43f2f17d97918174fd9142bc094c05f06cf8e"
+  }
+  ```
+
 - Click `Execute` button and check result has no error
   ```json
   {
@@ -222,36 +229,55 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeApp` --> `create` callable
 
 - Fill in the form
-
-<img src="./img/m1/m1-6.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-6.png" width="700" >
 
 - Submit the request
 
 - The app will be running
+
+- check k8s pod status
+  > error `error loading config file "/etc/rancher/k3s/k3s.yaml": open /etc/rancher/k3s/k3s.yaml: permission denied ` can be solved by `chmod 777 /etc/rancher/k3s/k3s.yaml`
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `app-0` pod is running
+
 ### 2.2. Update TEE app
 - Go to `Developer` --> `Extrinsics` section
 
 - Select `weteeApp` --> `update` callable
 
 - Fill in the form
-
-<img src="./img/m1/m1-13.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-13.png" width="700" >
 
 - Submit the request
 
 - The app will be update
+
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `app-0` pod is updated
+
 ### 2.3. Set settiings for TEE app
 - Go to `Developer` --> `Extrinsics` section
 
 - Select `weteeApp` --> `setSettings`
 
 - Fill in the form
-
-<img src="./img/m1/m1-14.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-14.png" width="700" >
 
 - Submit the request
 
 - The app will be set settings to app run environment
+
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `app-0` pod is updated
+
 ### 2.4. Restart TEE app
 
 - Go to `Developer` --> `Extrinsics` section
@@ -259,24 +285,28 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeApp` --> `restart`
 
 - Fill in the form
-
-<img src="./img/m2/m2-5.png" width="700" style="padding-left: 30px;">
+<img src="./img/m2/m2-5.png" width="700" >
 
 - Submit the request
 
 - The app will be charged
+
 ### 2.5. Stop TEE app
 - Go to `Developer` --> `Extrinsics` section
 
 - Select `weteeApp` --> `stop`
 
 - Fill in the form
-
-<img src="./img/m1/m1-16.png" width="700" style="padding-left: 30px;">
-
+<img src="./img/m1/m1-16.png" width="700" >
 - Submit the request
 
 - The app will be stop
+
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `app-0` pod is delete
 
 ## 3. Use as task developer
 ### 3.1. Create TEE task
@@ -285,21 +315,82 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Select `weteeTask` --> `create` callable
 
 - Fill in the form
-
-<img src="./img/m1/m1-17.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-17.png" width="700" >
 
 - Submit the request
 
 - The task will be running
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `task-0` pod is created
+
 ### 3.2. Update TEE task
 - Go to `Developer` --> `Extrinsics` section
 
 - Select `weteeTask` --> `update` callable
 
 - Fill in the form
-
-<img src="./img/m1/m1-18.png" width="700" style="padding-left: 30px;">
+<img src="./img/m1/m1-18.png" width="700" >
 
 - Submit the request
 
 - The task will be update
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `task-0` pod is updated
+
+### 3.3. Task Settings
+
+- Go to `Developer` --> `Extrinsics` section
+
+- Select `weteeTask` --> `setSettings`
+
+- Fill in the form
+
+<img src="./img/m1/m1-19.png" width="700" style="padding-left: 30px;">
+
+- Submit the request
+
+- The task will be set settings to app run environment
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `task-0` pod is updated
+
+### 3.4. Task Recharge
+
+- Go to `Developer` --> `Extrinsics` section
+
+- Select `weteeTask` --> `recharge`
+
+- Fill in the form
+
+<img src="./img/m1/m1-20.png" width="700" style="padding-left: 30px;">
+
+- Submit the request
+
+- The task will be charged
+
+### 3.5. Task Stop
+
+- Go to `Developer` --> `Extrinsics` section
+
+- Select `weteeTask` --> `stop`
+
+- Fill in the form
+
+<img src="./img/m1/m1-21.png" width="700" style="padding-left: 30px;">
+
+- Submit the request
+
+- The task will be stop
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `task-0` pod is deleted

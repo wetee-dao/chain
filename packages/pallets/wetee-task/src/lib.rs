@@ -68,11 +68,11 @@ pub struct TeeTask<AccountId, BlockNumber, Balance> {
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Price {
     /// cpu
-    pub cpu_per_block: u16,
+    pub cpu_per_block: u32,
     /// memory
-    pub memory_per_block: u16,
+    pub memory_per_block: u32,
     /// disk
-    pub disk_per_block: u16,
+    pub disk_per_block: u32,
 }
 
 #[frame_support::pallet]
@@ -239,9 +239,9 @@ pub mod pallet {
             name: Vec<u8>,
             image: Vec<u8>,
             port: Vec<u32>,
-            cpu: u16,
-            memory: u16,
-            disk: u16,
+            cpu: u32,
+            memory: u32,
+            disk: u32,
             level: u8,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
