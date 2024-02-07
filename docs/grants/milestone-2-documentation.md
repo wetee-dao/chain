@@ -234,6 +234,14 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The app will be running
+
+- check k8s pod status
+  > error `error loading config file "/etc/rancher/k3s/k3s.yaml": open /etc/rancher/k3s/k3s.yaml: permission denied ` can be solved by `chmod 777 /etc/rancher/k3s/k3s.yaml`
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `app-0` pod is running
+
 ### 2.2. Update TEE app
 - Go to `Developer` --> `Extrinsics` section
 
@@ -245,6 +253,13 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The app will be update
+
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `app-0` pod is updated
+
 ### 2.3. Set settiings for TEE app
 - Go to `Developer` --> `Extrinsics` section
 
@@ -256,6 +271,13 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The app will be set settings to app run environment
+
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `app-0` pod is updated
+
 ### 2.4. Restart TEE app
 
 - Go to `Developer` --> `Extrinsics` section
@@ -268,6 +290,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The app will be charged
+
 ### 2.5. Stop TEE app
 - Go to `Developer` --> `Extrinsics` section
 
@@ -278,6 +301,12 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The app will be stop
+
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `app-0` pod is delete
 
 ## 3. Use as task developer
 ### 3.1. Create TEE task
@@ -291,6 +320,12 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The task will be running
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `task-0` pod is created
+
 ### 3.2. Update TEE task
 - Go to `Developer` --> `Extrinsics` section
 
@@ -302,6 +337,11 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The task will be update
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `task-0` pod is updated
 
 ### 3.3. Task Settings
 
@@ -316,6 +356,11 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The task will be set settings to app run environment
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `task-0` pod is updated
 
 ### 3.4. Task Recharge
 
@@ -344,3 +389,8 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 - Submit the request
 
 - The task will be stop
+- check k8s pod status
+  ```bash
+  kubectl get pod -A
+  ```
+  can see `task-0` pod is deleted
