@@ -67,7 +67,7 @@ pub use wetee_sudo::Call as WeteeSudoCall;
 pub use wetee_task::Call as WeteeTaskCall;
 pub use wetee_treasury::Call as WeteeTreasuryCall;
 pub use wetee_worker::Call as WeteeWorkerCall;
-// end WETEE pallet.
+// End WETEE pallet.
 
 /// An index to a block.
 pub type BlockNumber = u64;
