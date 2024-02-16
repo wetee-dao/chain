@@ -590,7 +590,7 @@ pub mod pallet {
 
             // 任务只执行一次，执行后停止
             Self::try_stop(app_account, wid.id)?;
-            return Ok(());
+            Ok(())
         }
 
         /// Get fee

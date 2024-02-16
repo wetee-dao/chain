@@ -37,12 +37,26 @@ curl -sfL https://get.k3s.io | sh -
 
 ### Start local test chain
 ```bash
-docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-02-03-22_03
+docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-02-16-20_40
+```
+
+### Set golang env
+```bash
+# Install golang 1.20 ,ubuntu 20.04 default golang version is 1.13, is too low 
+sudo apt install golang-1.20
+
+# set golang env, also you can add it to .bashrc file（in home dir) or .zshrc file（in home dir)
+export GOROOT=/usr/lib/go-1.20/
+export PATH=$PATH:$GOROOT/bin
 ```
 
 ## Link to test chain and cluster
 ```bash
 git clone  https://github.com/wetee-dao/worker && cd worker
+
+# 1.0 Setup Env
+go mod tidy
+sudo chmod 744 /etc/rancher/k3s/k3s.yaml
 
 # 1.1 Setup SGX
 sh hack/sgx_device.sh
@@ -336,12 +350,8 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 
 - Submit the request
 
-- The task will be update
-- check k8s pod status
-  ```bash
-  kubectl get pod -A
-  ```
-  can see `task-0` pod is updated
+- The task will be update at next run
+
 
 ### 3.3. Task Settings
 
@@ -355,12 +365,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 
 - Submit the request
 
-- The task will be set settings to app run environment
-- check k8s pod status
-  ```bash
-  kubectl get pod -A
-  ```
-  can see `task-0` pod is updated
+- The task will be set settings to app run environment at next run
 
 ### 3.4. Task Recharge
 
