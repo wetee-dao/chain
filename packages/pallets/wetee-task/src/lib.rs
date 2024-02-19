@@ -502,23 +502,6 @@ pub mod pallet {
 
             Ok(().into())
         }
-
-        /// Task stop
-        /// 停止任务
-        #[pallet::call_index(006)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn stop(origin: OriginFor<T>, app_id: TeeAppId) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            let app_account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::TaskNotExists)?;
-            ensure!(who == app_account, Error::<T>::Task403);
-
-            let task = <TEETasks<T>>::get(app_account, app_id).ok_or(Error::<T>::TaskNotExists)?;
-
-            ensure!(task.status != 0, Error::<T>::TaskIsStoped);
-
-            Self::try_stop(who.clone(), app_id)?;
-            Ok(().into())
-        }
     }
 
     impl<T: Config> Pallet<T> {

@@ -88,14 +88,14 @@ pub fn update_should_fail() {
 pub fn stop() {
     new_test_run().execute_with(|| {
         do_create();
-        assert!(Pallet::<Test>::stop(OriginFor::<Test>::signed(ALICE), 0).is_ok());
+        assert!(Pallet::<Test>::try_stop(ALICE, 0).is_ok());
     });
 }
 
 #[test]
 pub fn stop_should_fail() {
     new_test_run().execute_with(|| {
-        assert!(Pallet::<Test>::stop(OriginFor::<Test>::signed(BOB), 0).is_err());
+        assert!(Pallet::<Test>::try_stop(BOB, 0).is_err());
     });
 }
 
