@@ -2,7 +2,6 @@
 
 ## Hardware and Software Requirements
 - [CPU List - click to see cpu list](https://ark.intel.com/content/www/us/en/ark/search/featurefilter.html?productType=873&2_SoftwareGuardExtensions=Yes%20with%20Intel%C2%AE%20ME)
-    - Intel 7th generation (Kaby Lake) Core i3, i5, i7, and i9 processors
     - Intel 8th generation (Cannon Lake) Core i3, i5, i7, and i9 processors
     - Intel 9th generation (Cascade Lake) Core i3, i5, i7, and i9 processors
     - Intel 10th generation (Comet Lake) Core i3, i5, i7, and i9 processors
