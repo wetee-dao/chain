@@ -98,8 +98,6 @@ pub struct ProofOfWork {
     /// task cpu memory usage hash
     /// 任务cpu 内存 占用监控hash
     pub cr_hash: Vec<u8>,
-    /// tee public key
-    pub public_key: Vec<u8>,
 }
 
 /// 合约日志
@@ -310,6 +308,11 @@ pub mod pallet {
         ProofOfWork,
         OptionQuery,
     >;
+
+    /// work report
+    #[pallet::storage]
+    #[pallet::getter(fn report_of_work)]
+    pub type ReportOfWork<T: Config> = StorageMap<_, Identity, WorkId, Vec<u8>, OptionQuery>;
 
     /// 投诉信息
     /// reports of work / cluster
@@ -668,6 +671,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             work_id: WorkId,
             proof: ProofOfWork,
+            report: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let cluster_id =
@@ -682,6 +686,11 @@ pub mod pallet {
             // check status
             // 保存工作证明
             ProofsOfWork::<T>::insert(work_id.clone(), number, proof);
+
+            let creport = ReportOfWork::<T>::get(work_id.clone());
+            if creport.is_none() || creport.unwrap() != report {
+                ReportOfWork::<T>::insert(work_id.clone(),report);
+            }
 
             // pay fee
             // 支付费用
