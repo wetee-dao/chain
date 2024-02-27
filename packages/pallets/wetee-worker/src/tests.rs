@@ -81,8 +81,8 @@ pub fn start() {
                 disk: 1,
             },
             cr_hash: "test".as_bytes().to_vec(),
-            public_key: "test".as_bytes().to_vec(),
         },
+        "test".as_bytes().to_vec(),
     )
     .unwrap();
 }
@@ -373,8 +373,8 @@ pub fn work_proof_upload() {
                     disk: 1,
                 },
                 cr_hash: "test".as_bytes().to_vec(),
-                public_key: "test".as_bytes().to_vec(),
             },
+            "test".as_bytes().to_vec(),
         );
         assert!(res.is_ok());
     });
@@ -405,8 +405,8 @@ pub fn work_proof_upload_should_fail() {
                     disk: 1,
                 },
                 cr_hash: "test".as_bytes().to_vec(),
-                public_key: "test".as_bytes().to_vec(),
             },
+            "test".as_bytes().to_vec(),
         );
         assert!(res.is_err());
     });
@@ -437,8 +437,8 @@ pub fn work_proof_upload_should_fail2() {
                     disk: 1,
                 },
                 cr_hash: "test".as_bytes().to_vec(),
-                public_key: "test".as_bytes().to_vec(),
             },
+            "test".as_bytes().to_vec(),
         );
         assert!(res.is_err());
     });

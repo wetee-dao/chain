@@ -476,16 +476,6 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// App stop
-        /// 停止任务
-        #[pallet::call_index(005)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn stop(origin: OriginFor<T>, app_id: TeeAppId) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            Self::try_stop(who.clone(), app_id)?;
-            Ok(().into())
-        }
-
         /// App restart
         /// 更新任务
         #[pallet::call_index(006)]
