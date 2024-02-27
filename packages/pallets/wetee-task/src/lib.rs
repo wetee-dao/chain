@@ -224,6 +224,8 @@ pub mod pallet {
         NotEnoughBalance,
         /// Task is runing.
         TaskIsRuning,
+        /// Task is stop.
+        TaskIsStoped,
         /// Level not exists.
         LevelNotExists,
     }
@@ -512,7 +514,7 @@ pub mod pallet {
 
             let task = <TEETasks<T>>::get(app_account, app_id).ok_or(Error::<T>::TaskNotExists)?;
 
-            // ensure!(task.status == 0, Error::<T>::TaskIsRuning);
+            ensure!(task.status != 0, Error::<T>::TaskIsStoped);
 
             Self::try_stop(who.clone(), app_id)?;
             Ok(().into())
@@ -590,7 +592,7 @@ pub mod pallet {
 
             // 任务只执行一次，执行后停止
             Self::try_stop(app_account, wid.id)?;
-            return Ok(());
+            Ok(())
         }
 
         /// Get fee

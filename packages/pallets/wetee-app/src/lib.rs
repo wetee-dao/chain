@@ -513,13 +513,21 @@ pub mod pallet {
             )?;
             <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
 
-            Self::deposit_event(Event::WorkUpdated {
-                user: account,
-                work_id: WorkId {
+            Self::deposit_event(Event::<T>::CreatedApp {
+                id: app_id,
+                creator: who.clone(),
+            });
+
+            // Run AfterCreate hook
+            // 执行 Task 创建后回调,部署任务添加到消息中间件
+            <T as pallet::Config>::AfterCreate::run_hook(
+                WorkId {
                     wtype: WorkType::APP,
                     id: app_id,
                 },
-            });
+                who,
+            );
+
             Ok(().into())
         }
     }

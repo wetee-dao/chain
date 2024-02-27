@@ -2,7 +2,6 @@
 
 ## Hardware and Software Requirements
 - [CPU List - click to see cpu list](https://ark.intel.com/content/www/us/en/ark/search/featurefilter.html?productType=873&2_SoftwareGuardExtensions=Yes%20with%20Intel%C2%AE%20ME)
-    - Intel 7th generation (Kaby Lake) Core i3, i5, i7, and i9 processors
     - Intel 8th generation (Cannon Lake) Core i3, i5, i7, and i9 processors
     - Intel 9th generation (Cascade Lake) Core i3, i5, i7, and i9 processors
     - Intel 10th generation (Comet Lake) Core i3, i5, i7, and i9 processors
@@ -37,12 +36,26 @@ curl -sfL https://get.k3s.io | sh -
 
 ### Start local test chain
 ```bash
-docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-02-10-12_50
+docker run -p 9944:9944 --name wetee wetee/wetee-node:dev.2024-02-16-20_40
+```
+
+### Set golang env
+```bash
+# Install golang 1.20 ,ubuntu 20.04 default golang version is 1.13, is too low 
+sudo apt install golang-1.20
+
+# set golang env, also you can add it to .bashrc file（in home dir) or .zshrc file（in home dir)
+export GOROOT=/usr/lib/go-1.20/
+export PATH=$PATH:$GOROOT/bin
 ```
 
 ## Link to test chain and cluster
 ```bash
 git clone  https://github.com/wetee-dao/worker && cd worker
+
+# 1.0 Setup Env
+go mod tidy
+sudo chmod 744 /etc/rancher/k3s/k3s.yaml
 
 # 1.1 Setup SGX
 sh hack/sgx_device.sh
@@ -336,12 +349,8 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 
 - Submit the request
 
-- The task will be update
-- check k8s pod status
-  ```bash
-  kubectl get pod -A
-  ```
-  can see `task-0` pod is updated
+- The task will be update at next run
+
 
 ### 3.3. Task Settings
 
@@ -355,12 +364,7 @@ docker run --device /dev/sgx/enclave --device /dev/sgx/provision \
 
 - Submit the request
 
-- The task will be set settings to app run environment
-- check k8s pod status
-  ```bash
-  kubectl get pod -A
-  ```
-  can see `task-0` pod is updated
+- The task will be set settings to app run environment at next run
 
 ### 3.4. Task Recharge
 
