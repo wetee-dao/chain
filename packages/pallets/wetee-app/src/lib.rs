@@ -32,11 +32,14 @@ pub use pallet::*;
 /// App specific information
 /// 程序信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct TeeApp<AccountId, BlockNumber, Balance> {
+pub struct TeeApp<AccountId, BlockNumber> {
     pub id: TeeAppId,
     /// creator of app
     /// 创建者
     pub creator: AccountId,
+    /// contract id
+    /// 合约账户
+    pub contract_id: AccountId,
     /// The block that creates the App
     /// App创建的区块
     pub start_block: BlockNumber,
@@ -55,9 +58,6 @@ pub struct TeeApp<AccountId, BlockNumber, Balance> {
     /// cpu memory disk
     /// cpu memory disk
     pub cr: Cr,
-    /// deposit of the App
-    /// 抵押金额
-    pub deposit: Balance,
     /// min score of the App
     /// 矿工最低等级
     pub level: u8,
@@ -140,7 +140,7 @@ pub mod pallet {
         T::AccountId,
         Identity,
         TeeAppId,
-        TeeApp<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
+        TeeApp<T::AccountId, BlockNumberFor<T>>,
     >;
 
     /// Price of resource
@@ -149,7 +149,7 @@ pub mod pallet {
     #[pallet::getter(fn price)]
     pub type Prices<T: Config> = StorageMap<_, Identity, u8, Price, OptionQuery>;
 
-    /// App 对应账户
+    /// App 拥有者账户
     /// user's K8sCluster information
     #[pallet::storage]
     #[pallet::getter(fn k8s_cluster_accounts)]
@@ -270,7 +270,7 @@ pub mod pallet {
                     mem: memory,
                     disk,
                 },
-                deposit,
+                contract_id: Self::app_id_account(id),
                 level,
             };
 
@@ -575,7 +575,7 @@ pub mod pallet {
             wid: WorkId,
             fee: BalanceOf<T>,
             to: T::AccountId,
-        ) -> result::Result<(), DispatchError> {
+        ) -> result::Result<u8, DispatchError> {
             let app_total =
                 wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id));
             log::warn!(
@@ -595,7 +595,7 @@ pub mod pallet {
                 if app_total < fee {
                     // transfer fee to target account
                     // 将抵押转移到目标账户
-                    return Ok(());
+                    return Ok(2);
                 }
             }
 
@@ -613,7 +613,7 @@ pub mod pallet {
                 to,
                 amount: fee,
             });
-            return Ok(());
+            return Ok(1);
         }
 
         /// Get fee
@@ -646,8 +646,7 @@ pub mod pallet {
         /// 8. app terminal block
         pub fn get_app(
             id: TeeAppId,
-        ) -> result::Result<TeeApp<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>, DispatchError>
-        {
+        ) -> result::Result<TeeApp<T::AccountId, BlockNumberFor<T>>, DispatchError> {
             let app_account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExist)?;
             let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExist)?;
             Ok(app)

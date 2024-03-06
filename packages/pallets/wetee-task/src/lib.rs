@@ -32,11 +32,14 @@ pub use pallet::*;
 /// Task specific information
 /// 程序信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct TeeTask<AccountId, BlockNumber, Balance> {
+pub struct TeeTask<AccountId, BlockNumber> {
     pub id: TeeAppId,
     /// creator of app
     /// 创建者
     pub creator: AccountId,
+    /// contract id
+    /// 合约账户
+    pub contract_id: AccountId,
     /// The block that creates the Task
     /// Task创建的区块
     pub start_block: BlockNumber,
@@ -55,9 +58,6 @@ pub struct TeeTask<AccountId, BlockNumber, Balance> {
     /// cpu memory disk
     /// cpu memory disk
     pub cr: Cr,
-    /// deposit of the Task
-    /// 抵押金额
-    pub deposit: Balance,
     /// min score of the Task
     /// 矿工最低等级
     pub level: u8,
@@ -143,7 +143,7 @@ pub mod pallet {
         T::AccountId,
         Identity,
         TeeAppId,
-        TeeTask<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
+        TeeTask<T::AccountId, BlockNumberFor<T>>,
     >;
 
     /// Price of resource
@@ -263,7 +263,7 @@ pub mod pallet {
                     mem: memory,
                     disk,
                 },
-                deposit,
+                contract_id: Self::task_id_account(id),
                 level,
             };
 

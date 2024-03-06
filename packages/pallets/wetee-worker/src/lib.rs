@@ -354,7 +354,7 @@ pub mod pallet {
         /// Cluster can not stopped
         /// 集群无法停止
         ClusterCanNotStopped,
-        /// Too many apps
+        /// Too many apps 
         /// 程序数量过多
         TooManyApp,
         /// No cluster
@@ -670,8 +670,8 @@ pub mod pallet {
         pub fn work_proof_upload(
             origin: OriginFor<T>,
             work_id: WorkId,
-            proof: ProofOfWork,
-            report: Vec<u8>,
+            proof: Option<ProofOfWork>,
+            report: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let cluster_id =
@@ -683,15 +683,23 @@ pub mod pallet {
 
             let number = <frame_system::Pallet<T>>::block_number();
 
-            // check status
-            // 保存工作证明
-            ProofsOfWork::<T>::insert(work_id.clone(), number, proof);
-
-            let creport = ReportOfWork::<T>::get(work_id.clone());
-            if creport.is_none() || creport.unwrap() != report {
-                ReportOfWork::<T>::insert(work_id.clone(),report);
+            if report.is_some() {
+                let new_report = report.unwrap();
+                let creport = ReportOfWork::<T>::get(work_id.clone());
+                if creport.is_none() || creport.unwrap() != new_report {
+                    ReportOfWork::<T>::insert(work_id.clone(),new_report);
+                }
             }
 
+            // 如果未提交证明，则直接返回，不继续计费和更新证明
+            if proof.is_none() {
+                return Ok(().into());
+            }
+
+            // check status
+            // 保存工作证明
+            ProofsOfWork::<T>::insert(work_id.clone(), number, proof.unwrap());
+        
             // pay fee
             // 支付费用
             if work_id.wtype == WorkType::APP {
@@ -708,27 +716,18 @@ pub mod pallet {
                     return Err(Error::<T>::WorkBlockNumberError.into());
                 } else if number - state.block_number > (stage * 2).into() {
                     // More than 2 cycles, only pay once, TODO, reduce service points
-                    // 超过2个周期，只支付一次费用，TODO，减少服务积分
-                    WorkContractState::<T>::insert(
-                        work_id.clone(),
-                        cluster_id,
-                        ContractState {
-                            block_number: number,
-                            minted: state.minted + fee,
-                            withdrawal: state.withdrawal,
-                        },
-                    );
-                } else {
-                    WorkContractState::<T>::insert(
-                        work_id.clone(),
-                        cluster_id,
-                        ContractState {
-                            block_number: number,
-                            minted: state.minted + fee,
-                            withdrawal: state.withdrawal,
-                        },
-                    );
+                    // TODO，超过2个周期，只支付一次费用，减少服务积分
                 }
+
+                WorkContractState::<T>::insert(
+                    work_id.clone(),
+                    cluster_id,
+                    ContractState {
+                        block_number: number,
+                        minted: state.minted + fee,
+                        withdrawal: state.withdrawal,
+                    },
+                );  
 
                 Self::deposit_event(Event::WorkContractUpdated {
                     work_id: work_id.clone(),
@@ -740,14 +739,15 @@ pub mod pallet {
                 );
 
                 let to = Self::get_mint_account(work_id.clone(), cluster_id);
-                wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
+                let status = wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
 
                 let app = wetee_app::Pallet::<T>::get_app(work_id.id)?;
 
                 // check app status
                 // 如果app状态为已停止，则删除工作合约
-                if app.status == 2 {
+                if app.status == 2 || status == 2 {
                     WorkContracts::<T>::remove(work_id.clone());
+                    ClusterContracts::<T>::remove(cluster_id,work_id.clone());
                     // 更新抵押数据
                     Crs::<T>::try_mutate_exists(
                         cluster_id,
@@ -775,7 +775,10 @@ pub mod pallet {
                 );
 
                 let to = Self::get_mint_account(work_id.clone(), cluster_id);
-                wetee_task::Pallet::<T>::pay_run_fee(work_id, fee, to)?;
+                wetee_task::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
+                
+                WorkContracts::<T>::remove(work_id.clone());
+                ClusterContracts::<T>::remove(cluster_id,work_id.clone());
             }
 
             Ok(().into())
@@ -965,6 +968,7 @@ pub mod pallet {
                     let app_account = wetee_app::AppIdAccounts::<T>::get(work_id.id)
                         .ok_or(Error::<T>::AppNotExists)?;
                     ensure!(app_account == who, Error::<T>::NotAllowed403);
+
                     if let Some(app) = wetee_app::TEEApps::<T>::get(who.clone(), work_id.id) {
                         ensure!(app.status != 0, Error::<T>::WorkNotStarted);
                     } else {
@@ -975,6 +979,7 @@ pub mod pallet {
                     let app_account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
                         .ok_or(Error::<T>::AppNotExists)?;
                     ensure!(app_account == who, Error::<T>::NotAllowed403);
+
                     if let Some(task) = wetee_task::TEETasks::<T>::get(who.clone(), work_id.id) {
                         ensure!(task.status != 0, Error::<T>::WorkNotStarted);
                     } else {
