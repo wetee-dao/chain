@@ -307,6 +307,7 @@ construct_runtime!(
         Tokens: orml_tokens,
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
         MessageQueue: pallet_message_queue,
+        Utility: pallet_utility,
         WeteeOrg: wetee_org,
         WeteeAsset: wetee_assets,
         WeteeSudo: wetee_sudo,
