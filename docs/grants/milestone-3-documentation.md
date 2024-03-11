@@ -78,64 +78,64 @@ sh hack/install.sh
   }
   ```
 - Click `Execute` button and check result has no error
-  <img src="./img/m3/1.png" width="700">
+- <img src="./img/m3/1.png" width="700">
 
 ## 2. Login to DAPP
 
 - Open Dapp address `http:// {server IP} :30002/`
 - Select `Account` and click `Login` button
-  <img src="./img/m3/2.png" width="700">
+- <img src="./img/m3/2.png" width="700">
 
 ## 3 Send token to test account
 
 - Open polkadot UI http://polkadot-ui.tc.asyou.me/#/accounts
 - Connect to `development node` --> `Custom node` ->
   `ws://{server IP}:30001`
-  <img src="./img/m3/3.png" width="700">
+- <img src="./img/m3/3.png" width="700">
 - Open `Accounts` --> `Transfer` section
 - Input `{MintAddress}` to `send to address`
 - Input `100000` to `amount`
 - Click `Transfer` button and check result has no error
 
-### 1.3 Start a TEE service
+### 1.3 Start a aplication(Confidential service)
 
 - Open Dapp address `http://{server IP}:30002/`
 - Open `Personal Project`
-  <img src="./img/m3/4.png" width="700">
+- <img src="./img/m3/4.png" width="700">
 
 - Click `New button` --> `Confidential Service`
-  <img src="./img/m3/5.png" width="700">
+- <img src="./img/m3/5.png" width="700">
 - Click `Add button` sign and submit to chain
 
 ### 1.4 Check metrics of the new service
 
 - Click `Application card` -> click `Metrics` tab
-  <img src="./img/m3/8.png" width="700">
+- <img src="./img/m3/8.png" width="700">
 - Open polkadot UI http://polkadot-ui.tc.asyou.me
 - Open `Developer` --> `Chain state` section
 - Select `weteeWorker` --> `proofsOfWork` callable
 - Query like this
-  <img src="./img/m3/7.png" width="700">
+- <img src="./img/m3/7.png" width="700">
 - All metrics and data hash are displayed in the `result` field
 
 ### 1.4 Check logs of the new service
 
 - Click `Application card` -> click `Log` tab
-  <img src="./img/m3/6.png" width="700">
+- <img src="./img/m3/6.png" width="700">
 - Open polkadot UI http://polkadot-ui.tc.asyou.me
 - Open `Developer` --> `Chain state` section
 - Select `weteeWorker` --> `proofsOfWork` callable
 - Query like this
-  <img src="./img/m3/7.png" width="700">
+- <img src="./img/m3/7.png" width="700">
 - All logs hash are displayed in the `result` field
 
 ### 1.5 Check  remote attestation  of the new service
 
 - Click `Application card` -> click `Sgx report` tab
-  <img src="./img/m3/9.png" width="700">
+- <img src="./img/m3/9.png" width="700">
 - Open polkadot UI http://polkadot-ui.tc.asyou.me
 - Open `Developer` --> `Chain state` section
 - Select `weteeWorker` --> `reportOfWork` callable
 - Query like this
-  <img src="./img/m3/10.png" width="700">
+- <img src="./img/m3/10.png" width="700">
 - All logs hash are displayed in the `result` field
