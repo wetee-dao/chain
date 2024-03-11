@@ -1,4 +1,4 @@
-# Milestone 2 Documentation
+# Milestone 3 Documentation
 
 ## Hardware and Software Requirements
 
@@ -7,7 +7,7 @@
   - Intel 9th generation (Cascade Lake) Core i3, i5, i7, and i9 processors
   - Intel 10th generation (Comet Lake) Core i3, i5, i7, and i9 processors
   - 2nd Generation Xeon Scalable processors (Cascade Lake) and later generations generally provide SGX capabilities.
-- OS ubuntu 20.04 or ubuntu 22.04 (not in docker)
+- Please utilize Ubuntu 20.04 or 22.04 as the HostOS, and avoid the use of containerized system.
 
 ## Setup local enviroment
 
@@ -42,10 +42,10 @@ curl -sfL https://get.k3s.io | sh -
 ### Set golang env
 
 ```bash
-# Install golang 1.20 ,ubuntu 20.04 default golang version is 1.13, is too low
+# Install golang 1.21 ,ubuntu 20.04 default golang version is 1.13
 sudo apt install golang-1.21
 
-# set golang env, also you can add it to .bashrc file（in home dir) or .zshrc file（in home dir)
+# Set up the Golang environment, and/or consider adding it to the .bashrc or .zshrc file in the home directory.
 export GOROOT=/usr/lib/go-1.21/
 export PATH=$PATH:$GOROOT/bin
 ```
@@ -71,7 +71,7 @@ sh hack/install.sh
 ## 1.As cluster start quick mint (The normal mining process has been validated in M2.)
 
 - Open cluster worker address `http:// {server IP} :30000/`
-- Input data and signature like this
+- Input data
   ```
   mutation{
     start_for_test
@@ -97,7 +97,7 @@ sh hack/install.sh
 - Input `100000` to `amount`
 - Click `Transfer` button and check result has no error
 
-### 1.3 Start a aplication(Confidential service)
+### 4 Deploy an application (Confidential service)
 
 - Open Dapp address `http://{server IP}:30002/`
 - Open `Personal Project`
@@ -107,7 +107,7 @@ sh hack/install.sh
 - <img src="./img/m3/5.png" width="700">
 - Click `Add button` sign and submit to chain
 
-### 1.4 Check metrics of the new service
+### 5 Check metrics of the new service
 
 - Click `Application card` -> click `Metrics` tab
 - <img src="./img/m3/8.png" width="700">
@@ -118,7 +118,7 @@ sh hack/install.sh
 - <img src="./img/m3/7.png" width="700">
 - All metrics and data hash are displayed in the `result` field
 
-### 1.4 Check logs of the new service
+### 6 Check logs of the new service
 
 - Click `Application card` -> click `Log` tab
 - <img src="./img/m3/6.png" width="700">
@@ -129,7 +129,7 @@ sh hack/install.sh
 - <img src="./img/m3/7.png" width="700">
 - All logs hash are displayed in the `result` field
 
-### 1.5 Check  remote attestation  of the new service
+### 7 Check remote attestation  of the new service
 
 - Click `Application card` -> click `Sgx report` tab
 - <img src="./img/m3/9.png" width="700">
