@@ -52,7 +52,7 @@ export PATH=$PATH:$GOROOT/bin
 
 ## Run worker images
 
-```bash
+````bash
 git clone  https://github.com/wetee-dao/worker && cd worker
 
 # 1.0 Setup Env
@@ -66,7 +66,24 @@ sh hack/pre_install.sh
 
 # 1.2 and then install worker
 sh hack/install.sh
-```
+
+# 1.3 `kubectl get pod -A` to check worker-controller-manager-* is successfully deployed.
+```bash
+$ kubectl get pod -A
+NAMESPACE       NAME                                        READY   STATUS      RESTARTS   AGE
+kube-system     local-path-provisioner-6c86858495-cr2nz     1/1     Running     0          2m22s
+kube-system     coredns-6799fbcd5-pjvqk                     1/1     Running     0          2m22s
+kube-system     helm-install-traefik-crd-c4vdc              0/1     Completed   0          2m23s
+kube-system     helm-install-traefik-7m6xf                  0/1     Completed   1          2m23s
+kube-system     sgx-device-plugin-ds-22p9v                  1/1     Running     0          118s
+kube-system     svclb-traefik-17b1b422-ztq68                2/2     Running     0          118s
+kube-system     metrics-server-67c658944b-29qp8             1/1     Running     0          2m22s
+worker-addon    wetee-dapp-86b4cb47b8-m2f6k                 1/1     Running     0          117s
+worker-addon    wetee-node-5d4bf8bc57-6rfbx                 1/1     Running     0          116s
+kube-system     traefik-f4564c4f4-p8k75                     1/1     Running     0          118s
+worker-addon    sgx-pccs-api-67c56bc9d5-4lkqd               1/1     Running     0          116s
+worker-system   worker-controller-manager-59bccdd4c-gpt8q   2/2     Running     0          82s
+````
 
 ## 1.As cluster start quick mint (The normal mining process has been validated in M2.)
 

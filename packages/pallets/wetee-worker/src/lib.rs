@@ -314,6 +314,11 @@ pub mod pallet {
     #[pallet::getter(fn report_of_work)]
     pub type ReportOfWork<T: Config> = StorageMap<_, Identity, WorkId, Vec<u8>, OptionQuery>;
 
+    /// work report
+    #[pallet::storage]
+    #[pallet::getter(fn report_of_work_time)]
+    pub type ReportOfWorkTime<T: Config> = StorageMap<_, Identity, WorkId, BlockNumberFor<T>, OptionQuery>;
+
     /// 投诉信息
     /// reports of work / cluster
     #[pallet::storage]
@@ -688,6 +693,7 @@ pub mod pallet {
                 let creport = ReportOfWork::<T>::get(work_id.clone());
                 if creport.is_none() || creport.unwrap() != new_report {
                     ReportOfWork::<T>::insert(work_id.clone(),new_report);
+                    ReportOfWorkTime::<T>::insert(work_id.clone(),number);
                 }
             }
 
