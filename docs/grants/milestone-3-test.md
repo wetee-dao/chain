@@ -11,7 +11,4 @@ sudo apt install golang-1.21
 ```bash
 git clone  https://github.com/wetee-dao/worker && cd worker/mint/proof
 go test
-
-git clone  https://github.com/wetee-dao/libos-entry && cd libos-entry
-go test ./...
 ```
