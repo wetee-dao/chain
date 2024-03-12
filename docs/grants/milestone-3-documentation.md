@@ -85,7 +85,7 @@ worker-addon    sgx-pccs-api-67c56bc9d5-4lkqd               1/1     Running     
 worker-system   worker-controller-manager-59bccdd4c-gpt8q   2/2     Running     0          82s
 ````
 
-## 1.As cluster start quick mint (The normal mining process has been validated in M2.)
+## 1. As cluster start quick mint (The normal mining process has been validated in M2.)
 
 - Open cluster worker address `http:// {server IP} :30000/`
 - Input data
@@ -103,7 +103,7 @@ worker-system   worker-controller-manager-59bccdd4c-gpt8q   2/2     Running     
 - Select `Account` and click `Login` button
 - <img src="./img/m3/2.png" width="700">
 
-## 3 Send token to test account
+## 3. Send token to test account
 
 - Open polkadot UI http://polkadot-ui.tc.asyou.me/#/accounts
 - Connect to `development node` --> `Custom node` ->
@@ -114,7 +114,7 @@ worker-system   worker-controller-manager-59bccdd4c-gpt8q   2/2     Running     
 - Input `100000` to `amount`
 - Click `Transfer` button and check result has no error
 
-### 4 Deploy an application (Confidential service)
+### 4. Deploy an application (Confidential service)
 
 - Open Dapp address `http://{server IP}:30002/`
 - Open `Personal Project`
@@ -124,7 +124,7 @@ worker-system   worker-controller-manager-59bccdd4c-gpt8q   2/2     Running     
 - <img src="./img/m3/5.png" width="700">
 - Click `Add button` sign and submit to chain
 
-### 5 Check metrics of the new service
+### 5. Check metrics of the new service
 
 - Click `Application card` -> click `Metrics` tab
 - <img src="./img/m3/8.png" width="700">
@@ -135,7 +135,7 @@ worker-system   worker-controller-manager-59bccdd4c-gpt8q   2/2     Running     
 - <img src="./img/m3/7.png" width="700">
 - All metrics and data hash are displayed in the `result` field
 
-### 6 Check logs of the new service
+### 6. Check logs of the new service
 
 - Click `Application card` -> click `Log` tab
 - <img src="./img/m3/6.png" width="700">
@@ -146,7 +146,7 @@ worker-system   worker-controller-manager-59bccdd4c-gpt8q   2/2     Running     
 - <img src="./img/m3/7.png" width="700">
 - All logs hash are displayed in the `result` field
 
-### 7 Check remote attestation  of the new service
+### 7. Check remote attestation  of the new service
 
 - Click `Application card` -> click `Sgx report` tab
 - <img src="./img/m3/9.png" width="700">
