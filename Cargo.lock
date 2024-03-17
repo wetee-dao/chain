@@ -10309,6 +10309,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "wetee-gpu"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "orml-tokens",
+ "orml-traits",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "wetee-assets",
+ "wetee-org",
+ "wetee-primitives",
+]
+
+[[package]]
 name = "wetee-guild"
 version = "1.0.0"
 dependencies = [
@@ -10488,6 +10510,7 @@ dependencies = [
  "wetee-app",
  "wetee-assets",
  "wetee-gov",
+ "wetee-gpu",
  "wetee-guild",
  "wetee-org",
  "wetee-primitives",

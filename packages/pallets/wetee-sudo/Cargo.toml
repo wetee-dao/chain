@@ -1,45 +1,45 @@
 [package]
-name = "wetee-sudo"
-version = "1.0.0"
-authors = ["dao-entrance"]
+authors = ["WeTEE DAO"]
 edition = "2021"
+name = "wetee-sudo"
 publish = false
+version = "1.0.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = [
-	"derive",
-] }
-scale-info = { version = "2.10.0", default-features = false, features = [
-	"derive",
-] }
-frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0" }
-sp-std = { git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false }
-pallet-balances = { git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false }
+codec = {package = "parity-scale-codec", version = "3.4.0", default-features = false, features = [
+  "derive",
+]}
+frame-benchmarking = {default-features = false, optional = true, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0"}
+frame-support = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0"}
+frame-system = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0"}
+pallet-balances = {git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false}
+scale-info = {version = "2.10.0", default-features = false, features = [
+  "derive",
+]}
+sp-runtime = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0"}
+sp-std = {git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false}
 
-wetee-primitives = { path = "../../primitives", package = "wetee-primitives", default-features = false }
-wetee-org = { path = "../wetee-org", package = "wetee-org", default-features = false }
+wetee-org = {path = "../wetee-org", package = "wetee-org", default-features = false}
+wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
 
 [dev-dependencies]
-sp-core = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0" }
+sp-core = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0"}
+sp-io = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0"}
+sp-runtime = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0"}
 
 [features]
 default = ["std"]
-std = [
-	"codec/std",
-	"frame-benchmarking?/std",
-	"frame-support/std",
-	"frame-system/std",
-	"scale-info/std",
-	"wetee-primitives/std",
-	"wetee-org/std",
-]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+std = [
+  "codec/std",
+  "frame-benchmarking?/std",
+  "frame-support/std",
+  "frame-system/std",
+  "scale-info/std",
+  "wetee-primitives/std",
+  "wetee-org/std",
+]
 try-runtime = ["frame-support/try-runtime"]

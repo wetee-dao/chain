@@ -10,7 +10,10 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::AfterCreate,
-    types::{AppSetting, AppSettingInput, Cr, EditType, TeeAppId, WorkId, WorkType},
+    types::{
+        AppSetting, AppSettingInput, ClusterLevel, Cr, EditType, TeeAppId, WorkId, WorkStatus,
+        WorkType,
+    },
 };
 
 use orml_traits::MultiCurrency;
@@ -54,13 +57,13 @@ pub struct TeeApp<AccountId, BlockNumber> {
     pub port: Vec<u32>,
     /// State of the App
     /// App状态 0: created, 1: running, 2: stop
-    pub status: u8,
+    pub status: WorkStatus,
     /// cpu memory disk
     /// cpu memory disk
     pub cr: Cr,
     /// min score of the App
     /// 矿工最低等级
-    pub level: u8,
+    pub level: ClusterLevel,
 }
 
 /// 价格

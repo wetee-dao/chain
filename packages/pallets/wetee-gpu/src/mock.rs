@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate as wetee_worker;
+use crate as wetee_app;
 use frame_support::{
     parameter_types,
     traits::{ConstU32, ConstU64, Contains},
@@ -17,7 +17,7 @@ use sp_runtime::{
 use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
-    traits::{AfterCreate, WorkExt},
+    traits::AfterCreate,
     types::{DaoAssetId, WorkId},
 };
 
@@ -43,12 +43,10 @@ frame_support::construct_runtime!(
         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
 
-        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
         Tokens: orml_tokens::{Pallet, Call, Config<T>, Storage, Event<T>},
         WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
         WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
         WeteeApp: wetee_app::{ Pallet, Call, Event<T>, Storage },
-        WeteeWorker: wetee_worker::{ Pallet, Call, Event<T>, Storage },
     }
 );
 
@@ -58,8 +56,6 @@ impl Contains<RuntimeCall> for BlockEverything {
         false
     }
 }
-
-impl pallet_insecure_randomness_collective_flip::Config for Test {}
 
 impl frame_system::Config for Test {
     type BaseCallFilter = BlockEverything;
@@ -133,63 +129,6 @@ impl AfterCreate<WorkId, AccountId> for WorkerQueueHook {
     fn run_hook(id: WorkId, dao_id: DaoAssetId) {}
 }
 
-pub struct WorkExtIns;
-impl WorkExt<AccountId, Balance> for WorkExtIns {
-    fn work_info(
-        work: WorkId,
-    ) -> core::result::Result<
-        (AccountId, wetee_primitives::types::Cr, u8, u8),
-        sp_runtime::DispatchError,
-    > {
-        let account = wetee_app::AppIdAccounts::<Test>::get(work.id)
-            .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
-        let app = wetee_app::TEEApps::<Test>::get(account.clone(), work.clone().id)
-            .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
-        Ok((account, app.cr.clone(), app.level, app.status))
-    }
-
-    fn set_work_status(
-        w: WorkId,
-        status: u8,
-    ) -> core::result::Result<bool, sp_runtime::DispatchError> {
-        let account = wetee_app::AppIdAccounts::<Test>::get(w.id)
-            .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
-        let mut app = wetee_app::TEEApps::<Test>::get(account.clone(), w.id.clone())
-            .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
-
-        app.status = 1;
-        wetee_app::TEEApps::<Test>::insert(account.clone(), w.id.clone(), app);
-
-        Ok(true)
-    }
-
-    fn calculate_fee(work: WorkId) -> core::result::Result<Balance, sp_runtime::DispatchError> {
-        return wetee_app::Pallet::<Test>::get_fee(work.id.clone());
-    }
-
-    fn pay_run_fee(
-        work: WorkId,
-        to: AccountId,
-        fee: Balance,
-    ) -> core::result::Result<u8, sp_runtime::DispatchError> {
-        return wetee_app::Pallet::<Test>::pay_run_fee(work.clone(), fee, to);
-    }
-
-    fn try_stop(
-        account: AccountId,
-        work: WorkId,
-    ) -> core::result::Result<bool, sp_runtime::DispatchError> {
-        let _ = wetee_app::Pallet::<Test>::try_stop(account, work.id.clone())?;
-        return Ok(true);
-    }
-}
-
-impl wetee_worker::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-    type WorkExt = WorkExtIns;
-}
-
 impl wetee_app::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
@@ -250,7 +189,7 @@ pub fn new_test_run() -> sp_io::TestExternalities {
         .unwrap();
 
     pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE, 10000000), (BOB, 10000), (103, 10)],
+        balances: vec![(ALICE, 100000000), (BOB, 10000), (103, 10)],
     }
     .assimilate_storage(&mut t)
     .unwrap();

@@ -10,7 +10,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::types::{ClusterId, Cr, MintId, TeeAppId, WorkId, WorkType};
+use wetee_primitives::{traits::WorkExt,types::{ClusterId, Cr, MintId, TeeAppId, WorkId, WorkType,ClusterLevel}};
 
 #[cfg(test)]
 mod mock;
@@ -163,8 +163,6 @@ pub mod pallet {
         frame_system::Config
         + wetee_assets::Config
         + wetee_org::Config
-        + wetee_app::Config
-        + wetee_task::Config
         + pallet_insecure_randomness_collective_flip::Config
     {
         /// pallet event
@@ -174,6 +172,10 @@ pub mod pallet {
         /// Weight information for extrinsics in this pallet.
         /// extrinsics 权重信息
         type WeightInfo: WeightInfo;
+
+        /// work ext function
+        /// 工作扩展函数
+        type WorkExt: WorkExt<Self::AccountId,BalanceOf<Self>>;
     }
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -229,13 +231,13 @@ pub mod pallet {
     /// computing resource
     #[pallet::storage]
     #[pallet::getter(fn scores)]
-    pub type Scores<T: Config> = StorageMap<_, Identity, ClusterId, (u8, u8), OptionQuery>;
+    pub type Scores<T: Config> = StorageMap<_, Identity, ClusterId, (ClusterLevel, u8), OptionQuery>;
 
     /// 抵押价格
     /// deposit of computing resource
     #[pallet::storage]
     #[pallet::getter(fn deposit_price)]
-    pub type DepositPrices<T: Config> = StorageMap<_, Identity, u8, DepositPrice, OptionQuery>;
+    pub type DepositPrices<T: Config> = StorageMap<_, Identity, ClusterLevel, DepositPrice, OptionQuery>;
 
     /// 抵押信息
     /// deposit of computing resource
@@ -706,16 +708,15 @@ pub mod pallet {
             // 保存工作证明
             ProofsOfWork::<T>::insert(work_id.clone(), number, proof.unwrap());
         
+            let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
+            .ok_or(Error::<T>::WorkNotExists)?;
+
             // pay fee
             // 支付费用
-            if work_id.wtype == WorkType::APP {
+            if work_id.wtype == WorkType::APP || work_id.wtype == WorkType::GPU  {
                 // Pay fees in stages
                 // 分阶段支付费用
-                let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
-                    .ok_or(Error::<T>::WorkNotExists)?;
-
                 let stage: u32 = Stage::<T>::get();
-                let fee = wetee_app::Pallet::<T>::get_fee(work_id.id.clone())?;
 
                 // 检查是否是重复提交状态
                 if number - state.block_number < stage.into() {
@@ -724,7 +725,43 @@ pub mod pallet {
                     // More than 2 cycles, only pay once, TODO, reduce service points
                     // TODO，超过2个周期，只支付一次费用，减少服务积分
                 }
+            }
 
+            let (_,cr,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let fee = <T as pallet::Config>::WorkExt::calculate_fee(work_id.clone())?;
+            let to = Self::get_mint_account(work_id.clone(), cluster_id);
+            let status = <T as pallet::Config>::WorkExt::pay_run_fee(
+                work_id.clone(),
+                to,
+                fee,
+            )?;
+            log::warn!(
+                "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?} {:?} {:?}",
+                work_id.wtype,work_id.id,fee
+            );
+
+            if status == 2 {
+                // 如果app状态为已停止，则删除工作合约
+                WorkContracts::<T>::remove(work_id.clone());
+                ClusterContracts::<T>::remove(cluster_id,work_id.clone());
+                // 更新抵押数据
+                Crs::<T>::try_mutate_exists(
+                    cluster_id,
+                    |c| -> result::Result<(), DispatchError> {
+                        let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
+                        let ccr = crs.1.clone();
+
+                        // 更新抵押参数
+                        crs.1 = Cr {
+                            cpu: ccr.cpu - cr.cpu,
+                            mem: ccr.mem - cr.mem,
+                            disk: ccr.disk - cr.disk,
+                        };
+                        *c = Some(crs);
+                        Ok(())
+                    },
+                )?;
+            }else {
                 WorkContractState::<T>::insert(
                     work_id.clone(),
                     cluster_id,
@@ -738,53 +775,6 @@ pub mod pallet {
                 Self::deposit_event(Event::WorkContractUpdated {
                     work_id: work_id.clone(),
                 });
-
-                log::warn!(
-                    "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ APP {:?} {:?}",
-                    work_id.id,fee
-                );
-
-                let to = Self::get_mint_account(work_id.clone(), cluster_id);
-                let status = wetee_app::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
-
-                let app = wetee_app::Pallet::<T>::get_app(work_id.id)?;
-
-                // check app status
-                // 如果app状态为已停止，则删除工作合约
-                if app.status == 2 || status == 2 {
-                    WorkContracts::<T>::remove(work_id.clone());
-                    ClusterContracts::<T>::remove(cluster_id,work_id.clone());
-                    // 更新抵押数据
-                    Crs::<T>::try_mutate_exists(
-                        cluster_id,
-                        |c| -> result::Result<(), DispatchError> {
-                            let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
-                            let ccr = crs.1.clone();
-
-                            // 更新抵押参数
-                            crs.1 = Cr {
-                                cpu: ccr.cpu - app.cr.cpu,
-                                mem: ccr.mem - app.cr.mem,
-                                disk: ccr.disk - app.cr.disk,
-                            };
-                            *c = Some(crs);
-                            Ok(())
-                        },
-                    )?;
-                }
-            } else if work_id.wtype == WorkType::TASK {
-                let fee = wetee_task::Pallet::<T>::get_fee(work_id.id.clone())?;
-
-                log::warn!(
-                    "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ TASK {:?} {:?}",
-                    work_id.id,fee
-                );
-
-                let to = Self::get_mint_account(work_id.clone(), cluster_id);
-                wetee_task::Pallet::<T>::pay_run_fee(work_id.clone(), fee, to)?;
-                
-                WorkContracts::<T>::remove(work_id.clone());
-                ClusterContracts::<T>::remove(cluster_id,work_id.clone());
             }
 
             Ok(().into())
@@ -925,28 +915,9 @@ pub mod pallet {
                 return Err(Error::<T>::ClusterNotExists.into());
             }
 
-            match work_id.wtype {
-                WorkType::APP => {
-                    let app_account = wetee_app::AppIdAccounts::<T>::get(work_id.id)
-                        .ok_or(Error::<T>::AppNotExists)?;
-                    ensure!(app_account == who, Error::<T>::NotAllowed403);
-                    if let Some(app) = wetee_app::TEEApps::<T>::get(who.clone(), work_id.id) {
-                        ensure!(app.status != 0, Error::<T>::WorkNotStarted);
-                    } else {
-                        return Err(Error::<T>::AppNotExists.into());
-                    }
-                }
-                WorkType::TASK => {
-                    let app_account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
-                        .ok_or(Error::<T>::AppNotExists)?;
-                    ensure!(app_account == who, Error::<T>::NotAllowed403);
-                    if let Some(task) = wetee_task::TEETasks::<T>::get(who.clone(), work_id.id) {
-                        ensure!(task.status != 0, Error::<T>::WorkNotStarted);
-                    } else {
-                        return Err(Error::<T>::AppNotExists.into());
-                    }
-                }
-            }
+            let (owner_account,_,_,status) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            ensure!(owner_account == who, Error::<T>::NotAllowed403);
+            ensure!(status != 0, Error::<T>::WorkNotStarted);
 
             Reports::<T>::insert(cluster_id, work_id, reason);
 
@@ -969,30 +940,9 @@ pub mod pallet {
                 return Err(Error::<T>::ClusterNotExists.into());
             }
 
-            match work_id.wtype {
-                WorkType::APP => {
-                    let app_account = wetee_app::AppIdAccounts::<T>::get(work_id.id)
-                        .ok_or(Error::<T>::AppNotExists)?;
-                    ensure!(app_account == who, Error::<T>::NotAllowed403);
-
-                    if let Some(app) = wetee_app::TEEApps::<T>::get(who.clone(), work_id.id) {
-                        ensure!(app.status != 0, Error::<T>::WorkNotStarted);
-                    } else {
-                        return Err(Error::<T>::AppNotExists.into());
-                    }
-                }
-                WorkType::TASK => {
-                    let app_account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
-                        .ok_or(Error::<T>::AppNotExists)?;
-                    ensure!(app_account == who, Error::<T>::NotAllowed403);
-
-                    if let Some(task) = wetee_task::TEETasks::<T>::get(who.clone(), work_id.id) {
-                        ensure!(task.status != 0, Error::<T>::WorkNotStarted);
-                    } else {
-                        return Err(Error::<T>::AppNotExists.into());
-                    }
-                }
-            }
+            let (owner_account,_,_,status) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            ensure!(owner_account == who, Error::<T>::NotAllowed403);
+            ensure!(status != 0, Error::<T>::WorkNotStarted);
 
             Reports::<T>::remove(cluster_id, work_id);
             Ok(().into())
@@ -1008,21 +958,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            // 停止任务
-            match work_id.wtype {
-                WorkType::APP => {
-                    let app_account = wetee_app::AppIdAccounts::<T>::get(work_id.id)
-                        .ok_or(Error::<T>::AppNotExists)?;
-                    ensure!(app_account == who, Error::<T>::NotAllowed403);
-                    wetee_app::Pallet::<T>::try_stop(app_account,work_id.id.clone())?;
-                }
-                WorkType::TASK => {
-                    let app_account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
-                        .ok_or(Error::<T>::AppNotExists)?;
-                    ensure!(app_account == who, Error::<T>::NotAllowed403);
-                    wetee_task::Pallet::<T>::try_stop(app_account,work_id.id.clone())?;
-                }
-            }
+            let (owner_account,_,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            ensure!(owner_account == who, Error::<T>::NotAllowed403);
+
+            <T as pallet::Config>::WorkExt::try_stop(owner_account,work_id.clone())?;
 
             // 删除合约
             let cid = WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
@@ -1039,22 +978,17 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        /// Worker app deploy
+        /// Work deploy
         /// 部署应用
-        pub fn match_app_deploy(
+        pub fn match_deploy(
             work_id: WorkId,
             match_id: Option<TeeAppId>,
         ) -> result::Result<bool, DispatchError> {
-            let account =
-                wetee_app::AppIdAccounts::<T>::get(work_id.id).ok_or(Error::<T>::AppNotExists)?;
-
-            // get app info
-            // 获取app信息
-            let mut app = wetee_app::TEEApps::<T>::get(account.clone(), work_id.clone().id)
-                .ok_or(Error::<T>::AppNotExists)?;
-            let app_cr = app.cr.clone();
+            let (account,cr,level,status) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let app_cr = cr;
+            
             let id =
-                Self::get_random_cluster(work_id.clone(), app_cr.clone(), app.level, match_id)?;
+                Self::get_random_cluster(work_id.clone(), app_cr.clone(), level, match_id)?;
 
             // If the id is 0, it means there is no matching node and it will be put into the next block calculation
             // id 为 0 表示没有匹配的节点，放入下一个区块计算
@@ -1062,7 +996,7 @@ pub mod pallet {
                 return Ok(false);
             }
 
-            if app.status == 0 {
+            if status == 0 || status == 4 {
                 // update app cr
                 // 更新抵押数据
                 Crs::<T>::try_mutate_exists(id, |c| -> result::Result<(), DispatchError> {
@@ -1108,8 +1042,7 @@ pub mod pallet {
                     );
                 }
 
-                app.status = 1;
-                wetee_app::TEEApps::<T>::insert(account.clone(), work_id.id.clone(), app);
+                <T as pallet::Config>::WorkExt::set_work_status(work_id.clone(), 1)?;
 
                 // Runing event
                 // 运行事件
@@ -1123,83 +1056,12 @@ pub mod pallet {
             Ok(true)
         }
 
-        /// Worker task deploy
-        /// 部署任务
-        pub fn match_task_deploy(
-            work_id: WorkId,
-            match_id: Option<TeeAppId>,
-        ) -> result::Result<bool, DispatchError> {
-            let account = wetee_task::TaskIdAccounts::<T>::get(work_id.id)
-                .ok_or(Error::<T>::TaskNotExists)?;
-            let mut task = wetee_task::TEETasks::<T>::get(account.clone(), work_id.clone().id)
-                .ok_or(Error::<T>::TaskNotExists)?;
-            let task_cr = task.cr.clone();
-            let id =
-                Self::get_random_cluster(work_id.clone(), task_cr.clone(), task.level, match_id)?;
-
-            // id 为 0 表示没有匹配的节点，放入下一个区块计算
-            if id == 0 {
-                return Ok(false);
-            }
-
-            if task.status == 0 || task.status == 4 {
-                // 更新抵押数据
-                Crs::<T>::try_mutate_exists(id, |c| -> result::Result<(), DispatchError> {
-                    let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
-                    let ccr = crs.1.clone();
-
-                    // 更新抵押参数
-                    crs.1 = Cr {
-                        cpu: ccr.cpu + task_cr.cpu,
-                        mem: ccr.mem + task_cr.mem,
-                        disk: ccr.disk + task_cr.disk,
-                    };
-                    *c = Some(crs);
-                    Ok(())
-                })?;
-
-                WorkContracts::<T>::insert(work_id.clone(), id);
-
-                let number = <frame_system::Pallet<T>>::block_number();
-
-                // 如果没有集群挖矿记录，则插入记录
-                if !ClusterContracts::<T>::contains_key(id, work_id.clone()) {
-                    ClusterContracts::<T>::insert(
-                        id,
-                        work_id.clone(),
-                        ClusterContractState {
-                            user: account.clone(),
-                            work_id: work_id.clone(),
-                            start_number: number,
-                        },
-                    );
-                }
-
-                if !WorkContractState::<T>::contains_key(work_id.clone(), id) {
-                    WorkContractState::<T>::insert(
-                        work_id.clone(),
-                        id,
-                        ContractState {
-                            block_number: number,
-                            minted: 0u32.into(),
-                            withdrawal: 0u32.into(),
-                        },
-                    );
-                }
-
-                task.status = 1;
-                wetee_task::TEETasks::<T>::insert(account, work_id.id.clone(), task);
-            }
-
-            Ok(true)
-        }
-
         /// Get random cluster
         /// 获取随机节点
         pub fn get_random_cluster(
             work_id: WorkId,
             app_cr: Cr,
-            level: u8,
+            level: ClusterLevel,
             match_id: Option<ClusterId>,
         ) -> result::Result<ClusterId, DispatchError> {
             let num = NextClusterId::<T>::get() - 1;

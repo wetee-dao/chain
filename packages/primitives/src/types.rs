@@ -41,6 +41,14 @@ pub type TeeAppId = u64;
 /// 应用ID
 pub type ClusterId = u64;
 
+/// Level
+/// 等级
+pub type ClusterLevel = u8;
+
+/// status
+/// 状态
+pub type WorkStatus = u8;
+
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum WorkType {
     #[default]
@@ -48,6 +56,8 @@ pub enum WorkType {
     APP,
     /// TASK
     TASK,
+    /// GPU
+    GPU,
 }
 
 /// WorkId
@@ -74,6 +84,7 @@ pub struct Cr {
     pub cpu: u32,
     pub mem: u32,
     pub disk: u32,
+    // pub gpu: Option<u32>,
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]

@@ -360,7 +360,7 @@ pub fn work_proof_upload() {
             wtype: WorkType::APP,
             id: 0,
         };
-        Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
+        Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
         frame_system::Pallet::<Test>::set_block_number(631);
         let res = Pallet::<Test>::work_proof_upload(
             OriginFor::<Test>::signed(ALICE),
@@ -392,7 +392,7 @@ pub fn work_proof_upload_should_fail() {
             wtype: WorkType::APP,
             id: 0,
         };
-        // Pallet::<Test>::match_app_deploy(ALICE.clone(), work_id.clone(), None).unwrap();
+        // Pallet::<Test>::match_deploy(ALICE.clone(), work_id.clone(), None).unwrap();
         frame_system::Pallet::<Test>::set_block_number(631);
         let res = Pallet::<Test>::work_proof_upload(
             OriginFor::<Test>::signed(ALICE),
@@ -424,7 +424,7 @@ pub fn work_proof_upload_should_fail2() {
             wtype: WorkType::APP,
             id: 0,
         };
-        Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
+        Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
         // frame_system::Pallet::<Test>::set_block_number(631);
         let res = Pallet::<Test>::work_proof_upload(
             OriginFor::<Test>::signed(ALICE),
@@ -455,7 +455,7 @@ pub fn cluster_withdrawal() {
             wtype: WorkType::APP,
             id: 0,
         };
-        Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
+        Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
         start();
         frame_system::Pallet::<Test>::set_block_number(635);
         let work_id = WorkId {
@@ -479,7 +479,7 @@ pub fn cluster_report() {
             wtype: WorkType::APP,
             id: 0,
         };
-        Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
+        Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
         start();
         let work_id = WorkId {
             wtype: WorkType::APP,
@@ -506,7 +506,7 @@ pub fn cluster_report_should_fail() {
             wtype: WorkType::APP,
             id: 0,
         };
-        Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
+        Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
         start();
         let mut vec: Vec<u8> = Vec::with_capacity(256);
         vec.resize(256, 0);
@@ -526,7 +526,7 @@ pub fn cluster_report_close() {
             wtype: WorkType::APP,
             id: 0,
         };
-        Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
+        Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
         start();
 
         let work_id = WorkId {
@@ -557,7 +557,7 @@ pub fn cluster_report_close_should_fail() {
             wtype: WorkType::APP,
             id: 0,
         };
-        Pallet::<Test>::match_app_deploy(work_id.clone(), None).unwrap();
+        Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
         start();
 
         let work_id = WorkId {

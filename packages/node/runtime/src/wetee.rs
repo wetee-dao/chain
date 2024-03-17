@@ -169,9 +169,16 @@ impl wetee_task::Config for Runtime {
     type AfterCreate = WorkerQueueHook;
 }
 
+impl wetee_gpu::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+    type AfterCreate = WorkerQueueHook;
+}
+
 impl wetee_worker::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    type WorkExt = WorkExtIns;
 }
 
 impl pallet_utility::Config for Runtime {

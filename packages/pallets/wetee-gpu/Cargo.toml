@@ -1,7 +1,7 @@
 [package]
 authors = ["WeTEE DAO"]
 edition = "2021"
-name = "wetee-gov"
+name = "wetee-gpu"
 publish = false
 version = "1.0.0"
 
@@ -20,19 +20,14 @@ pallet-balances = {git = 'https://github.com/paritytech/polkadot-sdk.git', branc
 scale-info = {version = "2.10.0", default-features = false, features = [
   "derive",
 ]}
-serde = {version = "1.0.193", default-features = false, features = ["alloc", "derive"]}
 sp-runtime = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0"}
 sp-std = {git = 'https://github.com/paritytech/polkadot-sdk.git', branch = 'release-polkadot-v1.1.0', default-features = false}
 
 orml-tokens = {default-features = false, git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v1.1.0"}
 orml-traits = {default-features = false, git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v1.1.0"}
-# orml-traits = { default-features = false, path = "../../../../open-runtime-module-library/traits" }
-# orml-tokens = { default-features = false, path = "../../../../open-runtime-module-library/tokens" }
-
 wetee-assets = {path = "../wetee-assets", package = "wetee-assets", default-features = false}
 wetee-org = {path = "../wetee-org", package = "wetee-org", default-features = false}
 wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
-wetee-sudo = {path = "../wetee-sudo", package = "wetee-sudo", default-features = false}
 
 [dev-dependencies]
 sp-core = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", "branch" = "release-polkadot-v1.1.0"}
@@ -51,7 +46,6 @@ std = [
   "pallet-balances/std",
   "wetee-primitives/std",
   "wetee-org/std",
-  "wetee-sudo/std",
   "wetee-assets/std",
 ]
 try-runtime = ["frame-support/try-runtime"]
