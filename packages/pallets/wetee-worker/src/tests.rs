@@ -13,6 +13,7 @@ pub fn create_cluster() {
             cpu_per: 10,
             memory_per: 10,
             disk_per: 10,
+            gpu_per: 10,
         },
     );
     Pallet::<Test>::cluster_register(
@@ -59,6 +60,7 @@ pub fn mortgage() {
         1000,
         1000,
         1000,
+        1,
         1000000
     )
     .is_ok());
@@ -79,6 +81,7 @@ pub fn start() {
                 cpu: 1,
                 mem: 1,
                 disk: 1,
+                gpu: 0,
             },
             cr_hash: "test".as_bytes().to_vec(),
         }),
@@ -153,6 +156,7 @@ pub fn cluster_mortgage() {
             1000,
             1000,
             1000,
+            1,
             100000
         )
         .is_ok());
@@ -164,10 +168,16 @@ pub fn cluster_mortgage() {
 pub fn cluster_mortgage_should_fail() {
     new_test_run().execute_with(|| {
         create_cluster();
-        assert!(
-            Pallet::<Test>::cluster_mortgage(OriginFor::<Test>::signed(BOB), 1, 1, 1, 1, 100)
-                .is_err()
-        );
+        assert!(Pallet::<Test>::cluster_mortgage(
+            OriginFor::<Test>::signed(BOB),
+            1,
+            1,
+            1,
+            1,
+            1,
+            100
+        )
+        .is_err());
     });
 }
 
@@ -176,10 +186,16 @@ pub fn cluster_mortgage_should_fail() {
 pub fn cluster_mortgage_should_fail2() {
     new_test_run().execute_with(|| {
         create_cluster();
-        assert!(
-            Pallet::<Test>::cluster_mortgage(OriginFor::<Test>::signed(ALICE), 1, 1, 1, 1, 0)
-                .is_err()
-        );
+        assert!(Pallet::<Test>::cluster_mortgage(
+            OriginFor::<Test>::signed(ALICE),
+            1,
+            1,
+            1,
+            1,
+            1,
+            0
+        )
+        .is_err());
     });
 }
 
@@ -190,6 +206,7 @@ pub fn cluster_unmortgage() {
         frame_system::Pallet::<Test>::set_block_number(30);
         assert!(Pallet::<Test>::cluster_mortgage(
             OriginFor::<Test>::signed(ALICE),
+            1,
             1,
             1,
             1,
@@ -216,6 +233,7 @@ pub fn cluster_unmortgage_should_fail() {
             1,
             1,
             1,
+            1,
             100
         )
         .is_ok());
@@ -232,6 +250,7 @@ pub fn cluster_unmortgage_should_fail2() {
         frame_system::Pallet::<Test>::set_block_number(30);
         assert!(Pallet::<Test>::cluster_mortgage(
             OriginFor::<Test>::signed(ALICE),
+            1,
             1,
             1,
             1,
@@ -258,6 +277,7 @@ pub fn cluster_unmortgage_should_fail3() {
             1,
             1,
             1,
+            1,
             100
         )
         .is_ok());
@@ -274,6 +294,7 @@ pub fn cluster_proof_upload() {
         create_cluster();
         assert!(Pallet::<Test>::cluster_mortgage(
             OriginFor::<Test>::signed(ALICE),
+            1,
             1,
             1,
             1,
@@ -371,6 +392,7 @@ pub fn work_proof_upload() {
                     cpu: 1,
                     mem: 1,
                     disk: 1,
+                    gpu: 0,
                 },
                 cr_hash: "test".as_bytes().to_vec(),
             }),
@@ -403,6 +425,7 @@ pub fn work_proof_upload_should_fail() {
                     cpu: 1,
                     mem: 1,
                     disk: 1,
+                    gpu: 0,
                 },
                 cr_hash: "test".as_bytes().to_vec(),
             }),
@@ -435,6 +458,7 @@ pub fn work_proof_upload_should_fail2() {
                     cpu: 1,
                     mem: 1,
                     disk: 1,
+                    gpu: 0,
                 },
                 cr_hash: "test".as_bytes().to_vec(),
             }),

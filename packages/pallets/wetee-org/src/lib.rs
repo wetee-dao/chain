@@ -8,7 +8,7 @@ use scale_info::TypeInfo;
 use sp_runtime::{traits::BlockNumberProvider, RuntimeDebug};
 use sp_std::{prelude::*, result};
 use wetee_primitives::{
-    traits::AfterCreate,
+    traits::UHook,
     types::{DaoAssetId, GuildId, ProjectId, TaskId},
 };
 
@@ -258,7 +258,7 @@ pub mod pallet {
 
         /// Do some things after creating dao, such as setting up a sudo account.
         /// 创建DAO之后的回调
-        type AfterCreate: AfterCreate<Self::AccountId, DaoAssetId>;
+        type UHook: UHook<Self::AccountId, DaoAssetId>;
 
         /// max member number
         /// 组织最大的人数
@@ -551,7 +551,7 @@ pub mod pallet {
             NextDaoId::<T>::put(next_id);
 
             // 执行 DAO 创建后回调
-            T::AfterCreate::run_hook(creator.clone(), dao_id);
+            T::UHook::run_hook(creator.clone(), dao_id);
 
             Self::deposit_event(Event::CreatedDao(creator, dao_id));
             Ok(().into())

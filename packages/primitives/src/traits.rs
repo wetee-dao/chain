@@ -19,11 +19,11 @@ pub trait SetCollectiveMembers<AccountId: Clone + Ord, DispathErr> {
     ) -> result::Result<(), DispathErr>;
 }
 
-pub trait AfterCreate<AccountId, DaoAssetId> {
+pub trait UHook<AccountId, DaoAssetId> {
     fn run_hook(a: AccountId, b: DaoAssetId);
 }
 
-impl<AccountId: Clone, DaoAssetId: Clone> AfterCreate<AccountId, DaoAssetId> for () {
+impl<AccountId: Clone, DaoAssetId: Clone> UHook<AccountId, DaoAssetId> for () {
     fn run_hook(_a: AccountId, _b: DaoAssetId) {}
 }
 

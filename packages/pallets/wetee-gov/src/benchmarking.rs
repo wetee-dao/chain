@@ -2,7 +2,7 @@
 use super::*;
 use frame_benchmarking::v2::*;
 use wetee_primitives::{
-    traits::AfterCreate,
+    traits::UHook,
     types::{DaoAssetId, GuildId, ProjectId, TaskId},
 };
 use codec::{Decode, Encode};

@@ -5,7 +5,7 @@ use frame_benchmarking::{
 };
 use frame_system::RawOrigin as SystemOrigin;
 use wetee_primitives::{
-    traits::AfterCreate,
+    traits::UHook,
     types::{DaoAssetId, GuildId, ProjectId, TaskId},
 };
 

@@ -15,7 +15,7 @@ use frame_support::{
 use scale_info::TypeInfo;
 
 use wetee_primitives::{
-    traits::{AfterCreate, WorkExt},
+    traits::{UHook, WorkExt},
     types::{WorkId, WorkType},
     vec2bytes,
 };
@@ -36,7 +36,7 @@ pub enum MessageOrigin {
 
 /// 任务队列变化处理器
 pub struct WorkerQueueHook;
-impl AfterCreate<WorkId, AccountId> for WorkerQueueHook {
+impl UHook<WorkId, AccountId> for WorkerQueueHook {
     fn run_hook(id: WorkId, _: AccountId) {
         // 添加消息到队列
         MessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::Work);

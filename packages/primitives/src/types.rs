@@ -84,7 +84,7 @@ pub struct Cr {
     pub cpu: u32,
     pub mem: u32,
     pub disk: u32,
-    // pub gpu: Option<u32>,
+    pub gpu: u32,
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]

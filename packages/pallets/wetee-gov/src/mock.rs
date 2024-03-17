@@ -199,7 +199,7 @@ impl wetee_org::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = CallId;
-    type AfterCreate = ();
+    type UHook = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }

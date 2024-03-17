@@ -75,6 +75,9 @@ pub struct Deposit<Balance> {
     /// disk
     /// disk
     pub disk: u32,
+    /// gpu
+    /// gpu
+    pub gpu: u32,
 }
 
 /// 集群证明
@@ -140,6 +143,8 @@ pub struct DepositPrice {
     pub memory_per: u32,
     /// disk
     pub disk_per: u32,
+    /// gpu
+    pub gpu_per: u32,
 }
 
 /// Ip 信息
@@ -432,6 +437,7 @@ pub mod pallet {
                     cpu_per: 10,
                     memory_per: 10,
                     disk_per: 10,
+                    gpu_per: 10,
                 },
             );
         }
@@ -500,11 +506,13 @@ pub mod pallet {
                         cpu: 0,
                         mem: 0,
                         disk: 0,
+                        gpu: 0,
                     },
                     Cr {
                         cpu: 0,
                         mem: 0,
                         disk: 0,
+                        gpu: 0,
                     },
                 ),
             );
@@ -559,6 +567,7 @@ pub mod pallet {
             cpu: u32,
             mem: u32,
             disk: u32,
+            gpu: u32,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
@@ -572,7 +581,7 @@ pub mod pallet {
             );
 
             let score = Scores::<T>::get(id).ok_or(Error::<T>::LevelNotExists)?;
-            let price = Self::get_level_price(score.0, cpu, mem, disk)?;
+            let price = Self::get_level_price(score.0, cpu, mem, disk,gpu)?;
 
             // check deposit
             // 检查抵押金额是否足够
@@ -595,6 +604,7 @@ pub mod pallet {
                     cpu,
                     mem,
                     disk,
+                    gpu,
                 },
             );
 
@@ -609,6 +619,7 @@ pub mod pallet {
                     cpu: ccr.cpu + cpu,
                     mem: ccr.mem + mem,
                     disk: ccr.disk + disk,
+                    gpu: ccr.gpu + gpu,
                 };
 
                 *c = Some(crs);
@@ -658,6 +669,7 @@ pub mod pallet {
                     cpu: ccr.cpu - d.cpu,
                     mem: ccr.mem - d.mem,
                     disk: ccr.disk - d.disk,
+                    gpu: ccr.gpu - d.gpu,
                 };
                 *c = Some(crs);
                 Ok(())
@@ -756,6 +768,7 @@ pub mod pallet {
                             cpu: ccr.cpu - cr.cpu,
                             mem: ccr.mem - cr.mem,
                             disk: ccr.disk - cr.disk,
+                            gpu: ccr.gpu - cr.gpu,
                         };
                         *c = Some(crs);
                         Ok(())
@@ -882,8 +895,8 @@ pub mod pallet {
             Crs::<T>::insert(
                 cluster_id,
                 (
-                    Cr {cpu: 0,mem: 0,disk: 0},
-                    Cr {cpu: 0,mem: 0,disk: 0},
+                    Cr {cpu: 0,mem: 0,disk: 0,gpu: 0},
+                    Cr {cpu: 0,mem: 0,disk: 0,gpu: 0},
                 ),
             );
 
@@ -1008,6 +1021,7 @@ pub mod pallet {
                         cpu: ccr.cpu + app_cr.cpu,
                         mem: ccr.mem + app_cr.mem,
                         disk: ccr.disk + app_cr.disk,
+                        gpu: ccr.gpu + app_cr.gpu,
                     };
                     *c = Some(crs);
                     Ok(())
@@ -1167,12 +1181,14 @@ pub mod pallet {
             cpu: u32,
             mem: u32,
             disk: u32,
+            gpu: u32,
         ) -> result::Result<BalanceOf<T>, DispatchError> {
             let p = DepositPrices::<T>::get(level).ok_or(Error::<T>::LevelNotExists)?;
             return Ok(BalanceOf::<T>::from(
                 cpu as u32 * p.cpu_per as u32
                     + mem as u32 * p.memory_per as u32
-                    + disk as u32 * p.disk_per as u32,
+                    + disk as u32 * p.disk_per as u32
+                    + gpu as u32 * p.gpu_per as u32,
             ));
         }
     }

@@ -17,7 +17,7 @@ use sp_runtime::{
 use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
-    traits::AfterCreate,
+    traits::UHook,
     types::{DaoAssetId, WorkId},
 };
 
@@ -119,20 +119,20 @@ impl wetee_org::Config for Test {
     type RuntimeCall = RuntimeCall;
     type CallId = u64;
     type PalletId = DaoPalletId;
-    type AfterCreate = ();
+    type UHook = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }
 
 pub struct WorkerQueueHook;
-impl AfterCreate<WorkId, AccountId> for WorkerQueueHook {
+impl UHook<WorkId, AccountId> for WorkerQueueHook {
     fn run_hook(id: WorkId, dao_id: DaoAssetId) {}
 }
 
 impl wetee_app::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    type AfterCreate = WorkerQueueHook;
+    type UHook = WorkerQueueHook;
 }
 
 parameter_types! {

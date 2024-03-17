@@ -80,7 +80,7 @@
 //     type RuntimeCall = RuntimeCall;
 //     type CallId = u64;
 //     type PalletId = DaoPalletId;
-//     type AfterCreate = ();
+//     type UHook = ();
 //     type WeightInfo = ();
 //     type MaxMembers = ConstU32<1000000>;
 // }

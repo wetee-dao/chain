@@ -9,7 +9,7 @@ use frame_system::pallet_prelude::*;
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
-    traits::AfterCreate,
+    traits::UHook,
     types::{AppSetting, AppSettingInput, Cr, EditType, TeeAppId, WorkId, WorkType},
 };
 
@@ -111,7 +111,7 @@ pub mod pallet {
 
         /// Do some things after creating dao, such as setting up a sudo account.
         /// 创建部署任务后回调
-        type AfterCreate: AfterCreate<WorkId, Self::AccountId>;
+        type UHook: UHook<WorkId, Self::AccountId>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -246,6 +246,7 @@ pub mod pallet {
             cpu: u32,
             memory: u32,
             disk: u32,
+            gpu: u32,
             // min score of the App
             level: u8,
             // min deposit of the App
@@ -269,6 +270,7 @@ pub mod pallet {
                     cpu,
                     mem: memory,
                     disk,
+                    gpu: gpu,
                 },
                 contract_id: Self::app_id_account(id),
                 level,
@@ -302,7 +304,7 @@ pub mod pallet {
 
             // run after create hook
             // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(
+            <T as pallet::Config>::UHook::run_hook(
                 WorkId {
                     wtype: WorkType::APP,
                     id,
@@ -353,7 +355,7 @@ pub mod pallet {
 
             // run after create hook
             // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(
+            <T as pallet::Config>::UHook::run_hook(
                 WorkId {
                     wtype: WorkType::APP,
                     id: app_id,
@@ -508,9 +510,9 @@ pub mod pallet {
                 creator: who.clone(),
             });
 
-            // Run AfterCreate hook
+            // Run UHook hook
             // 执行 Task 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(
+            <T as pallet::Config>::UHook::run_hook(
                 WorkId {
                     wtype: WorkType::APP,
                     id: app_id,
