@@ -49,6 +49,8 @@ pub struct GpuApp<AccountId, BlockNumber> {
     /// img of the App.
     /// image 目标宗旨
     pub image: Vec<u8>,
+    /// meta of the App.
+    pub meta: Vec<u8>,
     /// port of service
     /// 服务端口号
     pub port: Vec<u32>,
@@ -240,6 +242,8 @@ pub mod pallet {
             name: Vec<u8>,
             // img of the App.
             image: Vec<u8>,
+            // meta of the App.
+            meta: Vec<u8>,
             // port of service
             port: Vec<u32>,
             // cpu memory disk
@@ -261,6 +265,7 @@ pub mod pallet {
             let app = GpuApp {
                 id,
                 name,
+                meta,
                 image,
                 port,
                 creator: who.clone(),
@@ -306,7 +311,7 @@ pub mod pallet {
             // 执行 App 创建后回调,部署任务添加到消息中间件
             <T as pallet::Config>::UHook::run_hook(
                 WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id,
                 },
                 who,
@@ -357,7 +362,7 @@ pub mod pallet {
             // 执行 App 创建后回调,部署任务添加到消息中间件
             <T as pallet::Config>::UHook::run_hook(
                 WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
                 who,
@@ -366,7 +371,7 @@ pub mod pallet {
             Self::deposit_event(Event::WorkUpdated {
                 user: account,
                 work_id: WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
             });
@@ -440,7 +445,7 @@ pub mod pallet {
             Self::deposit_event(Event::WorkUpdated {
                 user: app_account,
                 work_id: WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
             });
@@ -514,7 +519,7 @@ pub mod pallet {
             // 执行 Task 创建后回调,部署任务添加到消息中间件
             <T as pallet::Config>::UHook::run_hook(
                 WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
                 who,
@@ -530,7 +535,7 @@ pub mod pallet {
         pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(WorkId {
                 id: app_id,
-                wtype: WorkType::APP,
+                wtype: WorkType::GPU,
             })
         }
 
@@ -563,7 +568,7 @@ pub mod pallet {
             Self::deposit_event(Event::WorkStopped {
                 user: account,
                 work_id: WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
             });

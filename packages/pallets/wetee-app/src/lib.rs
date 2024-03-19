@@ -52,6 +52,9 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// img of the App.
     /// image 目标宗旨
     pub image: Vec<u8>,
+    /// meta of the App.
+    /// 应用元数据
+    pub meta: Vec<u8>,
     /// port of service
     /// 服务端口号
     pub port: Vec<u32>,
@@ -243,6 +246,8 @@ pub mod pallet {
             name: Vec<u8>,
             // img of the App.
             image: Vec<u8>,
+            // meta of the App.
+            meta: Vec<u8>,
             // port of service
             port: Vec<u32>,
             // cpu memory disk gpu
@@ -264,6 +269,7 @@ pub mod pallet {
                 id,
                 name,
                 image,
+                meta,
                 port,
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),

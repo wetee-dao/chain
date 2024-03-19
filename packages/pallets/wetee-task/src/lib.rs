@@ -51,6 +51,9 @@ pub struct TeeTask<AccountId, BlockNumber> {
     /// img of the Task.
     /// image 目标宗旨
     pub image: Vec<u8>,
+    /// meta of the App.
+    /// 应用元数据
+    pub meta: Vec<u8>,
     /// port of service
     /// 服务端口号
     pub port: Vec<u32>,
@@ -242,6 +245,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             name: Vec<u8>,
             image: Vec<u8>,
+            meta: Vec<u8>,
             port: Vec<u32>,
             cpu: u32,
             memory: u32,
@@ -256,6 +260,7 @@ pub mod pallet {
                 id,
                 name,
                 image,
+                meta,
                 port,
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),

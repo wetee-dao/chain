@@ -42,6 +42,7 @@ pub fn create_work() {
         OriginFor::<Test>::signed(ALICE),
         "test".as_bytes().to_vec(),
         "test".as_bytes().to_vec(),
+        "{}".as_bytes().to_vec(),
         vec![1, 2, 3],
         10,
         10,
