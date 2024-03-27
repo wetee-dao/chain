@@ -24,6 +24,10 @@ $ cpuid | grep SGX
       SGX1 supported                         = true                       = true
 ```
 
+- SGX: Software Guard Extensions supported is true if the hardware supports it.
+- SGX_LC: SGX launch config supported is true if the hardware also supports FLC. This is required for attestation.
+- SGX1 supported is true if it's enabled in the BIOS.
+
 ### Intel Sgx Setup on Ubuntu 20.04/Ubuntu 22.04 and Ego Setup
 
 > For more information about Ego, please refer to https://docs.edgeless.systems/ego/getting-started/install
