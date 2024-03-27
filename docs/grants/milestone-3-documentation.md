@@ -11,6 +11,19 @@
 
 ## Setup local enviroment
 
+### Check Intel SGX support
+
+```
+The hardware must support SGX and it must be enabled in the BIOS:
+
+$ sudo apt install cpuid
+$ cpuid | grep SGX
+      SGX: Software Guard Extensions supported = true
+      SGX_LC: SGX launch config supported      = true
+   SGX capability (0x12/0):
+      SGX1 supported                         = true                       = true
+```
+
 ### Intel Sgx Setup on Ubuntu 20.04/Ubuntu 22.04 and Ego Setup
 
 > For more information about Ego, please refer to https://docs.edgeless.systems/ego/getting-started/install
