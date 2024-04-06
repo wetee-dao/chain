@@ -60,6 +60,7 @@ pub use wetee::*;
 pub use wetee_app::Call as WeteeAppCall;
 pub use wetee_assets::Call as WeteeAssetsCall;
 pub use wetee_gov::Call as WeteeGovCall;
+pub use wetee_gpu::Call as WeteeGpuCall;
 pub use wetee_guild::Call as WeteeGuildCall;
 pub use wetee_org::Call as WeteeOrgCall;
 pub use wetee_project::Call as WeteeProjectCall;
@@ -67,7 +68,7 @@ pub use wetee_sudo::Call as WeteeSudoCall;
 pub use wetee_task::Call as WeteeTaskCall;
 pub use wetee_treasury::Call as WeteeTreasuryCall;
 pub use wetee_worker::Call as WeteeWorkerCall;
-// end WETEE pallet.
+// End WETEE pallet.
 
 /// An index to a block.
 pub type BlockNumber = u64;
@@ -308,6 +309,7 @@ construct_runtime!(
         Tokens: orml_tokens,
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
         MessageQueue: pallet_message_queue,
+        Utility: pallet_utility,
         WeteeOrg: wetee_org,
         WeteeAsset: wetee_assets,
         WeteeSudo: wetee_sudo,
@@ -317,6 +319,7 @@ construct_runtime!(
         WeteeTreasury: wetee_treasury,
         WeteeApp: wetee_app,
         WeteeTask: wetee_task,
+        WeteeGpu: wetee_gpu,
         WeteeWorker: wetee_worker,
         // WETEE end
     }

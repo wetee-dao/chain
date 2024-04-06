@@ -11,7 +11,7 @@ use sp_runtime::{
 };
 
 use wetee_primitives::{
-    traits::AfterCreate,
+    traits::UHook,
     types::{CallId, DaoAssetId},
 };
 
@@ -160,7 +160,7 @@ parameter_types! {
 }
 
 pub struct CreatedHook;
-impl AfterCreate<AccountId, DaoAssetId> for CreatedHook {
+impl UHook<AccountId, DaoAssetId> for CreatedHook {
     fn run_hook(acount_id: AccountId, dao_id: DaoAssetId) {
         // 以 WETEE 创建者设置为WETEE初始的 root 账户
         wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
@@ -172,7 +172,7 @@ impl wetee_org::Config for Test {
     type RuntimeCall = RuntimeCall;
     type CallId = CallId;
     type PalletId = DaoPalletId;
-    type AfterCreate = CreatedHook;
+    type UHook = CreatedHook;
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }

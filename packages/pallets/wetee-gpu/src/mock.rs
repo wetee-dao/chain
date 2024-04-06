@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate as wetee_task;
+use crate as wetee_app;
 use frame_support::{
     parameter_types,
     traits::{ConstU32, ConstU64, Contains},
@@ -46,7 +46,7 @@ frame_support::construct_runtime!(
         Tokens: orml_tokens::{Pallet, Call, Config<T>, Storage, Event<T>},
         WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
         WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
-        WeteeTask: wetee_task::{ Pallet, Call, Event<T>, Storage },
+        WeteeApp: wetee_app::{ Pallet, Call, Event<T>, Storage },
     }
 );
 
@@ -112,7 +112,6 @@ impl pallet_balances::Config for Test {
     type MaxFreezes = ();
     type RuntimeHoldReason = ();
     type MaxHolds = ();
-    type RuntimeFreezeReason = ();
 }
 
 impl wetee_org::Config for Test {
@@ -130,7 +129,7 @@ impl UHook<WorkId, AccountId> for WorkerQueueHook {
     fn run_hook(id: WorkId, dao_id: DaoAssetId) {}
 }
 
-impl wetee_task::Config for Test {
+impl wetee_app::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type UHook = WorkerQueueHook;
@@ -190,7 +189,7 @@ pub fn new_test_run() -> sp_io::TestExternalities {
         .unwrap();
 
     pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE, 10000000), (BOB, 10000000)],
+        balances: vec![(ALICE, 100000000), (BOB, 10000), (103, 10)],
     }
     .assimilate_storage(&mut t)
     .unwrap();

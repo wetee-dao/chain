@@ -5221,6 +5221,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-utility"
+version = "25.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85a8a6941da32837e4297e0d8abe0a5c94f348a119cccbf27b0f99ee01246c0e"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "parity-db"
 version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10403,6 +10420,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "wetee-gpu"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "orml-tokens",
+ "orml-traits",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "wetee-assets",
+ "wetee-org",
+ "wetee-primitives",
+]
+
+[[package]]
 name = "wetee-guild"
 version = "1.0.0"
 dependencies = [
@@ -10562,6 +10601,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-utility",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -10580,6 +10620,7 @@ dependencies = [
  "wetee-app",
  "wetee-assets",
  "wetee-gov",
+ "wetee-gpu",
  "wetee-guild",
  "wetee-org",
  "wetee-primitives",

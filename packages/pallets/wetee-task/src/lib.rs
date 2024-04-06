@@ -9,8 +9,10 @@ use frame_system::pallet_prelude::*;
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
-    traits::AfterCreate,
-    types::{AppSetting, AppSettingInput, Cr, EditType, TeeAppId, WorkId},
+    traits::UHook,
+    types::{
+        AppSetting, AppSettingInput, ClusterLevel, Cr, EditType, TeeAppId, WorkId, WorkStatus,
+    },
 };
 
 use orml_traits::MultiCurrency;
@@ -32,11 +34,14 @@ pub use pallet::*;
 /// Task specific information
 /// 程序信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct TeeTask<AccountId, BlockNumber, Balance> {
+pub struct TeeTask<AccountId, BlockNumber> {
     pub id: TeeAppId,
     /// creator of app
     /// 创建者
     pub creator: AccountId,
+    /// contract id
+    /// 合约账户
+    pub contract_id: AccountId,
     /// The block that creates the Task
     /// Task创建的区块
     pub start_block: BlockNumber,
@@ -46,21 +51,21 @@ pub struct TeeTask<AccountId, BlockNumber, Balance> {
     /// img of the Task.
     /// image 目标宗旨
     pub image: Vec<u8>,
+    /// meta of the App.
+    /// 应用元数据
+    pub meta: Vec<u8>,
     /// port of service
     /// 服务端口号
     pub port: Vec<u32>,
     /// State of the Task
     /// Task状态
-    pub status: u8,
+    pub status: WorkStatus,
     /// cpu memory disk
     /// cpu memory disk
     pub cr: Cr,
-    /// deposit of the Task
-    /// 抵押金额
-    pub deposit: Balance,
     /// min score of the Task
     /// 矿工最低等级
-    pub level: u8,
+    pub level: ClusterLevel,
 }
 
 /// 价格
@@ -114,7 +119,7 @@ pub mod pallet {
 
         /// Do some things after creating dao, such as setting up a sudo account.
         /// 创建部署任务后回调
-        type AfterCreate: AfterCreate<WorkId, Self::AccountId>;
+        type UHook: UHook<WorkId, Self::AccountId>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -143,7 +148,7 @@ pub mod pallet {
         T::AccountId,
         Identity,
         TeeAppId,
-        TeeTask<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
+        TeeTask<T::AccountId, BlockNumberFor<T>>,
     >;
 
     /// Price of resource
@@ -240,6 +245,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             name: Vec<u8>,
             image: Vec<u8>,
+            meta: Vec<u8>,
             port: Vec<u32>,
             cpu: u32,
             memory: u32,
@@ -254,6 +260,7 @@ pub mod pallet {
                 id,
                 name,
                 image,
+                meta,
                 port,
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
@@ -262,8 +269,9 @@ pub mod pallet {
                     cpu,
                     mem: memory,
                     disk,
+                    gpu: 0,
                 },
-                deposit,
+                contract_id: Self::task_id_account(id),
                 level,
             };
 
@@ -290,9 +298,9 @@ pub mod pallet {
                 creator: who.clone(),
             });
 
-            // Run AfterCreate hook
+            // Run UHook hook
             // 执行 Task 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(
+            <T as pallet::Config>::UHook::run_hook(
                 WorkId {
                     wtype: WorkType::TASK,
                     id,
@@ -336,9 +344,9 @@ pub mod pallet {
                 },
             )?;
 
-            // Run AfterCreate hook
+            // Run UHook hook
             // 执行 Task 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::AfterCreate::run_hook(
+            <T as pallet::Config>::UHook::run_hook(
                 WorkId {
                     wtype: WorkType::TASK,
                     id,
@@ -554,7 +562,7 @@ pub mod pallet {
             wid: WorkId,
             fee: BalanceOf<T>,
             to: T::AccountId,
-        ) -> result::Result<(), DispatchError> {
+        ) -> result::Result<u8, DispatchError> {
             let who = Self::task_id_account(wid.id);
             let app_total = wetee_assets::Pallet::<T>::free_balance(0, &who);
             log::warn!(
@@ -575,7 +583,7 @@ pub mod pallet {
 
             // 任务只执行一次，执行后停止
             Self::try_stop(app_account, wid.id)?;
-            Ok(())
+            Ok(2)
         }
 
         /// Get fee

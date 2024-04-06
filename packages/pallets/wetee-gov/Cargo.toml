@@ -1,5 +1,5 @@
 [package]
-authors = ["dao-entrance"]
+authors = ["WeTEE DAO"]
 edition = "2021"
 name = "wetee-gov"
 publish = false

@@ -17,7 +17,7 @@ use sp_runtime::{
 use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
-    traits::AfterCreate,
+    traits::{UHook, WorkExt},
     types::{DaoAssetId, WorkId},
 };
 
@@ -48,7 +48,6 @@ frame_support::construct_runtime!(
         WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
         WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
         WeteeApp: wetee_app::{ Pallet, Call, Event<T>, Storage },
-        WeteeTask: wetee_task::{ Pallet, Call, Event<T>, Storage },
         WeteeWorker: wetee_worker::{ Pallet, Call, Event<T>, Storage },
     }
 );
@@ -125,31 +124,77 @@ impl wetee_org::Config for Test {
     type RuntimeCall = RuntimeCall;
     type CallId = u64;
     type PalletId = DaoPalletId;
-    type AfterCreate = ();
+    type UHook = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }
 
 pub struct WorkerQueueHook;
-impl AfterCreate<WorkId, AccountId> for WorkerQueueHook {
+impl UHook<WorkId, AccountId> for WorkerQueueHook {
     fn run_hook(id: WorkId, dao_id: DaoAssetId) {}
 }
 
-impl wetee_app::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-    type AfterCreate = WorkerQueueHook;
+pub struct WorkExtIns;
+impl WorkExt<AccountId, Balance> for WorkExtIns {
+    fn work_info(
+        work: WorkId,
+    ) -> core::result::Result<
+        (AccountId, wetee_primitives::types::Cr, u8, u8),
+        sp_runtime::DispatchError,
+    > {
+        let account = wetee_app::AppIdAccounts::<Test>::get(work.id)
+            .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
+        let app = wetee_app::TEEApps::<Test>::get(account.clone(), work.clone().id)
+            .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
+        Ok((account, app.cr.clone(), app.level, app.status))
+    }
+
+    fn set_work_status(
+        w: WorkId,
+        status: u8,
+    ) -> core::result::Result<bool, sp_runtime::DispatchError> {
+        let account = wetee_app::AppIdAccounts::<Test>::get(w.id)
+            .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
+        let mut app = wetee_app::TEEApps::<Test>::get(account.clone(), w.id.clone())
+            .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
+
+        app.status = 1;
+        wetee_app::TEEApps::<Test>::insert(account.clone(), w.id.clone(), app);
+
+        Ok(true)
+    }
+
+    fn calculate_fee(work: WorkId) -> core::result::Result<Balance, sp_runtime::DispatchError> {
+        return wetee_app::Pallet::<Test>::get_fee(work.id.clone());
+    }
+
+    fn pay_run_fee(
+        work: WorkId,
+        to: AccountId,
+        fee: Balance,
+    ) -> core::result::Result<u8, sp_runtime::DispatchError> {
+        return wetee_app::Pallet::<Test>::pay_run_fee(work.clone(), fee, to);
+    }
+
+    fn try_stop(
+        account: AccountId,
+        work: WorkId,
+    ) -> core::result::Result<bool, sp_runtime::DispatchError> {
+        let _ = wetee_app::Pallet::<Test>::try_stop(account, work.id.clone())?;
+        return Ok(true);
+    }
 }
 
 impl wetee_worker::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    type WorkExt = WorkExtIns;
 }
 
-impl wetee_task::Config for Test {
+impl wetee_app::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    type AfterCreate = WorkerQueueHook;
+    type UHook = WorkerQueueHook;
 }
 
 parameter_types! {

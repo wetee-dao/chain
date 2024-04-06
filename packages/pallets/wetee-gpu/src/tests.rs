@@ -1,6 +1,7 @@
 #![allow(unused_imports)]
 #![cfg(test)]
 use super::*;
+use crate as wetee_app;
 use crate::mock::{RuntimeCall, *};
 use frame_support::{assert_noop, assert_ok, debug};
 
@@ -8,24 +9,25 @@ pub fn do_create() {
     Prices::<Test>::insert(
         1,
         Price {
-            cpu_per_block: 100,
-            memory_per_block: 100,
-            disk_per_block: 100,
+            cpu_per: 100,
+            memory_per: 100,
+            disk_per: 100,
         },
     );
-    let res = Pallet::<Test>::create(
+    Pallet::<Test>::create(
         OriginFor::<Test>::signed(ALICE),
         "test".as_bytes().to_vec(),
         "test".as_bytes().to_vec(),
         "{}".as_bytes().to_vec(),
         vec![1, 2, 3],
+        10,
+        10,
         1,
         1,
         1,
-        1,
-        1000,
-    );
-    println!("{:?}", res);
+        100000,
+    )
+    .unwrap();
 }
 
 #[test]
@@ -34,24 +36,25 @@ pub fn create() {
         Prices::<Test>::insert(
             1,
             Price {
-                cpu_per_block: 100,
-                memory_per_block: 100,
-                disk_per_block: 100,
+                cpu_per: 100,
+                memory_per: 100,
+                disk_per: 100,
             },
         );
-        Pallet::<Test>::create(
+        assert!(Pallet::<Test>::create(
             OriginFor::<Test>::signed(ALICE),
             "test".as_bytes().to_vec(),
             "test".as_bytes().to_vec(),
             "{}".as_bytes().to_vec(),
             vec![1, 2, 3],
+            10,
+            10,
+            10,
             1,
             1,
-            1,
-            1,
-            300,
+            100000,
         )
-        .unwrap();
+        .is_ok());
     });
 }
 
@@ -112,7 +115,7 @@ pub fn get_fee() {
 #[test]
 pub fn get_fee_should_fail() {
     new_test_run().execute_with(|| {
-        assert_noop!(Pallet::<Test>::get_fee(0), Error::<Test>::TaskNotExists);
+        assert_noop!(Pallet::<Test>::get_fee(0), Error::<Test>::AppNotExist);
     });
 }
 
@@ -123,18 +126,7 @@ pub fn recharge() {
         assert_ok!(Pallet::<Test>::recharge(
             OriginFor::<Test>::signed(ALICE),
             0,
-            1
-        ));
-    });
-}
-
-#[test]
-pub fn charge2() {
-    new_test_run().execute_with(|| {
-        assert_ok!(Pallet::<Test>::recharge(
-            OriginFor::<Test>::signed(BOB),
-            0,
-            1
+            1000
         ));
     });
 }
