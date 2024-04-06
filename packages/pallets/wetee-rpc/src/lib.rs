@@ -1,11 +1,7 @@
-use codec::{self, Codec};
+use codec::{self};
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-
-use sp_api::ProvideRuntimeApi;
-use sp_blockchain::HeaderBackend;
-use sp_rpc::number::NumberOrHex;
-use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
-use std::{fmt::Display, sync::Arc};
+use sp_runtime::traits::{Block as BlockT};
+use std::{sync::Arc};
 use wetee_primitives::types::DaoAssetId;
 
 pub use wetee_runtime_api::WeteeAssetRuntimeApi;
@@ -30,20 +26,20 @@ impl<C, Block> WeteeAsset<C, Block> {
     }
 }
 
-impl<C, Block, AccountId, Balance> WeteeAssetApiServer<<Block as BlockT>::Hash, AccountId, Balance>
-    for WeteeAsset<C, Block>
-where
-    Block: BlockT,
-    AccountId: Clone + Display + Codec + Send + 'static,
-    Balance: Codec + MaybeDisplay + Copy + TryInto<NumberOrHex> + Send + Sync + 'static,
-    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: WeteeAssetRuntimeApi<Block, AccountId, Balance>,
-{
-    fn get_asset_balance(&self, dao_id: DaoAssetId, who: AccountId) -> RpcResult<Balance> {
-        let api = self.client.runtime_api();
-        let best = self.client.info().best_hash;
+// impl<C, Block, AccountId, Balance> WeteeAssetApiServer<<Block as BlockT>::Hash, AccountId, Balance>
+//     for WeteeAsset<C, Block>
+// where
+//     Block: BlockT,
+//     AccountId: Clone + Display + Codec + Send + 'static,
+//     Balance: Codec + MaybeDisplay + Copy + TryInto<NumberOrHex> + Send + Sync + 'static,
+//     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+//     C::Api: WeteeAssetRuntimeApi<Block, AccountId, Balance>,
+// {
+//     fn get_asset_balance(&self, dao_id: DaoAssetId, who: AccountId) -> RpcResult<Balance> {
+//         let api = self.client.runtime_api();
+//         let best = self.client.info().best_hash;
 
-        let amount = api.get_asset_balance(best, dao_id, who).unwrap();
-        Ok(amount)
-    }
-}
+//         let amount = api.get_asset_balance(best, dao_id, who).unwrap();
+//         Ok(amount)
+//     }
+// }
