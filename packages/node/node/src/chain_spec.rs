@@ -166,6 +166,7 @@ fn testnet_genesis(
         wetee_gov: Default::default(),
         wetee_app: Default::default(),
         wetee_task: Default::default(),
+        wetee_gpu: Default::default(),
         wetee_worker: Default::default(),
     }
 }

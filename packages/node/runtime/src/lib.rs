@@ -60,6 +60,7 @@ pub use wetee::*;
 pub use wetee_app::Call as WeteeAppCall;
 pub use wetee_assets::Call as WeteeAssetsCall;
 pub use wetee_gov::Call as WeteeGovCall;
+pub use wetee_gpu::Call as WeteeGpuCall;
 pub use wetee_guild::Call as WeteeGuildCall;
 pub use wetee_org::Call as WeteeOrgCall;
 pub use wetee_project::Call as WeteeProjectCall;
@@ -317,6 +318,7 @@ construct_runtime!(
         WeteeTreasury: wetee_treasury,
         WeteeApp: wetee_app,
         WeteeTask: wetee_task,
+        WeteeGpu: wetee_gpu,
         WeteeWorker: wetee_worker,
         // WETEE end
     }

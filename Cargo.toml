@@ -3,31 +3,26 @@
 exclude = ["native-nostd-hasher"]
 
 members = [
-	# POS
-	"packages/node/node",
-	"packages/node/runtime",
-
-	# pellets
-	"packages/pallets/wetee-org",
-	"packages/pallets/wetee-sudo",
-	"packages/pallets/wetee-gov",
-	"packages/pallets/wetee-assets",
-	"packages/pallets/wetee-guild",
-	"packages/pallets/wetee-project",
-	"packages/pallets/wetee-worker",
-	"packages/pallets/wetee-rpc",
-	"packages/pallets/wetee-rpc/runtime-api",
-	"packages/pallets/wetee-treasury",
-	"packages/pallets/wetee-app",
-	"packages/pallets/wetee-task",
-
-	# 工具
-	# "tools/hash",
-	# "tools/subkey",
-	# "tools/chain-spec-builder",
-
-	"packages/primitives",
-
+  # POS
+  "packages/node/node",
+  "packages/node/runtime", # pellets
+  "packages/pallets/wetee-org",
+  "packages/pallets/wetee-sudo",
+  "packages/pallets/wetee-gov",
+  "packages/pallets/wetee-assets",
+  "packages/pallets/wetee-guild",
+  "packages/pallets/wetee-project",
+  "packages/pallets/wetee-worker",
+  "packages/pallets/wetee-rpc",
+  "packages/pallets/wetee-rpc/runtime-api",
+  "packages/pallets/wetee-treasury",
+  "packages/pallets/wetee-app",
+  "packages/pallets/wetee-task",
+  "packages/pallets/wetee-gpu", # 工具
+  # "tools/hash",
+  # "tools/subkey",
+  # "tools/chain-spec-builder",
+  "packages/primitives",
 ]
 
 resolver = "2"

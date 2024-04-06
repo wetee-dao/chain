@@ -10,10 +10,7 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
-    types::{
-        AppSetting, AppSettingInput, ClusterLevel, Cr, EditType, TeeAppId, WorkId, WorkStatus,
-        WorkType,
-    },
+    types::{AppSetting, AppSettingInput, Cr, EditType, TeeAppId, WorkId, WorkType},
 };
 
 use orml_traits::MultiCurrency;
@@ -35,7 +32,7 @@ pub use pallet::*;
 /// App specific information
 /// 程序信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct TeeApp<AccountId, BlockNumber> {
+pub struct GpuApp<AccountId, BlockNumber> {
     pub id: TeeAppId,
     /// creator of app
     /// 创建者
@@ -53,20 +50,19 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// image 目标宗旨
     pub image: Vec<u8>,
     /// meta of the App.
-    /// 应用元数据
     pub meta: Vec<u8>,
     /// port of service
     /// 服务端口号
     pub port: Vec<u32>,
     /// State of the App
     /// App状态 0: created, 1: running, 2: stop
-    pub status: WorkStatus,
+    pub status: u8,
     /// cpu memory disk
     /// cpu memory disk
     pub cr: Cr,
     /// min score of the App
     /// 矿工最低等级
-    pub level: ClusterLevel,
+    pub level: u8,
 }
 
 /// 价格
@@ -140,13 +136,13 @@ pub mod pallet {
     /// 应用
     #[pallet::storage]
     #[pallet::getter(fn tee_apps)]
-    pub type TEEApps<T: Config> = StorageDoubleMap<
+    pub type GPUApps<T: Config> = StorageDoubleMap<
         _,
         Identity,
         T::AccountId,
         Identity,
         TeeAppId,
-        TeeApp<T::AccountId, BlockNumberFor<T>>,
+        GpuApp<T::AccountId, BlockNumberFor<T>>,
     >;
 
     /// Price of resource
@@ -250,10 +246,11 @@ pub mod pallet {
             meta: Vec<u8>,
             // port of service
             port: Vec<u32>,
-            // cpu memory disk gpu
+            // cpu memory disk
             cpu: u32,
             memory: u32,
             disk: u32,
+            gpu: u32,
             // min score of the App
             level: u8,
             // min deposit of the App
@@ -265,11 +262,11 @@ pub mod pallet {
             ensure!(memory >= 10, Error::<T>::MemoryTooLow);
 
             let id = Self::next_tee_id();
-            let app = TeeApp {
+            let app = GpuApp {
                 id,
                 name,
-                image,
                 meta,
+                image,
                 port,
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
@@ -278,14 +275,14 @@ pub mod pallet {
                     cpu,
                     mem: memory,
                     disk,
-                    gpu: 0,
+                    gpu: gpu,
                 },
                 contract_id: Self::app_id_account(id),
                 level,
             };
 
             <NextTeeId<T>>::mutate(|id| *id += 1);
-            <TEEApps<T>>::insert(who.clone(), id, app);
+            <GPUApps<T>>::insert(who.clone(), id, app);
             <AppIdAccounts<T>>::insert(id, who.clone());
             <AppVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
 
@@ -314,7 +311,7 @@ pub mod pallet {
             // 执行 App 创建后回调,部署任务添加到消息中间件
             <T as pallet::Config>::UHook::run_hook(
                 WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id,
                 },
                 who,
@@ -346,7 +343,7 @@ pub mod pallet {
             let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
             ensure!(who == account, Error::<T>::App403);
 
-            <TEEApps<T>>::try_mutate_exists(
+            <GPUApps<T>>::try_mutate_exists(
                 who.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
@@ -365,7 +362,7 @@ pub mod pallet {
             // 执行 App 创建后回调,部署任务添加到消息中间件
             <T as pallet::Config>::UHook::run_hook(
                 WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
                 who,
@@ -374,7 +371,7 @@ pub mod pallet {
             Self::deposit_event(Event::WorkUpdated {
                 user: account,
                 work_id: WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
             });
@@ -448,7 +445,7 @@ pub mod pallet {
             Self::deposit_event(Event::WorkUpdated {
                 user: app_account,
                 work_id: WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
             });
@@ -501,7 +498,7 @@ pub mod pallet {
             ensure!(who == account, Error::<T>::App403);
 
             // 停止任务后,将任务状态设置为 2
-            <TEEApps<T>>::try_mutate_exists(
+            <GPUApps<T>>::try_mutate_exists(
                 account.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
@@ -522,7 +519,7 @@ pub mod pallet {
             // 执行 Task 创建后回调,部署任务添加到消息中间件
             <T as pallet::Config>::UHook::run_hook(
                 WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
                 who,
@@ -538,7 +535,7 @@ pub mod pallet {
         pub fn app_id_account(app_id: TeeAppId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(WorkId {
                 id: app_id,
-                wtype: WorkType::APP,
+                wtype: WorkType::GPU,
             })
         }
 
@@ -557,7 +554,7 @@ pub mod pallet {
             app_id: TeeAppId,
         ) -> result::Result<(), DispatchError> {
             // 停止任务后,将任务状态设置为 2
-            <TEEApps<T>>::try_mutate_exists(
+            <GPUApps<T>>::try_mutate_exists(
                 account.clone(),
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
@@ -571,7 +568,7 @@ pub mod pallet {
             Self::deposit_event(Event::WorkStopped {
                 user: account,
                 work_id: WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
             });
@@ -631,7 +628,7 @@ pub mod pallet {
         /// 费用 = cpu_per * cpu + memory_per * memory + disk_per * disk
         pub fn get_fee(id: TeeAppId) -> result::Result<BalanceOf<T>, DispatchError> {
             let app_account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExist)?;
-            let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExist)?;
+            let app = <GPUApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExist)?;
             let level = app.level;
 
             // get price of level
@@ -656,9 +653,9 @@ pub mod pallet {
         /// 8. app terminal block
         pub fn get_app(
             id: TeeAppId,
-        ) -> result::Result<TeeApp<T::AccountId, BlockNumberFor<T>>, DispatchError> {
+        ) -> result::Result<GpuApp<T::AccountId, BlockNumberFor<T>>, DispatchError> {
             let app_account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExist)?;
-            let app = <TEEApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExist)?;
+            let app = <GPUApps<T>>::get(app_account.clone(), id).ok_or(Error::<T>::AppNotExist)?;
             Ok(app)
         }
     }
