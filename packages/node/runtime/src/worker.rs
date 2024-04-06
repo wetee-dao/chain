@@ -19,7 +19,7 @@ use wetee_primitives::{
 };
 
 use crate::{
-    sp_api_hidden_includes_construct_runtime::hidden_include::traits::EnqueueMessage, Balance,
+    sp_api_hidden_includes_construct_runtime::hidden_include::traits::EnqueueMessage, Balance,Runtime
 };
 use crate::{AccountId, MessageQueue, WeteeWorker};
 use pallet_message_queue::OnQueueChanged;
