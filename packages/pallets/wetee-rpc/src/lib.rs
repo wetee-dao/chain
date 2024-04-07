@@ -1,7 +1,5 @@
-use codec::{self};
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use sp_runtime::traits::{Block as BlockT};
-use std::{sync::Arc};
+use std::sync::Arc;
 use wetee_primitives::types::DaoAssetId;
 
 pub use wetee_runtime_api::WeteeAssetRuntimeApi;
@@ -13,14 +11,14 @@ pub trait WeteeAssetApi<Block, AccountId, Balance> {
 }
 
 pub struct WeteeAsset<C, Block> {
-    client: Arc<C>,
+    _client: Arc<C>,
     _marker: std::marker::PhantomData<Block>,
 }
 
 impl<C, Block> WeteeAsset<C, Block> {
     pub fn new(client: Arc<C>) -> Self {
         Self {
-            client,
+            _client:client,
             _marker: Default::default(),
         }
     }

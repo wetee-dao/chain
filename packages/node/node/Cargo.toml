@@ -1,13 +1,11 @@
 [package]
-authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
+authors = ["wetee"]
 build = "build.rs"
-description = "A fresh FRAME-based Substrate node, ready for hacking."
 edition = "2021"
-homepage = "https://substrate.io/"
 license = "Unlicense"
 name = "wetee-node"
 publish = false
-version = "4.0.0-dev"
+version = "1.0.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]

@@ -20,7 +20,7 @@ use sp_runtime::{
 use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
-    traits::{GovIsJoin, PalletGet},
+    traits::{GovIsJoin, PalletGet,UHook},
     types::{CallId, DaoAssetId},
 };
 
@@ -195,12 +195,21 @@ impl pallet_balances::Config for Test {
     type RuntimeFreezeReason = ();
 }
 
+pub struct CreatedHook;
+impl UHook<AccountId, DaoAssetId> for CreatedHook {
+    fn run_hook(acount_id: AccountId, dao_id: DaoAssetId) {
+        // 以 WETEE 创建者设置为WETEE初始的 root 账户
+        wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
+    }
+}
+
+
 impl wetee_org::Config for Test {
     type PalletId = DaoPalletId;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = CallId;
-    type UHook = ();
+    type OrgHook = CreatedHook;
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }

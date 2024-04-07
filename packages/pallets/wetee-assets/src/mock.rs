@@ -172,7 +172,7 @@ impl wetee_org::Config for Test {
     type RuntimeCall = RuntimeCall;
     type CallId = CallId;
     type PalletId = DaoPalletId;
-    type UHook = CreatedHook;
+    type OrgHook = CreatedHook;
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }

@@ -115,12 +115,17 @@ impl pallet_balances::Config for Test {
     type RuntimeFreezeReason = ();
 }
 
+pub struct OrgHook;
+impl UHook<AccountId, DaoAssetId> for OrgHook {
+    fn run_hook(id: AccountId, dao_id: DaoAssetId) {}
+}
+
 impl wetee_org::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = u64;
     type PalletId = DaoPalletId;
-    type UHook = ();
+    type OrgHook = OrgHook;
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }
