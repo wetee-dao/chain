@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Codec;
+use parity_scale_codec::Codec;
 use sp_runtime::traits::MaybeDisplay;
 use wetee_primitives::types::DaoAssetId;
 

@@ -23,7 +23,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 use frame_support::traits::UnfilteredDispatchable;
 use frame_support::{dispatch::DispatchResult as DResult, traits::OriginTrait};
 use frame_system::pallet_prelude::*;

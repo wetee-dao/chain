@@ -5,7 +5,7 @@ use wetee_primitives::{
     traits::UHook,
     types::{DaoAssetId, GuildId, ProjectId, TaskId},
 };
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 use frame_support::traits::UnfilteredDispatchable;
 use scale_info::TypeInfo;
 use frame_system::{RawOrigin,Pallet as System};

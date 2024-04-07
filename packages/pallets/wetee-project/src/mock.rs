@@ -2,7 +2,7 @@
 use super::*;
 
 use crate as wetee_project;
-use codec::MaxEncodedLen;
+use parity_scale_codec::MaxEncodedLen;
 use frame_support::{construct_runtime, parameter_types, traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
 use serde::{Deserialize, Serialize};

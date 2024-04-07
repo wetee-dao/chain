@@ -6,9 +6,9 @@ name = "wetee-primitives"
 version = "1.0.0"
 
 [dependencies]
-codec = {package = "parity-scale-codec", version = "3.4.0", default-features = false, features = [
+parity-scale-codec = { workspace = true, default-features = false, features = [
   "derive",
-]}
+] }
 scale-info = {version = "2.10.0", default-features = false, features = [
   "derive",
 ]}
@@ -21,7 +21,7 @@ sp-std = {workspace = true}
 default = ["std"]
 runtime-benchmarks = []
 std = [
-  "codec/std",
+  "parity-scale-codec/std",
   "frame-support/std",
   "scale-info/std",
   "sp-runtime/std",

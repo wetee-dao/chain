@@ -3,7 +3,7 @@
 
 use crate as wetee_gov;
 use crate::PledgeTrait;
-use codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
     parameter_types,
     traits::{ConstU32, ConstU64, Contains},

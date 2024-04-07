@@ -17,8 +17,8 @@ use sp_runtime::{
 use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
-    traits::UHook,
     types::{DaoAssetId, WorkId},
+    traits::UHook,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
