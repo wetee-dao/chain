@@ -5,6 +5,7 @@ use super::*;
 use crate as wetee_worker;
 use crate::mock::{RuntimeCall, *};
 use frame_support::{assert_noop, assert_ok, debug};
+use wetee_primitives::types::Disk;
 
 pub fn create_cluster() {
     DepositPrices::<Test>::insert(
@@ -46,7 +47,10 @@ pub fn create_work() {
         vec![1, 2, 3],
         10,
         10,
-        1,
+        vec![Disk {
+            path: "test".as_bytes().to_vec(),
+            size: 1,
+        }],
         1,
         100000,
     )
@@ -78,7 +82,7 @@ pub fn start() {
         work_id,
         Some(ProofOfWork {
             log_hash: "test".as_bytes().to_vec(),
-            cr: Cr {
+            cr: ComCr {
                 cpu: 1,
                 mem: 1,
                 disk: 1,
@@ -389,7 +393,7 @@ pub fn work_proof_upload() {
             work_id,
             Some(ProofOfWork {
                 log_hash: "test".as_bytes().to_vec(),
-                cr: Cr {
+                cr: ComCr {
                     cpu: 1,
                     mem: 1,
                     disk: 1,
@@ -422,7 +426,7 @@ pub fn work_proof_upload_should_fail() {
             work_id,
             Some(ProofOfWork {
                 log_hash: "test".as_bytes().to_vec(),
-                cr: Cr {
+                cr: ComCr {
                     cpu: 1,
                     mem: 1,
                     disk: 1,
@@ -455,7 +459,7 @@ pub fn work_proof_upload_should_fail2() {
             work_id,
             Some(ProofOfWork {
                 log_hash: "test".as_bytes().to_vec(),
-                cr: Cr {
+                cr: ComCr {
                     cpu: 1,
                     mem: 1,
                     disk: 1,

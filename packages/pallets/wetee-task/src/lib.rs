@@ -1,17 +1,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use parity_scale_codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResultWithPostInfo, pallet_prelude::*,
     sp_runtime::traits::AccountIdConversion, PalletId,
 };
 use frame_system::pallet_prelude::*;
+use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        AppSetting, AppSettingInput, ClusterLevel, Cr, EditType, TeeAppId, WorkId, WorkStatus,
+        AppSetting, AppSettingInput, ClusterLevel, Cr, Disk, EditType, TeeAppId, WorkId, WorkStatus,
     },
 };
 
@@ -249,7 +249,7 @@ pub mod pallet {
             port: Vec<u32>,
             cpu: u32,
             memory: u32,
-            disk: u32,
+            disk: Vec<Disk>,
             level: u8,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
@@ -268,7 +268,7 @@ pub mod pallet {
                 cr: Cr {
                     cpu,
                     mem: memory,
-                    disk,
+                    disk: disk.clone(),
                     gpu: 0,
                 },
                 contract_id: Self::task_id_account(id),
@@ -599,11 +599,17 @@ pub mod pallet {
             // 获取费用
             let p = <Prices<T>>::get(level).ok_or(Error::<T>::LevelNotExists)?;
             let cos: u32 = (number - app.start_block).saturated_into::<u32>();
+            let disk_all = app
+                .cr
+                .disk
+                .iter()
+                .map(|d| d.size)
+                .fold(0, |acc, size| acc + size);
 
             return Ok(BalanceOf::<T>::from(
                 (p.cpu_per_block * app.cr.cpu
                     + p.memory_per_block * app.cr.mem
-                    + p.disk_per_block * app.cr.disk) as u32
+                    + p.disk_per_block * disk_all) as u32
                     * cos,
             ));
         }

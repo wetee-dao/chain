@@ -83,9 +83,30 @@ pub struct MintId {
 pub struct Cr {
     pub cpu: u32,
     pub mem: u32,
+    pub disk: Vec<Disk>,
+    pub gpu: u32,
+}
+
+/// 储存设置
+/// disk setting
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct Disk {
+    /// key
+    pub path: Vec<u8>,
+    /// value
+    pub size: u32,
+}
+
+/// 计算资源
+/// computing resource
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct ComCr {
+    pub cpu: u32,
+    pub mem: u32,
     pub disk: u32,
     pub gpu: u32,
 }
+
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum EditType {
