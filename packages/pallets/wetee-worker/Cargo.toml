@@ -12,31 +12,31 @@ targets = ["x86_64-unknown-linux-gnu"]
 parity-scale-codec = { workspace = true, default-features = false, features = [
   "derive",
 ] }
-frame-benchmarking = {workspace = true}
-frame-support = {workspace = true}
-frame-system = {workspace = true}
-log = "0.4.17"
-pallet-balances = {workspace = true}
-scale-info = {version = "2.10.0", default-features = false, features = [
+frame-benchmarking = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+pallet-balances = { workspace = true }
+scale-info = { workspace = true, default-features = false, features = [
   "derive",
-]}
-sp-runtime = {workspace = true}
-sp-std = {workspace = true}
+] }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
-orml-tokens = {workspace = true}
-orml-traits = {workspace = true}
-pallet-insecure-randomness-collective-flip = {workspace = true}
+orml-tokens = { workspace = true }
+orml-traits = { workspace = true }
+pallet-insecure-randomness-collective-flip = { workspace = true }
 
-wetee-app = {path = "../wetee-app", package = "wetee-app", default-features = false}
-wetee-assets = {path = "../wetee-assets", package = "wetee-assets", default-features = false}
-wetee-org = {path = "../wetee-org", package = "wetee-org", default-features = false}
-wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
-wetee-task = {path = "../wetee-task", package = "wetee-task", default-features = false}
+wetee-app = { path = "../wetee-app", package = "wetee-app", default-features = false }
+wetee-assets = { path = "../wetee-assets", package = "wetee-assets", default-features = false }
+wetee-org = { path = "../wetee-org", package = "wetee-org", default-features = false }
+wetee-primitives = { path = "../../primitives", package = "wetee-primitives", default-features = false }
+wetee-task = { path = "../wetee-task", package = "wetee-task", default-features = false }
 
 [dev-dependencies]
-sp-core = {workspace = true}
-sp-io = {workspace = true}
-sp-runtime = {workspace = true}
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
