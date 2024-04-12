@@ -344,6 +344,9 @@ pub mod pallet {
             // port of service
             // 服务端口号
             port: Vec<u32>,
+            // with restart
+            // 是否重启
+            with_restart: bool,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
@@ -362,7 +365,9 @@ pub mod pallet {
                 },
             )?;
 
-            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            if with_restart {
+                <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            }
 
             // run after create hook
             // 执行 App 创建后回调,部署任务添加到消息中间件
@@ -393,6 +398,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             app_id: TeeAppId,
             value: Vec<AppSettingInput>,
+            // with restart
+            // 是否重启
+            with_restart: bool,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let app_account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
@@ -447,7 +455,10 @@ pub mod pallet {
                 }
             });
 
-            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            if with_restart {
+                <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            }
+            
             Self::deposit_event(Event::WorkUpdated {
                 user: app_account,
                 work_id: WorkId {
@@ -498,6 +509,9 @@ pub mod pallet {
             // App id
             // 应用id
             app_id: TeeAppId,
+            // with restart
+            // 是否重启
+            with_restart: bool,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
@@ -514,7 +528,10 @@ pub mod pallet {
                     Ok(())
                 },
             )?;
-            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+
+            if with_restart {
+                <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            }
 
             Self::deposit_event(Event::<T>::CreatedApp {
                 id: app_id,
