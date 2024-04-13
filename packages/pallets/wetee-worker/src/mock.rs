@@ -116,6 +116,7 @@ impl pallet_balances::Config for Test {
     type MaxFreezes = ();
     type RuntimeHoldReason = ();
     type MaxHolds = ();
+    type RuntimeFreezeReason = ();
 }
 
 impl wetee_org::Config for Test {
@@ -123,7 +124,7 @@ impl wetee_org::Config for Test {
     type RuntimeCall = RuntimeCall;
     type CallId = u64;
     type PalletId = DaoPalletId;
-    type UHook = ();
+    type OrgHook = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }

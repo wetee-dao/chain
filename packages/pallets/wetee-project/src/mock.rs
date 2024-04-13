@@ -2,7 +2,7 @@
 use super::*;
 
 use crate as wetee_project;
-use codec::MaxEncodedLen;
+use parity_scale_codec::MaxEncodedLen;
 use frame_support::{construct_runtime, parameter_types, traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
 use serde::{Deserialize, Serialize};
@@ -199,6 +199,7 @@ impl pallet_balances::Config for Test {
     type MaxFreezes = ();
     type RuntimeHoldReason = ();
     type MaxHolds = ();
+    type RuntimeFreezeReason = ();
 }
 
 parameter_types! {
@@ -217,7 +218,7 @@ impl wetee_org::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = CallId;
-    type UHook = CreatedHook;
+    type OrgHook = CreatedHook;
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
     type PalletId = DaoPalletId;

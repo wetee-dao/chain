@@ -1,16 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResultWithPostInfo, pallet_prelude::*,
     sp_runtime::traits::AccountIdConversion, PalletId,
 };
 use frame_system::pallet_prelude::*;
+use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
-    types::{AppSetting, AppSettingInput, Cr, EditType, TeeAppId, WorkId, WorkType},
+    types::{AppSetting, AppSettingInput, Cr, Disk, EditType, TeeAppId, WorkId, WorkType},
 };
 
 use orml_traits::MultiCurrency;
@@ -249,7 +249,7 @@ pub mod pallet {
             // cpu memory disk
             cpu: u32,
             memory: u32,
-            disk: u32,
+            disk: Vec<Disk>,
             gpu: u32,
             // min score of the App
             level: u8,
@@ -274,7 +274,7 @@ pub mod pallet {
                 cr: Cr {
                     cpu,
                     mem: memory,
-                    disk,
+                    disk: disk.clone(),
                     gpu: gpu,
                 },
                 contract_id: Self::app_id_account(id),
@@ -289,8 +289,14 @@ pub mod pallet {
             // check deposit
             // 检查抵押金额是否足够
             let p = <Prices<T>>::get(level).ok_or(Error::<T>::LevelNotExist)?;
-            let fee_unit =
-                BalanceOf::<T>::from(p.cpu_per * cpu + p.memory_per * memory + p.disk_per * disk);
+            let disk_all = disk
+                .clone()
+                .iter()
+                .map(|d| d.size)
+                .fold(0, |acc, size| acc + size);
+            let fee_unit = BalanceOf::<T>::from(
+                p.cpu_per * cpu + p.memory_per * memory + p.disk_per * disk_all,
+            );
 
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
@@ -338,6 +344,9 @@ pub mod pallet {
             // port of service
             // 服务端口号
             port: Vec<u32>,
+            // with restart
+            // 是否重启
+            with_restart: bool,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
@@ -356,7 +365,9 @@ pub mod pallet {
                 },
             )?;
 
-            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            if with_restart {
+                <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            }
 
             // run after create hook
             // 执行 App 创建后回调,部署任务添加到消息中间件
@@ -387,6 +398,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             app_id: TeeAppId,
             value: Vec<AppSettingInput>,
+            // with restart
+            // 是否重启
+            with_restart: bool,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let app_account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
@@ -441,7 +455,10 @@ pub mod pallet {
                 }
             });
 
-            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            if with_restart {
+                <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            }
+            
             Self::deposit_event(Event::WorkUpdated {
                 user: app_account,
                 work_id: WorkId {
@@ -492,6 +509,9 @@ pub mod pallet {
             // App id
             // 应用id
             app_id: TeeAppId,
+            // with restart
+            // 是否重启
+            with_restart: bool,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
@@ -508,7 +528,10 @@ pub mod pallet {
                     Ok(())
                 },
             )?;
-            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+
+            if with_restart {
+                <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            }
 
             Self::deposit_event(Event::<T>::CreatedApp {
                 id: app_id,
@@ -634,9 +657,15 @@ pub mod pallet {
             // get price of level
             // 获取费用
             let p = <Prices<T>>::get(level).ok_or(Error::<T>::AppNotExist)?;
+            let disk_all = app
+                .cr
+                .disk
+                .iter()
+                .map(|d| d.size)
+                .fold(0, |acc, size| acc + size);
 
             return Ok(BalanceOf::<T>::from(
-                p.cpu_per * app.cr.cpu + p.memory_per * app.cr.mem + p.disk_per * app.cr.disk,
+                p.cpu_per * app.cr.cpu + p.memory_per * app.cr.mem + p.disk_per * disk_all,
             ));
         }
 

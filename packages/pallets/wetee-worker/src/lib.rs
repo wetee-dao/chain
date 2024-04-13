@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::Randomness};
 use frame_system::pallet_prelude::*;
 use scale_info::{prelude::vec::Vec, TypeInfo};
@@ -10,7 +10,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::{traits::WorkExt,types::{ClusterId, Cr, MintId, TeeAppId, WorkId, WorkType,ClusterLevel}};
+use wetee_primitives::{traits::WorkExt,types::{ClusterId, ComCr, MintId, TeeAppId, WorkId, WorkType,ClusterLevel}};
 
 #[cfg(test)]
 mod mock;
@@ -97,7 +97,7 @@ pub struct ProofOfWork {
     pub log_hash: Vec<u8>,
     /// task cpu memory usage
     /// 任务cpu 内存 占用
-    pub cr: Cr,
+    pub cr: ComCr,
     /// task cpu memory usage hash
     /// 任务cpu 内存 占用监控hash
     pub cr_hash: Vec<u8>,
@@ -230,7 +230,7 @@ pub mod pallet {
     /// computing resource
     #[pallet::storage]
     #[pallet::getter(fn crs)]
-    pub type Crs<T: Config> = StorageMap<_, Identity, ClusterId, (Cr, Cr), OptionQuery>;
+    pub type Crs<T: Config> = StorageMap<_, Identity, ClusterId, (ComCr, ComCr), OptionQuery>;
 
     /// 节点(评级,评分)
     /// computing resource
@@ -502,13 +502,13 @@ pub mod pallet {
             Crs::<T>::insert(
                 cid.clone(),
                 (
-                    Cr {
+                    ComCr {
                         cpu: 0,
                         mem: 0,
                         disk: 0,
                         gpu: 0,
                     },
-                    Cr {
+                    ComCr {
                         cpu: 0,
                         mem: 0,
                         disk: 0,
@@ -615,7 +615,7 @@ pub mod pallet {
                 let ccr = crs.0.clone();
 
                 // 更新抵押参数
-                crs.0 = Cr {
+                crs.0 = ComCr {
                     cpu: ccr.cpu + cpu,
                     mem: ccr.mem + mem,
                     disk: ccr.disk + disk,
@@ -665,7 +665,7 @@ pub mod pallet {
                 let ccr = crs.0.clone();
 
                 // 更新抵押参数
-                crs.0 = Cr {
+                crs.0 = ComCr {
                     cpu: ccr.cpu - d.cpu,
                     mem: ccr.mem - d.mem,
                     disk: ccr.disk - d.disk,
@@ -763,11 +763,13 @@ pub mod pallet {
                         let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
                         let ccr = crs.1.clone();
 
+                        let disk_all = cr.clone().disk.iter().map(|d| d.size).fold(0, |acc, size| acc + size);
+
                         // 更新抵押参数
-                        crs.1 = Cr {
+                        crs.1 = ComCr {
                             cpu: ccr.cpu - cr.cpu,
                             mem: ccr.mem - cr.mem,
-                            disk: ccr.disk - cr.disk,
+                            disk: ccr.disk - disk_all,
                             gpu: ccr.gpu - cr.gpu,
                         };
                         *c = Some(crs);
@@ -895,8 +897,8 @@ pub mod pallet {
             Crs::<T>::insert(
                 cluster_id,
                 (
-                    Cr {cpu: 0,mem: 0,disk: 0,gpu: 0},
-                    Cr {cpu: 0,mem: 0,disk: 0,gpu: 0},
+                    ComCr {cpu: 0,mem: 0,disk: 0,gpu: 0},
+                    ComCr {cpu: 0,mem: 0,disk: 0,gpu: 0},
                 ),
             );
 
@@ -998,7 +1000,13 @@ pub mod pallet {
             match_id: Option<TeeAppId>,
         ) -> result::Result<bool, DispatchError> {
             let (account,cr,level,status) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
-            let app_cr = cr;
+            let disk_all = cr.disk.iter().map(|d| d.size).fold(0, |acc, size| acc + size);
+            let app_cr = ComCr{
+                cpu: cr.cpu,
+                mem: cr.mem,
+                disk: disk_all,
+                gpu: cr.gpu,
+            };
             
             let id =
                 Self::get_random_cluster(work_id.clone(), app_cr.clone(), level, match_id)?;
@@ -1017,7 +1025,7 @@ pub mod pallet {
                     let ccr = crs.1.clone();
 
                     // 更新抵押参数
-                    crs.1 = Cr {
+                    crs.1 = ComCr {
                         cpu: ccr.cpu + app_cr.cpu,
                         mem: ccr.mem + app_cr.mem,
                         disk: ccr.disk + app_cr.disk,
@@ -1074,7 +1082,7 @@ pub mod pallet {
         /// 获取随机节点
         pub fn get_random_cluster(
             work_id: WorkId,
-            app_cr: Cr,
+            app_cr: ComCr,
             level: ClusterLevel,
             match_id: Option<ClusterId>,
         ) -> result::Result<ClusterId, DispatchError> {

@@ -21,7 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
-use codec::{Codec, Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Codec, Decode, Encode, MaxEncodedLen};
 use frame_support::{
     dispatch::DispatchResult,
     ensure,

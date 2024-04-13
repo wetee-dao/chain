@@ -1,17 +1,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResultWithPostInfo, pallet_prelude::*,
     sp_runtime::traits::AccountIdConversion, PalletId,
 };
 use frame_system::pallet_prelude::*;
+use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        AppSetting, AppSettingInput, ClusterLevel, Cr, EditType, TeeAppId, WorkId, WorkStatus,
+        AppSetting, AppSettingInput, ClusterLevel, Cr, Disk, EditType, TeeAppId, WorkId, WorkStatus,
     },
 };
 
@@ -249,7 +249,7 @@ pub mod pallet {
             port: Vec<u32>,
             cpu: u32,
             memory: u32,
-            disk: u32,
+            disk: Vec<Disk>,
             level: u8,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
@@ -268,7 +268,7 @@ pub mod pallet {
                 cr: Cr {
                     cpu,
                     mem: memory,
-                    disk,
+                    disk: disk.clone(),
                     gpu: 0,
                 },
                 contract_id: Self::task_id_account(id),
@@ -375,6 +375,9 @@ pub mod pallet {
             // port of service
             // 服务端口号
             port: Vec<u32>,
+            // with restart
+            // 是否重启
+            with_restart: bool,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::TaskNotExists)?;
@@ -393,7 +396,10 @@ pub mod pallet {
                 },
             )?;
 
-            <TaskVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            if with_restart {
+                <TaskVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            }
+
             Self::deposit_event(Event::WorkUpdated {
                 user: account,
                 work_id: WorkId {
@@ -413,6 +419,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             app_id: TeeAppId,
             value: Vec<AppSettingInput>,
+            // with restart
+            // 是否重启
+            with_restart: bool,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let app_account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::TaskNotExists)?;
@@ -470,7 +479,10 @@ pub mod pallet {
                 }
             });
 
-            <TaskVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            if with_restart {
+                <TaskVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+            }
+            
             Self::deposit_event(Event::WorkUpdated {
                 user: app_account,
                 work_id: WorkId {
@@ -486,7 +498,7 @@ pub mod pallet {
         /// 任务充值
         #[pallet::call_index(005)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn recharge(
+        pub fn charge(
             origin: OriginFor<T>,
             id: TeeAppId,
             deposit: BalanceOf<T>,
@@ -599,11 +611,17 @@ pub mod pallet {
             // 获取费用
             let p = <Prices<T>>::get(level).ok_or(Error::<T>::LevelNotExists)?;
             let cos: u32 = (number - app.start_block).saturated_into::<u32>();
+            let disk_all = app
+                .cr
+                .disk
+                .iter()
+                .map(|d| d.size)
+                .fold(0, |acc, size| acc + size);
 
             return Ok(BalanceOf::<T>::from(
                 (p.cpu_per_block * app.cr.cpu
                     + p.memory_per_block * app.cr.mem
-                    + p.disk_per_block * app.cr.disk) as u32
+                    + p.disk_per_block * disk_all) as u32
                     * cos,
             ));
         }

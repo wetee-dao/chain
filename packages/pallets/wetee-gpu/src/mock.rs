@@ -17,8 +17,8 @@ use sp_runtime::{
 use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
-    traits::UHook,
     types::{DaoAssetId, WorkId},
+    traits::UHook,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -112,6 +112,14 @@ impl pallet_balances::Config for Test {
     type MaxFreezes = ();
     type RuntimeHoldReason = ();
     type MaxHolds = ();
+
+    type RuntimeFreezeReason = ();
+}
+
+
+pub struct OrgHook;
+impl UHook<AccountId, DaoAssetId> for OrgHook {
+    fn run_hook(id: AccountId, dao_id: DaoAssetId) {}
 }
 
 impl wetee_org::Config for Test {
@@ -119,10 +127,11 @@ impl wetee_org::Config for Test {
     type RuntimeCall = RuntimeCall;
     type CallId = u64;
     type PalletId = DaoPalletId;
-    type UHook = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
+    type OrgHook = OrgHook;
 }
+
 
 pub struct WorkerQueueHook;
 impl UHook<WorkId, AccountId> for WorkerQueueHook {

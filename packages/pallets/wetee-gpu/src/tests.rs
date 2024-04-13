@@ -22,7 +22,10 @@ pub fn do_create() {
         vec![1, 2, 3],
         10,
         10,
-        1,
+        vec![Disk {
+            path: "test".as_bytes().to_vec(),
+            size: 1,
+        }],
         1,
         1,
         100000,
@@ -49,7 +52,10 @@ pub fn create() {
             vec![1, 2, 3],
             10,
             10,
-            10,
+            vec![Disk {
+                path: "test".as_bytes().to_vec(),
+                size: 10,
+            }],
             1,
             1,
             100000,
