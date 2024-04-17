@@ -7,70 +7,73 @@ name = "wetee-runtime"
 publish = false
 version = "1.0.0"
 
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
 [dependencies]
-log = { workspace = true }
-parity-scale-codec = { workspace = true, features = [
+log = {workspace = true}
+parity-scale-codec = {workspace = true, features = [
   "derive",
   "max-encoded-len",
-] }
-scale-info = { workspace = true, features = ["derive"] }
+]}
+scale-info = {workspace = true, features = ["derive"]}
 
-frame-executive = { workspace = true }
-frame-support = { workspace = true }
-frame-system = { workspace = true }
-frame-try-runtime = { workspace = true }
-pallet-aura = { workspace = true }
-pallet-balances = { workspace = true }
-pallet-grandpa = { workspace = true }
-pallet-sudo = { workspace = true }
-pallet-timestamp = { workspace = true }
-pallet-transaction-payment = { workspace = true }
-sp-api = { workspace = true }
-sp-block-builder = { workspace = true }
-sp-consensus-aura = { workspace = true }
-sp-consensus-grandpa = { workspace = true }
-sp-core = { workspace = true }
-sp-inherents = { workspace = true }
-sp-offchain = { workspace = true }
-sp-runtime = { workspace = true }
-sp-session = { workspace = true }
-sp-std = { workspace = true }
-sp-transaction-pool = { workspace = true }
-sp-version = { workspace = true }
+frame-executive = {workspace = true}
+frame-support = {workspace = true}
+frame-system = {workspace = true}
+frame-try-runtime = {workspace = true}
+pallet-aura = {workspace = true}
+pallet-balances = {workspace = true}
+pallet-grandpa = {workspace = true}
+pallet-sudo = {workspace = true}
+pallet-timestamp = {workspace = true}
+pallet-transaction-payment = {workspace = true}
+sp-api = {workspace = true}
+sp-block-builder = {workspace = true}
+sp-consensus-aura = {workspace = true}
+sp-consensus-grandpa = {workspace = true}
+sp-core = {workspace = true}
+sp-inherents = {workspace = true}
+sp-offchain = {workspace = true}
+sp-runtime = {workspace = true}
+sp-session = {workspace = true}
+sp-std = {workspace = true}
+sp-transaction-pool = {workspace = true}
+sp-version = {workspace = true}
 
 # Used for the node template's RPCs
-frame-system-rpc-runtime-api = { workspace = true }
-pallet-transaction-payment-rpc-runtime-api = { workspace = true }
+frame-system-rpc-runtime-api = {workspace = true}
+pallet-transaction-payment-rpc-runtime-api = {workspace = true}
 
 # Used for runtime benchmarking
-frame-benchmarking = { workspace = true }
-frame-system-benchmarking = { workspace = true }
+frame-benchmarking = {workspace = true}
+frame-system-benchmarking = {workspace = true}
 
 # Local Dependencies
-orml-tokens = { workspace = true }
-orml-traits = { workspace = true }
-pallet-insecure-randomness-collective-flip = { workspace = true }
-pallet-message-queue = { workspace = true }
-pallet-utility = { workspace = true }
+orml-tokens = {workspace = true}
+orml-traits = {workspace = true}
+pallet-insecure-randomness-collective-flip = {workspace = true}
+pallet-message-queue = {workspace = true}
+pallet-utility = {workspace = true}
 # orml-traits = { default-features = false, path = "../../../../open-runtime-module-library/traits" }
 # orml-tokens = { default-features = false, path = "../../../../open-runtime-module-library/tokens" }
 
-wetee-app = { path = "../../pallets/wetee-app", default-features = false }
-wetee-assets = { path = "../../pallets/wetee-assets", default-features = false }
-wetee-gov = { path = "../../pallets/wetee-gov", default-features = false }
-wetee-gpu = { path = "../../pallets/wetee-gpu", default-features = false }
-wetee-guild = { path = "../../pallets/wetee-guild", default-features = false }
-wetee-org = { path = "../../pallets/wetee-org", default-features = false }
-wetee-primitives = { path = "../../primitives", default-features = false }
-wetee-project = { path = "../../pallets/wetee-project", default-features = false }
-wetee-runtime-api = { path = "../../pallets/wetee-rpc/runtime-api", default-features = false, optional = true }
-wetee-sudo = { path = "../../pallets/wetee-sudo", default-features = false }
-wetee-task = { path = "../../pallets/wetee-task", default-features = false }
-wetee-treasury = { path = "../../pallets/wetee-treasury", default-features = false }
-wetee-worker = { path = "../../pallets/wetee-worker", default-features = false }
+wetee-app = {path = "../../pallets/wetee-app", default-features = false}
+wetee-assets = {path = "../../pallets/wetee-assets", default-features = false}
+wetee-gov = {path = "../../pallets/wetee-gov", default-features = false}
+wetee-gpu = {path = "../../pallets/wetee-gpu", default-features = false}
+wetee-guild = {path = "../../pallets/wetee-guild", default-features = false}
+wetee-org = {path = "../../pallets/wetee-org", default-features = false}
+wetee-primitives = {path = "../../primitives", default-features = false}
+wetee-project = {path = "../../pallets/wetee-project", default-features = false}
+wetee-runtime-api = {path = "../../pallets/wetee-rpc/runtime-api", default-features = false, optional = true}
+wetee-sudo = {path = "../../pallets/wetee-sudo", default-features = false}
+wetee-task = {path = "../../pallets/wetee-task", default-features = false}
+wetee-treasury = {path = "../../pallets/wetee-treasury", default-features = false}
+wetee-worker = {path = "../../pallets/wetee-worker", default-features = false}
 
 [build-dependencies]
-substrate-wasm-builder = { workspace = true, optional = true }
+substrate-wasm-builder = {workspace = true, optional = true}
 
 [features]
 default = ["std"]
