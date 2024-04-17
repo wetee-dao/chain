@@ -1,14 +1,9 @@
 #![allow(dead_code)]
 use super::*;
 use crate::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
-use frame_support::{construct_runtime, parameter_types, traits::Contains, PalletId};
+use frame_support::{construct_runtime, derive_impl, parameter_types, traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
-use serde::{Deserialize, Serialize};
-use sp_core::{ConstU64, H256};
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-    BuildStorage,
-};
+use sp_runtime::BuildStorage;
 
 use wetee_primitives::{
     traits::UHook,
@@ -22,37 +17,9 @@ pub type BlockNumber = u64;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-#[derive(
-    Eq,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Clone,
-    Encode,
-    Decode,
-    RuntimeDebug,
-    TypeInfo,
-    Copy,
-    MaxEncodedLen,
-    Serialize,
-    Deserialize,
-)]
-pub struct AccountId(pub [u8; 32]);
-
-impl Default for AccountId {
-    fn default() -> Self {
-        AccountId([0; 32])
-    }
-}
-
-impl std::fmt::Display for AccountId {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "ed25519: {}", self.to_string())
-    }
-}
-
-pub const ALICE: AccountId = AccountId([0; 32]);
-pub const BOB: AccountId = AccountId([1; 32]);
+pub type AccountId = u64;
+pub const ALICE: AccountId = 0;
+pub const BOB: AccountId = 1;
 
 construct_runtime!(
     pub enum Test{
@@ -73,30 +40,10 @@ impl Contains<RuntimeCall> for BlockEverything {
     }
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-    type BaseCallFilter = BlockEverything;
-    type BlockWeights = ();
-    type BlockLength = ();
-    type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Nonce = u64;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
     type Block = Block;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU64<250>;
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {
@@ -151,7 +98,6 @@ impl pallet_balances::Config for Test {
     type FreezeIdentifier = ();
     type MaxFreezes = ();
     type RuntimeHoldReason = ();
-    type MaxHolds = ();
     type RuntimeFreezeReason = ();
 }
 

@@ -72,6 +72,7 @@ pub fn update() {
             "test".as_bytes().to_vec(),
             vec![1, 2, 3],
             vec![1],
+            false,
         )
         .is_ok());
     });
@@ -87,7 +88,8 @@ pub fn update_should_fail() {
             0,
             "test".as_bytes().to_vec(),
             vec![1, 2, 3],
-            vec![1, 2]
+            vec![1, 2],
+            false,
         )
         .is_ok(),);
     });
@@ -127,7 +129,7 @@ pub fn get_fee_should_fail() {
 pub fn recharge() {
     new_test_run().execute_with(|| {
         do_create();
-        assert_ok!(Pallet::<Test>::recharge(
+        assert_ok!(Pallet::<Test>::charge(
             OriginFor::<Test>::signed(ALICE),
             0,
             1000
@@ -153,7 +155,8 @@ pub fn set_settings() {
                     k: "test".as_bytes().to_vec(),
                     v: "test".as_bytes().to_vec(),
                 }
-            ]
+            ],
+            false,
         ));
     });
 }
@@ -176,7 +179,8 @@ pub fn set_settings_should_fail() {
                     k: "test".as_bytes().to_vec(),
                     v: "test".as_bytes().to_vec(),
                 }
-            ]
+            ],
+            false,
         )
         .is_err());
     });

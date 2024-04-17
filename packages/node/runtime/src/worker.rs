@@ -1,13 +1,13 @@
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::QueuePausedQuery;
-pub use frame_support::weights::{
-    constants::{
-        BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-    },
-    IdentityFee, Weight,
-};
+// pub use frame_support::weights::{
+//     constants::{
+//         BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
+//     },
+//     IdentityFee, Weight,
+// };
 use frame_support::{
-    traits::{ProcessMessage, ProcessMessageError},
+    traits::{ProcessMessage, ProcessMessageError, QueueFootprint},
     weights::WeightMeter,
 };
 use scale_info::TypeInfo;
@@ -19,7 +19,8 @@ use wetee_primitives::{
 };
 
 use crate::{
-    sp_api_hidden_includes_construct_runtime::hidden_include::traits::EnqueueMessage, Balance,Runtime
+    sp_api_hidden_includes_construct_runtime::hidden_include::traits::EnqueueMessage, Balance,
+    Runtime,
 };
 use crate::{AccountId, MessageQueue, WeteeWorker};
 use pallet_message_queue::OnQueueChanged;
@@ -44,7 +45,7 @@ impl UHook<WorkId, AccountId> for WorkerQueueHook {
 /// 消息队列变化处理器
 pub struct WorkerQueueChangeHandler;
 impl OnQueueChanged<MessageOrigin> for WorkerQueueChangeHandler {
-    fn on_queue_changed(id: MessageOrigin, _items_count: u64, _items_size: u64) {
+    fn on_queue_changed(id: MessageOrigin, _: QueueFootprint) {
         log::info!("on_queue_changed ===> {:?}", id);
         // QueueChanges::mutate(|cs| cs.push((id, items_count, items_size)));
     }

@@ -3,24 +3,19 @@
 
 use crate as wetee_gov;
 use crate::PledgeTrait;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
-    parameter_types,
-    traits::{ConstU32, ConstU64, Contains},
+    derive_impl, parameter_types,
+    traits::{ConstU32, Contains},
     PalletId,
 };
 use orml_traits::parameter_type_with_key;
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
-use sp_core::{RuntimeDebug, H256};
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup, Zero},
-    BuildStorage, DispatchError,
-};
+use sp_runtime::{traits::Zero, BuildStorage, DispatchError};
 use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
-    traits::{GovIsJoin, PalletGet,UHook},
+    traits::{GovIsJoin, PalletGet, UHook},
     types::{CallId, DaoAssetId},
 };
 
@@ -30,37 +25,8 @@ type Amount = i128;
 pub type Balance = u64;
 pub type BlockNumber = u64;
 
-#[derive(
-    Eq,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Clone,
-    Encode,
-    Decode,
-    RuntimeDebug,
-    TypeInfo,
-    Copy,
-    MaxEncodedLen,
-    Serialize,
-    Deserialize,
-)]
-pub struct AccountId(pub [u8; 32]);
-
-impl Default for AccountId {
-    fn default() -> Self {
-        AccountId([0; 32])
-    }
-}
-
-impl std::fmt::Display for AccountId {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "ed25519: {}", self.to_string())
-    }
-}
-
-pub const ALICE: AccountId = AccountId([0; 32]);
-pub const BOB: AccountId = AccountId([1; 32]);
+pub const ALICE: u64 = 0;
+pub const BOB: u64 = 1;
 
 pub const DAO_ID: u64 = 5000;
 pub const P_ID: u32 = 0;
@@ -69,7 +35,6 @@ parameter_types! {
     pub const DaoPalletId: PalletId = PalletId(*b"weteedao");
 }
 
-// Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
     pub enum Test{
         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -90,44 +55,20 @@ impl Contains<RuntimeCall> for BlockEverything {
     }
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-    type BaseCallFilter = BlockEverything;
-    type BlockWeights = ();
-    type BlockLength = ();
-    type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Nonce = u64;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
     type Block = Block;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU64<250>;
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = ConstU32<16>;
-}
-
-parameter_types! {
-    pub const TokensMaxReserves: u32 = 50;
 }
 
 pub struct DustRemovalWhitelist;
-impl Contains<AccountId> for DustRemovalWhitelist {
-    fn contains(a: &AccountId) -> bool {
+impl Contains<u64> for DustRemovalWhitelist {
+    fn contains(a: &u64) -> bool {
         get_all_module_accounts().contains(a)
     }
 }
 
-pub fn get_all_module_accounts() -> Vec<AccountId> {
+pub fn get_all_module_accounts() -> Vec<u64> {
     vec![]
 }
 
@@ -146,7 +87,7 @@ impl orml_tokens::Config for Test {
     type WeightInfo = ();
     type ExistentialDeposits = ExistentialDeposits;
     type MaxLocks = MaxLocks;
-    type MaxReserves = TokensMaxReserves;
+    type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type DustRemovalWhitelist = DustRemovalWhitelist;
 }
@@ -191,18 +132,16 @@ impl pallet_balances::Config for Test {
     type FreezeIdentifier = ();
     type MaxFreezes = ();
     type RuntimeHoldReason = ();
-    type MaxHolds = ();
     type RuntimeFreezeReason = ();
 }
 
 pub struct CreatedHook;
-impl UHook<AccountId, DaoAssetId> for CreatedHook {
-    fn run_hook(acount_id: AccountId, dao_id: DaoAssetId) {
+impl UHook<u64, DaoAssetId> for CreatedHook {
+    fn run_hook(acount_id: u64, dao_id: DaoAssetId) {
         // 以 WETEE 创建者设置为WETEE初始的 root 账户
         wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
     }
 }
-
 
 impl wetee_org::Config for Test {
     type PalletId = DaoPalletId;
@@ -241,17 +180,17 @@ impl wetee_assets::Config for Test {
 )]
 pub struct Vote(pub Balance);
 
-impl PledgeTrait<u64, AccountId, u64, u64, DispatchError> for Vote {
+impl PledgeTrait<u64, u64, u64, u64, DispatchError> for Vote {
     fn try_vote(
         &self,
-        _who: &AccountId,
+        _who: &u64,
         _dao_id: &u64,
         vote_model: u8,
     ) -> Result<(u64, u64), DispatchError> {
         Ok((100u64, 100u64))
     }
 
-    fn vote_end_do(&self, _who: &AccountId, _dao_id: &u64) -> Result<(), DispatchError> {
+    fn vote_end_do(&self, _who: &u64, _dao_id: &u64) -> Result<(), DispatchError> {
         Ok(())
     }
 }

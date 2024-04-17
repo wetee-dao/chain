@@ -2,7 +2,6 @@ use crate::*;
 
 use frame_support::{traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
-pub use scale_info::TypeInfo;
 use sp_runtime::traits::Zero;
 use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
 use wetee_primitives::{

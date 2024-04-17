@@ -1,19 +1,19 @@
 use crate as wetee_org;
 use frame_support::{
-    parameter_types,
-    traits::{ConstU32, ConstU64, Contains},
+    derive_impl, parameter_types,
+    traits::{ConstU32, Contains},
     PalletId,
 };
-use sp_core::H256;
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-    BuildStorage,
-};
+use sp_runtime::BuildStorage;
 use sp_std::result::Result;
-use wetee_primitives::{traits::UHook, types::{DaoAssetId, WorkId}};
+use wetee_primitives::{
+    traits::UHook,
+    types::{DaoAssetId, WorkId},
+};
 
 // type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;
+type Balance = u64;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -31,30 +31,10 @@ impl Contains<RuntimeCall> for BlockEverything {
     }
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-    type BaseCallFilter = BlockEverything;
-    type BlockWeights = ();
-    type BlockLength = ();
-    type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Nonce = u64;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = u64;
-    type Lookup = IdentityLookup<Self::AccountId>;
     type Block = Block;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU64<250>;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = ();
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = ConstU32<16>;
+    type AccountData = pallet_balances::AccountData<Balance>;
 }
 
 impl TryFrom<RuntimeCall> for u64 {
@@ -68,7 +48,6 @@ parameter_types! {
     pub const DaoPalletId: PalletId = PalletId(*b"weteedao");
 }
 
-
 pub struct WorkerQueueHook;
 impl UHook<WorkId, u64> for WorkerQueueHook {
     fn run_hook(_id: WorkId, _dao_id: DaoAssetId) {}
@@ -79,7 +58,7 @@ impl wetee_org::Config for Test {
     type RuntimeCall = RuntimeCall;
     type PalletId = DaoPalletId;
     type CallId = u64;
-    type OrgHook  = ();
+    type OrgHook = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }

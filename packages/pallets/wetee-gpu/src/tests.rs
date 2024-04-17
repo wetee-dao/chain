@@ -74,6 +74,7 @@ pub fn update() {
             "test".as_bytes().to_vec(),
             vec![1, 2, 3],
             vec![1],
+            false,
         )
         .is_ok());
     });
@@ -89,7 +90,8 @@ pub fn update_should_fail() {
             0,
             "test".as_bytes().to_vec(),
             vec![1, 2, 3],
-            vec![1, 2]
+            vec![1, 2],
+            false,
         )
         .is_ok(),);
     });
@@ -155,7 +157,8 @@ pub fn set_settings() {
                     k: "test".as_bytes().to_vec(),
                     v: "test".as_bytes().to_vec(),
                 }
-            ]
+            ],
+            false
         ));
     });
 }
@@ -178,7 +181,8 @@ pub fn set_settings_should_fail() {
                     k: "test".as_bytes().to_vec(),
                     v: "test".as_bytes().to_vec(),
                 }
-            ]
+            ],
+            false
         )
         .is_err());
     });

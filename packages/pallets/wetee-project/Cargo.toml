@@ -9,35 +9,32 @@ version = "1.0.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-parity-scale-codec = { workspace = true, default-features = false, features = [
+frame-benchmarking = {workspace = true}
+frame-support = {workspace = true}
+frame-system = {workspace = true}
+pallet-balances = {workspace = true}
+parity-scale-codec = {workspace = true, default-features = false, features = [
   "derive",
-] }
-frame-benchmarking = { workspace = true }
-frame-support = { workspace = true }
-frame-system = { workspace = true }
-pallet-balances = { workspace = true }
-scale-info = { workspace = true, default-features = false, features = [
+]}
+scale-info = {workspace = true, default-features = false, features = [
   "derive",
-] }
-serde = { workspace = true, default-features = false, features = [
-  "alloc",
-  "derive",
-] }
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
+]}
+serde = {workspace = true, optional = true}
+sp-core = {workspace = true}
+sp-io = {workspace = true}
+sp-runtime = {workspace = true}
+sp-std = {workspace = true}
 
-orml-tokens = { workspace = true }
-orml-traits = { workspace = true }
+orml-tokens = {workspace = true}
+orml-traits = {workspace = true}
 # orml-traits = { default-features = false, path = "../../../../open-runtime-module-library/traits" }
 # orml-tokens = { default-features = false, path = "../../../../open-runtime-module-library/tokens" }
 
-wetee-assets = { path = "../wetee-assets", package = "wetee-assets", default-features = false }
-wetee-gov = { path = "../wetee-gov", package = "wetee-gov", default-features = false }
-wetee-org = { path = "../wetee-org", package = "wetee-org", default-features = false }
-wetee-primitives = { path = "../../primitives", package = "wetee-primitives", default-features = false }
-wetee-sudo = { path = "../wetee-sudo", package = "wetee-sudo", default-features = false }
+wetee-assets = {path = "../wetee-assets", package = "wetee-assets", default-features = false}
+wetee-gov = {path = "../wetee-gov", package = "wetee-gov", default-features = false}
+wetee-org = {path = "../wetee-org", package = "wetee-org", default-features = false}
+wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
+wetee-sudo = {path = "../wetee-sudo", package = "wetee-sudo", default-features = false}
 
 [dev-dependencies]
 # sp-runtime = {    workspace = true }
