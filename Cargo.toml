@@ -24,7 +24,7 @@ members = [
   "packages/pallets/wetee-rpc/runtime-api",
   "packages/pallets/wetee-treasury",
   "packages/pallets/wetee-app",
-  "packages/pallets/wetee-task", # 工具
+  "packages/pallets/wetee-task",
   "packages/pallets/wetee-task",
   "packages/pallets/wetee-gpu", # 工具
   # "tools/hash",
