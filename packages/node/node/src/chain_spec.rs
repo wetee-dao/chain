@@ -116,12 +116,12 @@ fn testnet_genesis(
             // Assign network admin rights.
             "key": Some(root_key),
         },
-        "transaction_payment": {},
+        "transactionPayment": {},
         "tokens": {},
-        "wetee_gov": {},
-        "wetee_app": {},
-        "wetee_task": {},
-        "wetee_gpu": {},
-        "wetee_worker": {},
+        "weteeGov": {},
+        "weteeApp": {},
+        "weteeTask": {},
+        "weteeGpu": {},
+        "weteeWorker": {},
     })
 }
