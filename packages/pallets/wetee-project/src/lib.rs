@@ -1,11 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(clippy::type_complexity)]
-#![allow(clippy::too_many_arguments)]
 
-use parity_scale_codec::{Decode, Encode};
 use frame_support::sp_runtime::SaturatedConversion;
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
+use parity_scale_codec::{Decode, Encode};
+// use scale_info::prelude::boxed::Box;
+use frame_support::traits::UnfilteredDispatchable;
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
@@ -191,6 +191,13 @@ pub mod pallet {
         ValueQuery,
     >;
 
+    /// project board
+    /// 项目看板
+    #[pallet::storage]
+    #[pallet::getter(fn proxy_boards)]
+    pub type ProxyProjects<T: Config> =
+        StorageDoubleMap<_, Identity, T::AccountId, Identity, u64, ProjectInfo<T::AccountId>>;
+
     /// project task
     /// 任务看板
     #[pallet::storage]
@@ -248,6 +255,11 @@ pub mod pallet {
         TaskCreated(DaoAssetId, ProjectId, u64, T::AccountId),
         TaskInProgress(DaoAssetId, ProjectId, u64, T::AccountId),
         TaskInReview(DaoAssetId, ProjectId, u64, T::AccountId),
+        ProxyCallResult {
+            caller: T::AccountId,
+            project_account: T::AccountId,
+            call_result: DispatchResult,
+        },
     }
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -750,6 +762,72 @@ pub mod pallet {
 
             <TaskReviews<T>>::insert(task_id, review);
 
+            Ok(().into())
+        }
+
+        /// 创建非DAO项目
+        #[pallet::call_index(013)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn add_proxy_project(
+            origin: OriginFor<T>,
+            name: Vec<u8>,
+            description: Vec<u8>,
+        ) -> DispatchResultWithPostInfo {
+            let me = ensure_signed(origin)?;
+            let project_id = NextProjectId::<T>::get();
+            let dao_account_id = wetee_org::Pallet::<T>::dao_project(0, project_id);
+            <ProxyProjects<T>>::insert(
+                me.clone(),
+                project_id,
+                ProjectInfo {
+                    name,
+                    creator: me.clone(),
+                    id: project_id,
+                    dao_account_id,
+                    description,
+                    status: Status::Active,
+                },
+            );
+
+            NextProjectId::<T>::put(project_id + 1);
+            Self::deposit_event(Event::ProjectCreated(0, project_id, me));
+
+            Ok(().into())
+        }
+
+        // 执行代理调用
+        #[pallet::call_index(014)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn proxy_call(
+            origin: OriginFor<T>,
+            project_id: ProjectId,
+            call: Box<<T as wetee_org::Config>::RuntimeCall>,
+        ) -> DispatchResultWithPostInfo {
+            let me = ensure_signed(origin)?;
+            if let Some(project) = <ProxyProjects<T>>::get(me.clone(), project_id) {
+                ensure!(project.status == Status::Active, Error::<T>::InVailCall);
+            }
+
+            // 获取项目账户
+            let dao_account_id = wetee_org::Pallet::<T>::dao_project(0, project_id);
+
+            // 签名并提交操作
+            let res = call.dispatch_bypass_filter(
+                frame_system::RawOrigin::Signed(dao_account_id.clone()).into(),
+            );
+
+            // 抛出事件
+            Self::deposit_event(Event::ProxyCallResult {
+                caller: me,
+                project_account: dao_account_id,
+                call_result: res.map(|_| ()).map_err(|e| e.error),
+            });
+
+            // 返回结果
+            let err = res.map(|_| ()).map_err(|e| e);
+            if err.is_err() {
+                return Err(err.unwrap_err())?;
+            }
             Ok(().into())
         }
     }
