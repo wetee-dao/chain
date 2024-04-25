@@ -458,7 +458,7 @@ pub mod pallet {
             if with_restart {
                 <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
             }
-            
+
             Self::deposit_event(Event::WorkUpdated {
                 user: app_account,
                 work_id: WorkId {
@@ -509,9 +509,6 @@ pub mod pallet {
             // App id
             // 应用id
             app_id: TeeAppId,
-            // with restart
-            // 是否重启
-            with_restart: bool,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
@@ -529,9 +526,7 @@ pub mod pallet {
                 },
             )?;
 
-            if with_restart {
-                <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
-            }
+            <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
 
             Self::deposit_event(Event::<T>::CreatedApp {
                 id: app_id,
@@ -614,19 +609,10 @@ pub mod pallet {
             );
 
             if app_total <= fee + fee {
-                let app_account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExist)?;
-
                 log::warn!("余额不足，停止应用");
                 // 余额不足，停止任务
                 // 余额不足支持下一个周期的费用，停止任务
-                Self::try_stop(app_account, wid.id)?;
-
-                // 不足以支付当前周期的费用
-                if app_total < fee {
-                    // transfer fee to target account
-                    // 将抵押转移到目标账户
-                    return Ok(2);
-                }
+                return Ok(2);
             }
 
             // transfer fee to target account

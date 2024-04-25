@@ -776,6 +776,10 @@ pub mod pallet {
                         Ok(())
                     },
                 )?;
+
+                // 删除应用
+                let (owner_account,_,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+                <T as pallet::Config>::WorkExt::try_stop(owner_account,work_id.clone())?;
             }else {
                 WorkContractState::<T>::insert(
                     work_id.clone(),
@@ -1035,8 +1039,10 @@ pub mod pallet {
                     Ok(())
                 })?;
 
+                // 添加合约
                 WorkContracts::<T>::insert(work_id.clone(), id);
 
+                // 获取当前区块高度
                 let number = <frame_system::Pallet<T>>::block_number();
 
                 // 如果没有集群挖矿记录，则插入记录
@@ -1052,18 +1058,20 @@ pub mod pallet {
                     );
                 }
 
+                // 如果没有合约状态记录，则插入记录
                 if !WorkContractState::<T>::contains_key(work_id.clone(), id) {
                     WorkContractState::<T>::insert(
                         work_id.clone(),
                         id,
                         ContractState {
-                            block_number: number,
                             minted: 0u32.into(),
                             withdrawal: 0u32.into(),
+                            block_number: number,
                         },
                     );
                 }
 
+                // 设置工作的状态
                 <T as pallet::Config>::WorkExt::set_work_status(work_id.clone(), 1)?;
 
                 // Runing event
@@ -1098,6 +1106,7 @@ pub mod pallet {
             // 随机选择集群
             let mut randoms = Vec::new();
             let mut scores = Vec::new();
+
             #[cfg(test)]
             println!("+++++++++++++++++++++++++++ {:?}", app_cr);
 

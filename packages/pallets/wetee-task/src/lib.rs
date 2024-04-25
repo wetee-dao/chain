@@ -482,7 +482,7 @@ pub mod pallet {
             if with_restart {
                 <TaskVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
             }
-            
+
             Self::deposit_event(Event::WorkUpdated {
                 user: app_account,
                 work_id: WorkId {
@@ -591,10 +591,7 @@ pub mod pallet {
                 amount: fee,
             });
 
-            let app_account = <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::TaskNotExists)?;
-
             // 任务只执行一次，执行后停止
-            Self::try_stop(app_account, wid.id)?;
             Ok(2)
         }
 

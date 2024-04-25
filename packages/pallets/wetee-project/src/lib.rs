@@ -1,11 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::sp_runtime::SaturatedConversion;
+use frame_support::traits::UnfilteredDispatchable;
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
-// use scale_info::prelude::boxed::Box;
-use frame_support::traits::UnfilteredDispatchable;
+use scale_info::prelude::boxed::Box;
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
@@ -768,7 +768,7 @@ pub mod pallet {
         /// 创建非DAO项目
         #[pallet::call_index(013)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn add_proxy_project(
+        pub fn create_proxy_project(
             origin: OriginFor<T>,
             name: Vec<u8>,
             description: Vec<u8>,

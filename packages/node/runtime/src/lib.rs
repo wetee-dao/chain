@@ -64,7 +64,7 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 // End WETEE pallet.
 
 /// An index to a block.
-pub type BlockNumber = u32;
+pub type BlockNumber = u64;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -118,7 +118,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 100,
+    spec_version: 102,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
