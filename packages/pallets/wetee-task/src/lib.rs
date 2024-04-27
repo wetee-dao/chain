@@ -11,7 +11,8 @@ use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        AppSetting, AppSettingInput, ClusterLevel, Cr, Disk, EditType, TeeAppId, WorkId, WorkStatus,
+        AppSetting, AppSettingInput, ClusterLevel, Cr, Disk, EditType, Service, TeeAppId, WorkId,
+        WorkStatus,
     },
 };
 
@@ -54,9 +55,12 @@ pub struct TeeTask<AccountId, BlockNumber> {
     /// meta of the App.
     /// 应用元数据
     pub meta: Vec<u8>,
+    /// command of service
+    /// 执行命令
+    pub command: Vec<Vec<u8>>,
     /// port of service
     /// 服务端口号
-    pub port: Vec<u32>,
+    pub port: Vec<Service>,
     /// State of the Task
     /// Task状态
     pub status: WorkStatus,
@@ -246,7 +250,9 @@ pub mod pallet {
             name: Vec<u8>,
             image: Vec<u8>,
             meta: Vec<u8>,
-            port: Vec<u32>,
+            port: Vec<Service>,
+            command: Vec<Vec<u8>>,
+            setting: Vec<AppSettingInput>,
             cpu: u32,
             memory: u32,
             disk: Vec<Disk>,
@@ -262,6 +268,7 @@ pub mod pallet {
                 image,
                 meta,
                 port,
+                command,
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 status: 0,
@@ -279,6 +286,21 @@ pub mod pallet {
             <TEETasks<T>>::insert(who.clone(), id, app);
             <TaskIdAccounts<T>>::insert(id, who.clone());
             <TaskVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
+
+            let mut sid = 0;
+            setting.iter().for_each(|v| {
+                if v.etype == EditType::INSERT {
+                    sid = sid + 1;
+                    <AppSettings<T>>::insert(
+                        id,
+                        sid,
+                        AppSetting {
+                            k: v.k.clone(),
+                            v: v.v.clone(),
+                        },
+                    );
+                }
+            });
 
             // Check deposit
             // 检查抵押金额是否足够
@@ -363,18 +385,23 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn update(
             origin: OriginFor<T>,
-            // Task id
+            // App id
             // 应用id
             app_id: TeeAppId,
             // name of the app.
             // 程序名字
-            name: Vec<u8>,
-            // img of the Task.
+            new_name: Option<Vec<u8>>,
+            // img of the App.
             // image 目标宗旨
-            image: Vec<u8>,
+            new_image: Option<Vec<u8>>,
             // port of service
             // 服务端口号
-            port: Vec<u32>,
+            new_port: Option<Vec<Service>>,
+            // run command
+            new_command: Option<Vec<Vec<u8>>>,
+            // setting
+            // 设置
+            new_setting: Vec<AppSettingInput>,
             // with restart
             // 是否重启
             with_restart: bool,
@@ -388,13 +415,71 @@ pub mod pallet {
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
                     let mut app = app_wrap.take().ok_or(Error::<T>::TaskNotExists)?;
-                    app.name = name;
-                    app.image = image;
-                    app.port = port;
+                    if new_name.is_some() {
+                        app.name = new_name.unwrap();
+                    }
+                    if new_image.is_some() {
+                        app.image = new_image.unwrap();
+                    }
+                    if new_port.is_some() {
+                        app.port = new_port.unwrap();
+                    }
+                    if new_command.is_some() {
+                        app.command = new_command.unwrap();
+                    }
                     *app_wrap = Some(app);
                     Ok(())
                 },
             )?;
+
+            let mut iter = AppSettings::<T>::iter_prefix(app_id);
+            let mut id = 0;
+
+            // 遍历设置
+            while let Some(setting) = iter.next() {
+                id = setting.0;
+                // 处理更新和删除设置
+                new_setting.iter().for_each(|v| {
+                    match v.etype {
+                        // 更新设置
+                        EditType::UPDATE(index) => {
+                            if index == setting.0 {
+                                <AppSettings<T>>::insert(
+                                    app_id,
+                                    setting.0,
+                                    AppSetting {
+                                        k: v.k.clone(),
+                                        v: v.v.clone(),
+                                    },
+                                );
+                            }
+                        }
+                        // 删除设置
+                        EditType::REMOVE(index) => {
+                            if index == setting.0 {
+                                <AppSettings<T>>::remove(app_id, setting.0);
+                            }
+                        }
+                        _ => {}
+                    };
+                });
+            }
+
+            // add all deposit
+            // 处理新增设置
+            new_setting.iter().for_each(|v| {
+                if v.etype == EditType::INSERT {
+                    id = id + 1;
+                    <AppSettings<T>>::insert(
+                        app_id,
+                        id,
+                        AppSetting {
+                            k: v.k.clone(),
+                            v: v.v.clone(),
+                        },
+                    );
+                }
+            });
 
             if with_restart {
                 <TaskVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());

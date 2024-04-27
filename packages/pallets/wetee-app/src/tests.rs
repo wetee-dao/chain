@@ -19,7 +19,9 @@ pub fn do_create() {
         "test".as_bytes().to_vec(),
         "test".as_bytes().to_vec(),
         "{}".as_bytes().to_vec(),
-        vec![1, 2, 3],
+        vec![Service::Tcp(80)],
+        vec![vec![1]],
+        vec![],
         10,
         10,
         vec![Disk {
@@ -48,7 +50,9 @@ pub fn create() {
             "test".as_bytes().to_vec(),
             "test".as_bytes().to_vec(),
             "{}".as_bytes().to_vec(),
-            vec![1, 2, 3],
+            vec![Service::Tcp(80)],
+            vec![vec![1]],
+            vec![],
             10,
             10,
             vec![Disk {
@@ -69,9 +73,15 @@ pub fn update() {
         assert!(Pallet::<Test>::update(
             OriginFor::<Test>::signed(ALICE),
             0,
-            "test".as_bytes().to_vec(),
-            vec![1, 2, 3],
-            vec![1],
+            Some("test".as_bytes().to_vec()),
+            Some(vec![1, 2, 3]),
+            Some(vec![Service::Tcp(80)]),
+            None,
+            vec![AppSettingInput {
+                etype: EditType::INSERT,
+                k: "test".as_bytes().to_vec(),
+                v: "test".as_bytes().to_vec(),
+            }],
             false,
         )
         .is_ok());
@@ -86,9 +96,15 @@ pub fn update_should_fail() {
         assert!(Pallet::<Test>::update(
             OriginFor::<Test>::signed(ALICE),
             0,
-            "test".as_bytes().to_vec(),
-            vec![1, 2, 3],
-            vec![1, 2],
+            Some("test".as_bytes().to_vec()),
+            Some(vec![1, 2, 3]),
+            Some(vec![Service::Tcp(80)]),
+            None,
+            vec![AppSettingInput {
+                etype: EditType::INSERT,
+                k: "test".as_bytes().to_vec(),
+                v: "test".as_bytes().to_vec(),
+            }],
             false,
         )
         .is_ok(),);
@@ -134,54 +150,5 @@ pub fn recharge() {
             0,
             1000
         ));
-    });
-}
-
-#[test]
-pub fn set_settings() {
-    new_test_run().execute_with(|| {
-        do_create();
-        assert_ok!(Pallet::<Test>::set_settings(
-            OriginFor::<Test>::signed(ALICE),
-            0,
-            vec![
-                AppSettingInput {
-                    etype: EditType::INSERT,
-                    k: "test".as_bytes().to_vec(),
-                    v: "test".as_bytes().to_vec(),
-                },
-                AppSettingInput {
-                    etype: EditType::INSERT,
-                    k: "test".as_bytes().to_vec(),
-                    v: "test".as_bytes().to_vec(),
-                }
-            ],
-            false,
-        ));
-    });
-}
-
-#[test]
-pub fn set_settings_should_fail() {
-    new_test_run().execute_with(|| {
-        do_create();
-        assert!(Pallet::<Test>::set_settings(
-            OriginFor::<Test>::signed(BOB),
-            0,
-            vec![
-                AppSettingInput {
-                    etype: EditType::INSERT,
-                    k: "test".as_bytes().to_vec(),
-                    v: "test".as_bytes().to_vec(),
-                },
-                AppSettingInput {
-                    etype: EditType::INSERT,
-                    k: "test".as_bytes().to_vec(),
-                    v: "test".as_bytes().to_vec(),
-                }
-            ],
-            false,
-        )
-        .is_err());
     });
 }

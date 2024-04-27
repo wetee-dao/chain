@@ -11,7 +11,7 @@ use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        AppSetting, AppSettingInput, ClusterLevel, Cr, Disk, EditType, TeeAppId, WorkId,
+        AppSetting, AppSettingInput, ClusterLevel, Cr, Disk, EditType, Service, TeeAppId, WorkId,
         WorkStatus, WorkType,
     },
 };
@@ -55,9 +55,12 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// meta of the App.
     /// 应用元数据
     pub meta: Vec<u8>,
+    /// command of service
+    /// 执行命令
+    pub command: Vec<Vec<u8>>,
     /// port of service
     /// 服务端口号
-    pub port: Vec<u32>,
+    pub port: Vec<Service>,
     /// State of the App
     /// App状态 0: created, 1: running, 2: stop
     pub status: WorkStatus,
@@ -249,10 +252,16 @@ pub mod pallet {
             // meta of the App.
             meta: Vec<u8>,
             // port of service
-            port: Vec<u32>,
+            port: Vec<Service>,
+            // run command
+            command: Vec<Vec<u8>>,
+            // setting of the App
+            setting: Vec<AppSettingInput>,
             // cpu memory disk gpu
             cpu: u32,
+            // memory
             memory: u32,
+            // disk
             disk: Vec<Disk>,
             // min score of the App
             level: u8,
@@ -271,6 +280,7 @@ pub mod pallet {
                 image,
                 meta,
                 port,
+                command,
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 status: 0,
@@ -288,6 +298,21 @@ pub mod pallet {
             <TEEApps<T>>::insert(who.clone(), id, app);
             <AppIdAccounts<T>>::insert(id, who.clone());
             <AppVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
+
+            let mut sid = 0;
+            setting.iter().for_each(|v| {
+                if v.etype == EditType::INSERT {
+                    sid = sid + 1;
+                    <AppSettings<T>>::insert(
+                        id,
+                        sid,
+                        AppSetting {
+                            k: v.k.clone(),
+                            v: v.v.clone(),
+                        },
+                    );
+                }
+            });
 
             // check deposit
             // 检查抵押金额是否足够
@@ -340,13 +365,18 @@ pub mod pallet {
             app_id: TeeAppId,
             // name of the app.
             // 程序名字
-            name: Vec<u8>,
+            new_name: Option<Vec<u8>>,
             // img of the App.
             // image 目标宗旨
-            image: Vec<u8>,
+            new_image: Option<Vec<u8>>,
             // port of service
             // 服务端口号
-            port: Vec<u32>,
+            new_port: Option<Vec<Service>>,
+            // run command
+            new_command: Option<Vec<Vec<u8>>>,
+            // setting
+            // 设置
+            new_setting: Vec<AppSettingInput>,
             // with restart
             // 是否重启
             with_restart: bool,
@@ -360,54 +390,22 @@ pub mod pallet {
                 app_id,
                 |app_wrap| -> result::Result<(), DispatchError> {
                     let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExist)?;
-                    app.name = name;
-                    app.image = image;
-                    app.port = port;
+                    if new_name.is_some() {
+                        app.name = new_name.unwrap();
+                    }
+                    if new_image.is_some() {
+                        app.image = new_image.unwrap();
+                    }
+                    if new_port.is_some() {
+                        app.port = new_port.unwrap();
+                    }
+                    if new_command.is_some() {
+                        app.command = new_command.unwrap();
+                    }
                     *app_wrap = Some(app);
                     Ok(())
                 },
             )?;
-
-            if with_restart {
-                <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
-            }
-
-            // run after create hook
-            // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::UHook::run_hook(
-                WorkId {
-                    wtype: WorkType::APP,
-                    id: app_id,
-                },
-                who,
-            );
-
-            Self::deposit_event(Event::WorkUpdated {
-                user: account,
-                work_id: WorkId {
-                    wtype: WorkType::APP,
-                    id: app_id,
-                },
-            });
-
-            Ok(().into())
-        }
-
-        /// App settings
-        /// 任务设置
-        #[pallet::call_index(003)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn set_settings(
-            origin: OriginFor<T>,
-            app_id: TeeAppId,
-            value: Vec<AppSettingInput>,
-            // with restart
-            // 是否重启
-            with_restart: bool,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            let app_account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
-            ensure!(who == app_account, Error::<T>::App403);
 
             let mut iter = AppSettings::<T>::iter_prefix(app_id);
             let mut id = 0;
@@ -416,7 +414,7 @@ pub mod pallet {
             while let Some(setting) = iter.next() {
                 id = setting.0;
                 // 处理更新和删除设置
-                value.iter().for_each(|v| {
+                new_setting.iter().for_each(|v| {
                     match v.etype {
                         // 更新设置
                         EditType::UPDATE(index) => {
@@ -444,7 +442,7 @@ pub mod pallet {
 
             // add all deposit
             // 处理新增设置
-            value.iter().for_each(|v| {
+            new_setting.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     id = id + 1;
                     <AppSettings<T>>::insert(
@@ -461,8 +459,19 @@ pub mod pallet {
             if with_restart {
                 <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
             }
+
+            // run after create hook
+            // 执行 App 创建后回调,部署任务添加到消息中间件
+            <T as pallet::Config>::UHook::run_hook(
+                WorkId {
+                    wtype: WorkType::APP,
+                    id: app_id,
+                },
+                who,
+            );
+
             Self::deposit_event(Event::WorkUpdated {
-                user: app_account,
+                user: account,
                 work_id: WorkId {
                     wtype: WorkType::APP,
                     id: app_id,

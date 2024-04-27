@@ -87,6 +87,26 @@ pub struct Cr {
     pub gpu: u32,
 }
 
+/// 网络设置
+/// disk setting
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum Service {
+    /// TCP
+    Tcp(u16),
+    /// UDP
+    Udp(u16),
+    /// Project Tcp
+    ProjectTcp(u16),
+    /// Project Udp
+    ProjectUdp(u16),
+}
+
+impl Default for Service {
+    fn default() -> Self {
+        Service::Tcp(80) // 默认为TCP协议，端口为0
+    }
+}
+
 /// 储存设置
 /// disk setting
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
@@ -106,7 +126,6 @@ pub struct ComCr {
     pub disk: u32,
     pub gpu: u32,
 }
-
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum EditType {
