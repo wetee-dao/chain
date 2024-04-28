@@ -11,7 +11,7 @@ use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        AppSetting, ClusterLevel, Cr, Disk, EditType, EnvInput, Service, TeeAppId, WorkId,
+        ClusterLevel, Command, Cr, Disk, EditType, Env, EnvInput, Service, TeeAppId, WorkId,
         WorkStatus,
     },
 };
@@ -57,7 +57,7 @@ pub struct TeeTask<AccountId, BlockNumber> {
     pub meta: Vec<u8>,
     /// command of service
     /// 执行命令
-    pub command: Vec<Vec<u8>>,
+    pub command: Command,
     /// port of service
     /// 服务端口号
     pub port: Vec<Service>,
@@ -172,8 +172,8 @@ pub mod pallet {
     /// Task设置
     #[pallet::storage]
     #[pallet::getter(fn app_settings)]
-    pub type AppSettings<T: Config> =
-        StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, AppSetting, OptionQuery>;
+    pub type Envs<T: Config> =
+        StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, Env, OptionQuery>;
 
     /// Task version
     /// Task 版本
@@ -251,7 +251,7 @@ pub mod pallet {
             image: Vec<u8>,
             meta: Vec<u8>,
             port: Vec<Service>,
-            command: Vec<Vec<u8>>,
+            command: Command,
             env: Vec<EnvInput>,
             cpu: u32,
             memory: u32,
@@ -291,10 +291,10 @@ pub mod pallet {
             env.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     sid = sid + 1;
-                    <AppSettings<T>>::insert(
+                    <Envs<T>>::insert(
                         id,
                         sid,
-                        AppSetting {
+                        Env {
                             k: v.k.clone(),
                             v: v.v.clone(),
                         },
@@ -398,7 +398,7 @@ pub mod pallet {
             // 服务端口号
             new_port: Option<Vec<Service>>,
             // run command
-            new_command: Option<Vec<Vec<u8>>>,
+            new_command: Option<Command>,
             // setting
             // 设置
             new_env: Vec<EnvInput>,
@@ -432,7 +432,7 @@ pub mod pallet {
                 },
             )?;
 
-            let mut iter = AppSettings::<T>::iter_prefix(app_id);
+            let mut iter = Envs::<T>::iter_prefix(app_id);
             let mut id = 0;
 
             // 遍历设置
@@ -444,10 +444,10 @@ pub mod pallet {
                         // 更新设置
                         EditType::UPDATE(index) => {
                             if index == setting.0 {
-                                <AppSettings<T>>::insert(
+                                <Envs<T>>::insert(
                                     app_id,
                                     setting.0,
-                                    AppSetting {
+                                    Env {
                                         k: v.k.clone(),
                                         v: v.v.clone(),
                                     },
@@ -457,7 +457,7 @@ pub mod pallet {
                         // 删除设置
                         EditType::REMOVE(index) => {
                             if index == setting.0 {
-                                <AppSettings<T>>::remove(app_id, setting.0);
+                                <Envs<T>>::remove(app_id, setting.0);
                             }
                         }
                         _ => {}
@@ -470,10 +470,10 @@ pub mod pallet {
             new_env.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     id = id + 1;
-                    <AppSettings<T>>::insert(
+                    <Envs<T>>::insert(
                         app_id,
                         id,
-                        AppSetting {
+                        Env {
                             k: v.k.clone(),
                             v: v.v.clone(),
                         },
@@ -512,7 +512,7 @@ pub mod pallet {
             let app_account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::TaskNotExists)?;
             ensure!(who == app_account, Error::<T>::Task403);
 
-            let mut iter = AppSettings::<T>::iter_prefix(app_id);
+            let mut iter = Envs::<T>::iter_prefix(app_id);
             let mut id = 0;
 
             // 遍历设置
@@ -526,10 +526,10 @@ pub mod pallet {
                         // 更新设置
                         EditType::UPDATE(index) => {
                             if index == setting.0 {
-                                <AppSettings<T>>::insert(
+                                <Envs<T>>::insert(
                                     app_id,
                                     setting.0,
-                                    AppSetting {
+                                    Env {
                                         k: v.k.clone(),
                                         v: v.v.clone(),
                                     },
@@ -540,7 +540,7 @@ pub mod pallet {
                         // 删除设置
                         EditType::REMOVE(index) => {
                             if index == setting.0 {
-                                <AppSettings<T>>::remove(app_id, setting.0);
+                                <Envs<T>>::remove(app_id, setting.0);
                             }
                         }
                         _ => {}
@@ -553,10 +553,10 @@ pub mod pallet {
             value.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     id = id + 1;
-                    <AppSettings<T>>::insert(
+                    <Envs<T>>::insert(
                         app_id,
                         id,
-                        AppSetting {
+                        Env {
                             k: v.k.clone(),
                             v: v.v.clone(),
                         },

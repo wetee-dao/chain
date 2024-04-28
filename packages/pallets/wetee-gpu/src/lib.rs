@@ -10,7 +10,7 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
-    types::{AppSetting, Cr, Disk, EditType, EnvInput, Service, TeeAppId, WorkId, WorkType},
+    types::{Command, Cr, Disk, EditType, Env, EnvInput, Service, TeeAppId, WorkId, WorkType},
 };
 
 use orml_traits::MultiCurrency;
@@ -53,7 +53,7 @@ pub struct GpuApp<AccountId, BlockNumber> {
     pub meta: Vec<u8>,
     /// command of service
     /// 执行命令
-    pub command: Vec<Vec<u8>>,
+    pub command: Command,
     /// port of service
     /// 服务端口号
     pub port: Vec<Service>,
@@ -165,8 +165,8 @@ pub mod pallet {
     /// App设置
     #[pallet::storage]
     #[pallet::getter(fn app_settings)]
-    pub type AppSettings<T: Config> =
-        StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, AppSetting, OptionQuery>;
+    pub type Envs<T: Config> =
+        StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, Env, OptionQuery>;
 
     /// App version
     /// App 版本
@@ -250,7 +250,7 @@ pub mod pallet {
             // port of service
             port: Vec<Service>,
             // run command
-            command: Vec<Vec<u8>>,
+            command: Command,
             // setting of the App
             env: Vec<EnvInput>,
             // cpu memory disk
@@ -298,10 +298,10 @@ pub mod pallet {
             env.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     sid = sid + 1;
-                    <AppSettings<T>>::insert(
+                    <Envs<T>>::insert(
                         id,
                         sid,
-                        AppSetting {
+                        Env {
                             k: v.k.clone(),
                             v: v.v.clone(),
                         },
@@ -368,7 +368,7 @@ pub mod pallet {
             // 服务端口号
             new_port: Option<Vec<Service>>,
             // run command
-            new_command: Option<Vec<Vec<u8>>>,
+            new_command: Option<Command>,
             // setting
             // 设置
             new_env: Vec<EnvInput>,
@@ -402,7 +402,7 @@ pub mod pallet {
                 },
             )?;
 
-            let mut iter = AppSettings::<T>::iter_prefix(app_id);
+            let mut iter = Envs::<T>::iter_prefix(app_id);
             let mut id = 0;
 
             // 遍历设置
@@ -414,10 +414,10 @@ pub mod pallet {
                         // 更新设置
                         EditType::UPDATE(index) => {
                             if index == setting.0 {
-                                <AppSettings<T>>::insert(
+                                <Envs<T>>::insert(
                                     app_id,
                                     setting.0,
-                                    AppSetting {
+                                    Env {
                                         k: v.k.clone(),
                                         v: v.v.clone(),
                                     },
@@ -427,7 +427,7 @@ pub mod pallet {
                         // 删除设置
                         EditType::REMOVE(index) => {
                             if index == setting.0 {
-                                <AppSettings<T>>::remove(app_id, setting.0);
+                                <Envs<T>>::remove(app_id, setting.0);
                             }
                         }
                         _ => {}
@@ -440,10 +440,10 @@ pub mod pallet {
             new_env.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     id = id + 1;
-                    <AppSettings<T>>::insert(
+                    <Envs<T>>::insert(
                         app_id,
                         id,
-                        AppSetting {
+                        Env {
                             k: v.k.clone(),
                             v: v.v.clone(),
                         },

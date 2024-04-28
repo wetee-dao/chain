@@ -5,7 +5,7 @@ use super::*;
 use crate as wetee_worker;
 use crate::mock::{RuntimeCall, *};
 use frame_support::{assert_noop, assert_ok, debug};
-use wetee_primitives::types::{Disk, DiskClass, Service};
+use wetee_primitives::types::{Command, Disk, DiskClass, Service};
 
 pub fn create_cluster() {
     DepositPrices::<Test>::insert(
@@ -45,7 +45,7 @@ pub fn create_work() {
         "test".as_bytes().to_vec(),
         "{}".as_bytes().to_vec(),
         vec![Service::Tcp(80)],
-        vec![],
+        Command::SH(vec![1]),
         vec![],
         10,
         10,

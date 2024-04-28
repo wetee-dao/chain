@@ -169,7 +169,7 @@ impl Default for EnvKey {
 /// App setting
 /// 应用设置
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct AppSetting {
+pub struct Env {
     /// key
     pub k: EnvKey,
     /// value
@@ -186,4 +186,21 @@ pub struct EnvInput {
     pub k: EnvKey,
     /// value
     pub v: Vec<u8>,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum Command {
+    /// /bin/sh 启动
+    SH(Vec<u8>),
+    /// /bin/bash 启动
+    BASH(Vec<u8>),
+    /// /bin/zsh 启动
+    ZSH(Vec<u8>),
+    NONE,
+}
+
+impl Default for Command {
+    fn default() -> Self {
+        Command::SH("".as_bytes().to_vec()) // 默认为TCP协议，端口为0
+    }
 }
