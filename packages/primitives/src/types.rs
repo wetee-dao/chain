@@ -107,12 +107,26 @@ impl Default for Service {
     }
 }
 
+/// 储存类型
+/// disk setting
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum DiskClass {
+    /// TCP
+    SSD(Vec<u8>),
+}
+
+impl Default for DiskClass {
+    fn default() -> Self {
+        DiskClass::SSD("".as_bytes().to_vec()) // 默认为TCP协议，端口为0
+    }
+}
+
 /// 储存设置
 /// disk setting
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct Disk {
     /// key
-    pub path: Vec<u8>,
+    pub path: DiskClass,
     /// value
     pub size: u32,
 }
@@ -138,12 +152,26 @@ pub enum EditType {
     REMOVE(u16),
 }
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum EnvKey {
+    /// Env 环境变量
+    Env(Vec<u8>),
+    /// UPDATE
+    File(Vec<u8>),
+}
+
+impl Default for EnvKey {
+    fn default() -> Self {
+        EnvKey::Env("".as_bytes().to_vec()) // 默认为TCP协议，端口为0
+    }
+}
+
 /// App setting
 /// 应用设置
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct AppSetting {
     /// key
-    pub k: Vec<u8>,
+    pub k: EnvKey,
     /// value
     pub v: Vec<u8>,
 }
@@ -151,11 +179,11 @@ pub struct AppSetting {
 /// App setting
 /// 应用设置
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct AppSettingInput {
+pub struct EnvInput {
     /// edit type
     pub etype: EditType,
     /// key
-    pub k: Vec<u8>,
+    pub k: EnvKey,
     /// value
     pub v: Vec<u8>,
 }

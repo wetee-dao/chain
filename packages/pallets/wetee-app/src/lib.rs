@@ -11,7 +11,7 @@ use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        AppSetting, AppSettingInput, ClusterLevel, Cr, Disk, EditType, Service, TeeAppId, WorkId,
+        AppSetting, ClusterLevel, Cr, Disk, EditType, EnvInput, Service, TeeAppId, WorkId,
         WorkStatus, WorkType,
     },
 };
@@ -256,7 +256,7 @@ pub mod pallet {
             // run command
             command: Vec<Vec<u8>>,
             // setting of the App
-            setting: Vec<AppSettingInput>,
+            env: Vec<EnvInput>,
             // cpu memory disk gpu
             cpu: u32,
             // memory
@@ -300,7 +300,7 @@ pub mod pallet {
             <AppVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
 
             let mut sid = 0;
-            setting.iter().for_each(|v| {
+            env.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     sid = sid + 1;
                     <AppSettings<T>>::insert(
@@ -376,7 +376,7 @@ pub mod pallet {
             new_command: Option<Vec<Vec<u8>>>,
             // setting
             // 设置
-            new_setting: Vec<AppSettingInput>,
+            new_env: Vec<EnvInput>,
             // with restart
             // 是否重启
             with_restart: bool,
@@ -414,7 +414,7 @@ pub mod pallet {
             while let Some(setting) = iter.next() {
                 id = setting.0;
                 // 处理更新和删除设置
-                new_setting.iter().for_each(|v| {
+                new_env.iter().for_each(|v| {
                     match v.etype {
                         // 更新设置
                         EditType::UPDATE(index) => {
@@ -442,7 +442,7 @@ pub mod pallet {
 
             // add all deposit
             // 处理新增设置
-            new_setting.iter().for_each(|v| {
+            new_env.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     id = id + 1;
                     <AppSettings<T>>::insert(

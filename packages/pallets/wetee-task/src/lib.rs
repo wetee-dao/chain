@@ -11,7 +11,7 @@ use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        AppSetting, AppSettingInput, ClusterLevel, Cr, Disk, EditType, Service, TeeAppId, WorkId,
+        AppSetting, ClusterLevel, Cr, Disk, EditType, EnvInput, Service, TeeAppId, WorkId,
         WorkStatus,
     },
 };
@@ -252,7 +252,7 @@ pub mod pallet {
             meta: Vec<u8>,
             port: Vec<Service>,
             command: Vec<Vec<u8>>,
-            setting: Vec<AppSettingInput>,
+            env: Vec<EnvInput>,
             cpu: u32,
             memory: u32,
             disk: Vec<Disk>,
@@ -288,7 +288,7 @@ pub mod pallet {
             <TaskVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
 
             let mut sid = 0;
-            setting.iter().for_each(|v| {
+            env.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     sid = sid + 1;
                     <AppSettings<T>>::insert(
@@ -401,7 +401,7 @@ pub mod pallet {
             new_command: Option<Vec<Vec<u8>>>,
             // setting
             // 设置
-            new_setting: Vec<AppSettingInput>,
+            new_env: Vec<EnvInput>,
             // with restart
             // 是否重启
             with_restart: bool,
@@ -439,7 +439,7 @@ pub mod pallet {
             while let Some(setting) = iter.next() {
                 id = setting.0;
                 // 处理更新和删除设置
-                new_setting.iter().for_each(|v| {
+                new_env.iter().for_each(|v| {
                     match v.etype {
                         // 更新设置
                         EditType::UPDATE(index) => {
@@ -467,7 +467,7 @@ pub mod pallet {
 
             // add all deposit
             // 处理新增设置
-            new_setting.iter().for_each(|v| {
+            new_env.iter().for_each(|v| {
                 if v.etype == EditType::INSERT {
                     id = id + 1;
                     <AppSettings<T>>::insert(
@@ -503,7 +503,7 @@ pub mod pallet {
         pub fn set_settings(
             origin: OriginFor<T>,
             app_id: TeeAppId,
-            value: Vec<AppSettingInput>,
+            value: Vec<EnvInput>,
             // with restart
             // 是否重启
             with_restart: bool,

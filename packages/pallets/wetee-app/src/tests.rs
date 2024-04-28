@@ -4,6 +4,7 @@ use super::*;
 use crate as wetee_app;
 use crate::mock::{RuntimeCall, *};
 use frame_support::{assert_noop, assert_ok, debug};
+use wetee_primitives::types::{DiskClass, EnvKey};
 
 pub fn do_create() {
     Prices::<Test>::insert(
@@ -25,7 +26,7 @@ pub fn do_create() {
         10,
         10,
         vec![Disk {
-            path: "test".as_bytes().to_vec(),
+            path: DiskClass::SSD("test".as_bytes().to_vec()),
             size: 10,
         }],
         1,
@@ -56,7 +57,7 @@ pub fn create() {
             10,
             10,
             vec![Disk {
-                path: "test".as_bytes().to_vec(),
+                path: DiskClass::SSD("test".as_bytes().to_vec()),
                 size: 10,
             }],
             1,
@@ -77,9 +78,9 @@ pub fn update() {
             Some(vec![1, 2, 3]),
             Some(vec![Service::Tcp(80)]),
             None,
-            vec![AppSettingInput {
+            vec![EnvInput {
                 etype: EditType::INSERT,
-                k: "test".as_bytes().to_vec(),
+                k: EnvKey::Env("test".as_bytes().to_vec()),
                 v: "test".as_bytes().to_vec(),
             }],
             false,
@@ -100,9 +101,9 @@ pub fn update_should_fail() {
             Some(vec![1, 2, 3]),
             Some(vec![Service::Tcp(80)]),
             None,
-            vec![AppSettingInput {
+            vec![EnvInput {
                 etype: EditType::INSERT,
-                k: "test".as_bytes().to_vec(),
+                k: EnvKey::Env("test".as_bytes().to_vec()),
                 v: "test".as_bytes().to_vec(),
             }],
             false,
