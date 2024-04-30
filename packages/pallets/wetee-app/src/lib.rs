@@ -11,8 +11,8 @@ use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        ClusterLevel, Command, Cr, Disk, EditType, Env, EnvInput, Service, TeeAppId, WorkId,
-        WorkStatus, WorkType,
+        ClusterLevel, Command, Cr, Disk, EditType, Env, EnvInput, Service, TEEVersion, TeeAppId,
+        WorkId, WorkStatus, WorkType,
     },
 };
 
@@ -70,6 +70,9 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// min score of the App
     /// 矿工最低等级
     pub level: ClusterLevel,
+    /// tee version
+    /// tee 版本
+    pub tee_version: TEEVersion,
 }
 
 /// 价格
@@ -265,6 +268,8 @@ pub mod pallet {
             disk: Vec<Disk>,
             // min score of the App
             level: u8,
+            // TEEVersion
+            tee_version: TEEVersion,
             // min deposit of the App
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
@@ -281,6 +286,7 @@ pub mod pallet {
                 meta,
                 port,
                 command,
+                tee_version,
                 creator: who.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 status: 0,

@@ -29,6 +29,7 @@ pub fn do_create() {
             size: 10,
         }],
         1,
+        TEEVersion::SGX,
         1000,
     );
     println!("{:?}", res);
@@ -60,6 +61,7 @@ pub fn create() {
                 size: 10,
             }],
             1,
+            TEEVersion::SGX,
             300,
         )
         .unwrap();

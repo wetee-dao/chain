@@ -10,7 +10,9 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
-    types::{Command, Cr, Disk, EditType, Env, EnvInput, Service, TeeAppId, WorkId, WorkType},
+    types::{
+        Command, Cr, Disk, EditType, Env, EnvInput, Service, TEEVersion, TeeAppId, WorkId, WorkType,
+    },
 };
 
 use orml_traits::MultiCurrency;
@@ -66,6 +68,9 @@ pub struct GpuApp<AccountId, BlockNumber> {
     /// min score of the App
     /// 矿工最低等级
     pub level: u8,
+    /// tee version
+    /// tee 版本
+    pub tee_version: TEEVersion,
 }
 
 /// 价格
@@ -260,6 +265,9 @@ pub mod pallet {
             gpu: u32,
             // min score of the App
             level: u8,
+            // tee version
+            // tee 版本
+            tee_version: TEEVersion,
             // min deposit of the App
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
@@ -277,6 +285,7 @@ pub mod pallet {
                 port,
                 command,
                 creator: who.clone(),
+                tee_version,
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 status: 0,
                 cr: Cr {

@@ -31,6 +31,7 @@ pub fn do_create() {
         }],
         1,
         1,
+        TEEVersion::SGX,
         100000,
     )
     .unwrap();
@@ -63,6 +64,7 @@ pub fn create() {
             }],
             1,
             1,
+            TEEVersion::SGX,
             100000,
         )
         .is_ok());

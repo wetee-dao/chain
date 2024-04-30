@@ -5,7 +5,7 @@ use super::*;
 use crate as wetee_worker;
 use crate::mock::{RuntimeCall, *};
 use frame_support::{assert_noop, assert_ok, debug};
-use wetee_primitives::types::{Command, Disk, DiskClass, Service};
+use wetee_primitives::types::{Command, Disk, DiskClass, Service, TEEVersion};
 
 pub fn create_cluster() {
     DepositPrices::<Test>::insert(
@@ -54,6 +54,7 @@ pub fn create_work() {
             size: 10,
         }],
         1,
+        TEEVersion::SGX,
         100000,
     )
     .unwrap();

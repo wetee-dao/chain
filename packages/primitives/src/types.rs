@@ -204,3 +204,12 @@ impl Default for Command {
         Command::SH("".as_bytes().to_vec()) // 默认为TCP协议，端口为0
     }
 }
+
+/// TEEVersion
+/// TEE 实现版本
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum TEEVersion {
+    #[default]
+    SGX,
+    SVM,
+}
