@@ -263,7 +263,6 @@ pub mod pallet {
             // tee version
             // tee 版本
             tee_version: TEEVersion,
-            #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -312,16 +311,10 @@ pub mod pallet {
             // Check deposit
             // 检查抵押金额是否足够
             let fee_unit = Self::get_fee(id)?;
+            let deposit = wetee_assets::Pallet::<T>::free_balance(0, &who.clone());
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
-            // Transfer deposit
-            // 将抵押转移到目标账户
-            wetee_assets::Pallet::<T>::try_transfer(
-                0,
-                who.clone(),
-                Self::task_id_account(id),
-                deposit,
-            )?;
+
             Self::deposit_event(Event::<T>::CreatedTask {
                 id,
                 creator: who.clone(),
@@ -667,18 +660,18 @@ pub mod pallet {
             fee: BalanceOf<T>,
             to: T::AccountId,
         ) -> result::Result<u8, DispatchError> {
-            let who = Self::task_id_account(wid.id);
-            let app_total = wetee_assets::Pallet::<T>::free_balance(0, &who);
+            let account = <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::TaskNotExists)?;
+            let app_total = wetee_assets::Pallet::<T>::free_balance(0, &account);
             log::warn!(
                 "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++app_total {:?}",
                 app_total
             );
 
             // 将抵押转移到目标账户
-            wetee_assets::Pallet::<T>::try_transfer(0, who.clone(), to.clone(), fee)?;
+            wetee_assets::Pallet::<T>::try_transfer(0, account.clone(), to.clone(), fee)?;
 
             Self::deposit_event(Event::<T>::PayRunFee {
-                from: who.clone(),
+                from: account.clone(),
                 to,
                 amount: fee,
             });

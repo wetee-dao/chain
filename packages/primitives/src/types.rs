@@ -211,5 +211,5 @@ impl Default for Command {
 pub enum TEEVersion {
     #[default]
     SGX,
-    SVM,
+    CVM,
 }

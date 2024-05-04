@@ -772,10 +772,19 @@ pub mod pallet {
             origin: OriginFor<T>,
             name: Vec<u8>,
             description: Vec<u8>,
+            // min deposit of the App
+            #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
             let project_id = NextProjectId::<T>::get();
             let dao_account_id = wetee_org::Pallet::<T>::dao_project(0, project_id);
+            wetee_assets::Pallet::<T>::try_transfer(
+                0,
+                me.clone(),
+                dao_account_id.clone(),
+                deposit,
+            )?;
+
             <ProxyProjects<T>>::insert(
                 me.clone(),
                 project_id,

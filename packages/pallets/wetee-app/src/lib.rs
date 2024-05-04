@@ -270,8 +270,6 @@ pub mod pallet {
             level: u8,
             // TEEVersion
             tee_version: TEEVersion,
-            // min deposit of the App
-            #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -332,16 +330,9 @@ pub mod pallet {
                 p.cpu_per * cpu + p.memory_per * memory + p.disk_per * disk_all,
             );
 
+            let deposit = wetee_assets::Pallet::<T>::free_balance(0, &who.clone());
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
-            // transfer deposit to target account
-            // 将抵押转移到目标账户
-            wetee_assets::Pallet::<T>::try_transfer(
-                0,
-                who.clone(),
-                Self::app_id_account(id),
-                deposit,
-            )?;
             Self::deposit_event(Event::<T>::CreatedApp {
                 id,
                 creator: who.clone(),
@@ -487,36 +478,6 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// App charge
-        /// 任务充值
-        #[pallet::call_index(004)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn charge(
-            origin: OriginFor<T>,
-            id: TeeAppId,
-            deposit: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            let _account = <AppIdAccounts<T>>::get(id).ok_or(Error::<T>::AppNotExist)?;
-
-            // transfer deposit to target account
-            // 将抵押转移到目标账户
-            wetee_assets::Pallet::<T>::try_transfer(
-                wetee_assets::NATIVE_ASSET_ID,
-                who.clone(),
-                Self::app_id_account(id),
-                deposit,
-            )?;
-
-            Self::deposit_event(Event::<T>::Charge {
-                from: who.clone(),
-                to: Self::app_id_account(id),
-                amount: deposit,
-            });
-
-            Ok(().into())
-        }
-
         /// App restart
         /// 更新任务
         #[pallet::call_index(006)]
@@ -617,8 +578,8 @@ pub mod pallet {
             fee: BalanceOf<T>,
             to: T::AccountId,
         ) -> result::Result<u8, DispatchError> {
-            let app_total =
-                wetee_assets::Pallet::<T>::free_balance(0, &Self::app_id_account(wid.id));
+            let account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExist)?;
+            let app_total = wetee_assets::Pallet::<T>::free_balance(0, &account);
             log::warn!(
                 "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ app_total {:?}",
                 app_total
@@ -635,13 +596,13 @@ pub mod pallet {
             // 将抵押转移到目标账户
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
-                Self::app_id_account(wid.id),
+                account.clone(),
                 to.clone(),
                 fee,
             )?;
 
             Self::deposit_event(Event::<T>::PayRunFee {
-                from: Self::app_id_account(wid.id),
+                from: account,
                 to,
                 amount: fee,
             });
