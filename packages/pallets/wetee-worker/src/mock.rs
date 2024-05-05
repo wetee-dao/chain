@@ -14,7 +14,7 @@ use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
     traits::{UHook, WorkExt},
-    types::{DaoAssetId, WorkId},
+    types::{DaoAssetId, TEEVersion, WorkId},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -114,14 +114,20 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
     fn work_info(
         work: WorkId,
     ) -> core::result::Result<
-        (AccountId, wetee_primitives::types::Cr, u8, u8),
+        (AccountId, wetee_primitives::types::Cr, u8, u8, TEEVersion),
         sp_runtime::DispatchError,
     > {
         let account = wetee_app::AppIdAccounts::<Test>::get(work.id)
             .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
         let app = wetee_app::TEEApps::<Test>::get(account.clone(), work.clone().id)
             .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
-        Ok((account, app.cr.clone(), app.level, app.status))
+        Ok((
+            account,
+            app.cr.clone(),
+            app.level,
+            app.status,
+            app.tee_version,
+        ))
     }
 
     fn set_work_status(

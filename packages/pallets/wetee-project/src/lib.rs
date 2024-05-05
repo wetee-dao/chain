@@ -792,7 +792,7 @@ pub mod pallet {
                     name,
                     creator: me.clone(),
                     id: project_id,
-                    dao_account_id,
+                    dao_account_id: dao_account_id.clone(),
                     description,
                     status: Status::Active,
                 },

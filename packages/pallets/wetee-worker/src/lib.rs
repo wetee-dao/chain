@@ -10,7 +10,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::{traits::WorkExt,types::{ClusterId, ComCr, MintId, TeeAppId, WorkId, WorkType,ClusterLevel}};
+use wetee_primitives::{traits::WorkExt,types::{ClusterId, ComCr, MintId,Cr, TeeAppId, WorkId, WorkType,ClusterLevel,TEEVersion}};
 
 #[cfg(test)]
 mod mock;
@@ -69,9 +69,11 @@ pub struct Deposit<Balance> {
     /// cpu
     /// cpu
     pub cpu: u32,
+    pub cvm_cpu: u32,
     /// memory
     /// memory
     pub mem: u32,
+    pub cvm_mem: u32,
     /// disk
     /// disk
     pub disk: u32,
@@ -139,8 +141,12 @@ pub struct ClusterContractState<BlockNumber, AccountId> {
 pub struct DepositPrice {
     /// cpu
     pub cpu_per: u32,
+    /// cpu
+    pub cvm_cpu_per: u32,
     /// memory
     pub memory_per: u32,
+    /// cvm_memory
+    pub cvm_memory_per: u32,
     /// disk
     pub disk_per: u32,
     /// gpu
@@ -435,7 +441,9 @@ pub mod pallet {
                 1,
                 DepositPrice {
                     cpu_per: 10,
+                    cvm_cpu_per: 10,
                     memory_per: 10,
+                    cvm_memory_per: 10,
                     disk_per: 10,
                     gpu_per: 10,
                 },
@@ -504,13 +512,17 @@ pub mod pallet {
                 (
                     ComCr {
                         cpu: 0,
+                        cvm_cpu: 0,
                         mem: 0,
+                        cvm_mem: 0,
                         disk: 0,
                         gpu: 0,
                     },
                     ComCr {
                         cpu: 0,
+                        cvm_cpu: 0,
                         mem: 0,
+                        cvm_mem: 0,
                         disk: 0,
                         gpu: 0,
                     },
@@ -566,6 +578,8 @@ pub mod pallet {
             id: ClusterId,
             cpu: u32,
             mem: u32,
+            cvm_cpu: u32,
+            cvm_mem: u32,
             disk: u32,
             gpu: u32,
             #[pallet::compact] deposit: BalanceOf<T>,
@@ -603,6 +617,8 @@ pub mod pallet {
                     deposit,
                     cpu,
                     mem,
+                    cvm_cpu,
+                    cvm_mem,
                     disk,
                     gpu,
                 },
@@ -618,6 +634,8 @@ pub mod pallet {
                 crs.0 = ComCr {
                     cpu: ccr.cpu + cpu,
                     mem: ccr.mem + mem,
+                    cvm_cpu: ccr.cvm_cpu + cvm_cpu,
+                    cvm_mem: ccr.cvm_mem + cvm_mem,
                     disk: ccr.disk + disk,
                     gpu: ccr.gpu + gpu,
                 };
@@ -668,6 +686,8 @@ pub mod pallet {
                 crs.0 = ComCr {
                     cpu: ccr.cpu - d.cpu,
                     mem: ccr.mem - d.mem,
+                    cvm_mem: ccr.cvm_mem - d.cvm_mem,
+                    cvm_cpu: ccr.cvm_cpu - d.cvm_cpu,
                     disk: ccr.disk - d.disk,
                     gpu: ccr.gpu - d.gpu,
                 };
@@ -739,7 +759,7 @@ pub mod pallet {
                 }
             }
 
-            let (_,cr,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,cr,_,_,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             let fee = <T as pallet::Config>::WorkExt::calculate_fee(work_id.clone())?;
             let to = Self::get_mint_account(work_id.clone(), cluster_id);
             let status = <T as pallet::Config>::WorkExt::pay_run_fee(
@@ -753,33 +773,13 @@ pub mod pallet {
             );
 
             if status == 2 {
-                // 如果app状态为已停止，则删除工作合约
-                WorkContracts::<T>::remove(work_id.clone());
-                ClusterContracts::<T>::remove(cluster_id,work_id.clone());
-                // 更新抵押数据
-                Crs::<T>::try_mutate_exists(
-                    cluster_id,
-                    |c| -> result::Result<(), DispatchError> {
-                        let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
-                        let ccr = crs.1.clone();
-
-                        let disk_all = cr.clone().disk.iter().map(|d| d.size).fold(0, |acc, size| acc + size);
-
-                        // 更新抵押参数
-                        crs.1 = ComCr {
-                            cpu: ccr.cpu - cr.cpu,
-                            mem: ccr.mem - cr.mem,
-                            disk: ccr.disk - disk_all,
-                            gpu: ccr.gpu - cr.gpu,
-                        };
-                        *c = Some(crs);
-                        Ok(())
-                    },
+                Self::try_stop_work(
+                    cluster_id, 
+                    work_id.clone(), 
+                    cr,
+                    owner_account,
+                    tee_version
                 )?;
-
-                // 删除应用
-                let (owner_account,_,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
-                <T as pallet::Config>::WorkExt::try_stop(owner_account,work_id.clone())?;
             }else {
                 WorkContractState::<T>::insert(
                     work_id.clone(),
@@ -901,8 +901,8 @@ pub mod pallet {
             Crs::<T>::insert(
                 cluster_id,
                 (
-                    ComCr {cpu: 0,mem: 0,disk: 0,gpu: 0},
-                    ComCr {cpu: 0,mem: 0,disk: 0,gpu: 0},
+                    ComCr {cpu: 0,mem: 0,cvm_cpu:0,cvm_mem:0,disk: 0,gpu: 0},
+                    ComCr {cpu: 0,mem: 0,cvm_cpu:0,cvm_mem:0,disk: 0,gpu: 0},
                 ),
             );
 
@@ -934,7 +934,7 @@ pub mod pallet {
                 return Err(Error::<T>::ClusterNotExists.into());
             }
 
-            let (owner_account,_,_,status) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,_,_,status,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
             ensure!(status != 0, Error::<T>::WorkNotStarted);
 
@@ -959,7 +959,7 @@ pub mod pallet {
                 return Err(Error::<T>::ClusterNotExists.into());
             }
 
-            let (owner_account,_,_,status) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,_,_,status,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
             ensure!(status != 0, Error::<T>::WorkNotStarted);
 
@@ -977,20 +977,19 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let (owner_account,_,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,cr,_,_,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
 
-            <T as pallet::Config>::WorkExt::try_stop(owner_account,work_id.clone())?;
-
-            // 删除合约
             let cid = WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
-            WorkContracts::<T>::remove(work_id.clone());
-            ClusterContracts::<T>::remove(cid,work_id.clone());
-
-            Self::deposit_event(Event::WorkStoped {
-                work_id: work_id.clone(),
-                cluster_id: cid,
-            });
+   
+            // 删除合约
+            Self::try_stop_work(
+                cid, 
+                work_id.clone(), 
+                cr,
+                owner_account,
+                tee_version
+            )?;
 
             Ok(().into())
         }
@@ -1003,11 +1002,24 @@ pub mod pallet {
             work_id: WorkId,
             match_id: Option<TeeAppId>,
         ) -> result::Result<bool, DispatchError> {
-            let (account,cr,level,status) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (account,cr,level,status,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             let disk_all = cr.disk.iter().map(|d| d.size).fold(0, |acc, size| acc + size);
+            let mut cpu = 0;
+            let mut mem = 0;
+            let mut cvm_cpu = 0;
+            let mut cvm_mem = 0;
+            if tee_version == TEEVersion::CVM {
+                cvm_cpu = cr.cpu;
+                cvm_mem = cr.mem;
+            } else if tee_version == TEEVersion::SGX {
+                cpu = cr.cpu;
+                mem = cr.mem;
+            }
             let app_cr = ComCr{
-                cpu: cr.cpu,
-                mem: cr.mem,
+                cpu: cpu,
+                mem: mem,
+                cvm_cpu: cvm_cpu,
+                cvm_mem: cvm_mem,
                 disk: disk_all,
                 gpu: cr.gpu,
             };
@@ -1027,11 +1039,13 @@ pub mod pallet {
                 Crs::<T>::try_mutate_exists(id, |c| -> result::Result<(), DispatchError> {
                     let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
                     let ccr = crs.1.clone();
-
+ 
                     // 更新抵押参数
                     crs.1 = ComCr {
                         cpu: ccr.cpu + app_cr.cpu,
                         mem: ccr.mem + app_cr.mem,
+                        cvm_cpu: ccr.cvm_cpu + app_cr.cvm_cpu,
+                        cvm_mem: ccr.cvm_mem + app_cr.cvm_mem,
                         disk: ccr.disk + app_cr.disk,
                         gpu: ccr.gpu + app_cr.gpu,
                     };
@@ -1132,6 +1146,8 @@ pub mod pallet {
                     if level == score.0
                         && cr.0.cpu - cr.1.cpu > app_cr.cpu
                         && cr.0.mem - cr.1.mem > app_cr.mem
+                        && cr.0.cvm_cpu - cr.1.cvm_cpu > app_cr.cvm_cpu
+                        && cr.0.cvm_mem - cr.1.cvm_mem > app_cr.cvm_mem
                         && cr.0.disk - cr.1.disk > app_cr.disk
                     {
                         randoms.push(v);
@@ -1207,6 +1223,60 @@ pub mod pallet {
                     + disk as u32 * p.disk_per as u32
                     + gpu as u32 * p.gpu_per as u32,
             ));
+        }
+
+        /// try to stop work
+        /// 尝试停止工作
+        pub fn try_stop_work(
+            cluster_id: ClusterId,
+            work_id: WorkId,
+            cr: Cr,
+            owner_account: T::AccountId,
+            tee_version: TEEVersion,
+        ) -> result::Result<(), DispatchError> {
+            // 如果app状态为已停止，则删除工作合约
+            WorkContracts::<T>::remove(work_id.clone());
+            ClusterContracts::<T>::remove(cluster_id,work_id.clone());
+            // 更新抵押数据
+            Crs::<T>::try_mutate_exists(
+                cluster_id,
+                |c| -> result::Result<(), DispatchError> {
+                    let mut crs = c.take().ok_or(Error::<T>::ClusterNotExists)?;
+                    let ccr = crs.1.clone();
+
+                    let disk_all = cr.clone().disk.iter().map(|d| d.size).fold(0, |acc, size| acc + size);
+
+                    // 计算抵押参数
+                    let mut cpu = 0;
+                    let mut mem = 0;
+                    let mut cvm_cpu = 0;
+                    let mut cvm_mem = 0;
+                    if tee_version == TEEVersion::CVM {
+                        cvm_cpu = cr.cpu;
+                        cvm_mem = cr.mem;
+                    } else if tee_version == TEEVersion::SGX {
+                        cpu = cr.cpu;
+                        mem = cr.mem;
+                    }
+
+                    // 更新抵押参数
+                    crs.1 = ComCr {
+                        cpu: ccr.cpu - cpu,
+                        mem: ccr.mem - mem,
+                        cvm_cpu: ccr.cvm_cpu - cvm_cpu,
+                        cvm_mem: ccr.cvm_mem - cvm_mem,
+                        disk: ccr.disk - disk_all,
+                        gpu: ccr.gpu - cr.gpu,
+                    };
+                    *c = Some(crs);
+                    Ok(())
+                },
+            )?;
+
+            // 删除应用
+            <T as pallet::Config>::WorkExt::try_stop(owner_account,work_id.clone())?;
+
+            Ok(())
         }
     }
 }

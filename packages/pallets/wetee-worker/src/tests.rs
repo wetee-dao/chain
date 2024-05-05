@@ -13,6 +13,8 @@ pub fn create_cluster() {
         DepositPrice {
             cpu_per: 10,
             memory_per: 10,
+            cvm_cpu_per: 10,
+            cvm_memory_per: 10,
             disk_per: 10,
             gpu_per: 10,
         },
@@ -55,7 +57,6 @@ pub fn create_work() {
         }],
         1,
         TEEVersion::SGX,
-        100000,
     )
     .unwrap();
 }
@@ -65,6 +66,8 @@ pub fn mortgage() {
     assert!(Pallet::<Test>::cluster_mortgage(
         OriginFor::<Test>::signed(ALICE),
         1,
+        1000,
+        1000,
         1000,
         1000,
         1000,
@@ -88,6 +91,8 @@ pub fn start() {
             cr: ComCr {
                 cpu: 1,
                 mem: 1,
+                cvm_cpu: 1,
+                cvm_mem: 1,
                 disk: 1,
                 gpu: 0,
             },
@@ -164,6 +169,8 @@ pub fn cluster_mortgage() {
             1000,
             1000,
             1000,
+            1000,
+            1000,
             1,
             100000
         )
@@ -178,6 +185,8 @@ pub fn cluster_mortgage_should_fail() {
         create_cluster();
         assert!(Pallet::<Test>::cluster_mortgage(
             OriginFor::<Test>::signed(BOB),
+            1,
+            1,
             1,
             1,
             1,
@@ -201,6 +210,8 @@ pub fn cluster_mortgage_should_fail2() {
             1,
             1,
             1,
+            1,
+            1,
             0
         )
         .is_err());
@@ -214,6 +225,8 @@ pub fn cluster_unmortgage() {
         frame_system::Pallet::<Test>::set_block_number(30);
         assert!(Pallet::<Test>::cluster_mortgage(
             OriginFor::<Test>::signed(ALICE),
+            1,
+            1,
             1,
             1,
             1,
@@ -242,6 +255,8 @@ pub fn cluster_unmortgage_should_fail() {
             1,
             1,
             1,
+            1,
+            1,
             100
         )
         .is_ok());
@@ -258,6 +273,8 @@ pub fn cluster_unmortgage_should_fail2() {
         frame_system::Pallet::<Test>::set_block_number(30);
         assert!(Pallet::<Test>::cluster_mortgage(
             OriginFor::<Test>::signed(ALICE),
+            1,
+            1,
             1,
             1,
             1,
@@ -286,6 +303,8 @@ pub fn cluster_unmortgage_should_fail3() {
             1,
             1,
             1,
+            1,
+            1,
             100
         )
         .is_ok());
@@ -302,6 +321,8 @@ pub fn cluster_proof_upload() {
         create_cluster();
         assert!(Pallet::<Test>::cluster_mortgage(
             OriginFor::<Test>::signed(ALICE),
+            1,
+            1,
             1,
             1,
             1,
@@ -399,6 +420,8 @@ pub fn work_proof_upload() {
                 cr: ComCr {
                     cpu: 1,
                     mem: 1,
+                    cvm_cpu: 1,
+                    cvm_mem: 1,
                     disk: 1,
                     gpu: 0,
                 },
@@ -432,6 +455,8 @@ pub fn work_proof_upload_should_fail() {
                 cr: ComCr {
                     cpu: 1,
                     mem: 1,
+                    cvm_cpu: 1,
+                    cvm_mem: 1,
                     disk: 1,
                     gpu: 0,
                 },
@@ -465,6 +490,8 @@ pub fn work_proof_upload_should_fail2() {
                 cr: ComCr {
                     cpu: 1,
                     mem: 1,
+                    cvm_cpu: 1,
+                    cvm_mem: 1,
                     disk: 1,
                     gpu: 0,
                 },

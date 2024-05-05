@@ -32,7 +32,6 @@ pub fn do_create() {
         1,
         1,
         TEEVersion::SGX,
-        100000,
     )
     .unwrap();
 }
@@ -65,7 +64,6 @@ pub fn create() {
             1,
             1,
             TEEVersion::SGX,
-            100000,
         )
         .is_ok());
     });
@@ -143,17 +141,5 @@ pub fn get_fee() {
 pub fn get_fee_should_fail() {
     new_test_run().execute_with(|| {
         assert_noop!(Pallet::<Test>::get_fee(0), Error::<Test>::AppNotExist);
-    });
-}
-
-#[test]
-pub fn recharge() {
-    new_test_run().execute_with(|| {
-        do_create();
-        assert_ok!(Pallet::<Test>::recharge(
-            OriginFor::<Test>::signed(ALICE),
-            0,
-            1000
-        ));
     });
 }

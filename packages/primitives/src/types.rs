@@ -137,6 +137,8 @@ pub struct Disk {
 pub struct ComCr {
     pub cpu: u32,
     pub mem: u32,
+    pub cvm_cpu: u32,
+    pub cvm_mem: u32,
     pub disk: u32,
     pub gpu: u32,
 }

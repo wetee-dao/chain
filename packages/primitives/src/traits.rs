@@ -1,6 +1,6 @@
 use core::result;
 
-use crate::types::{ClusterLevel, Cr, WorkId, WorkStatus};
+use crate::types::{ClusterLevel, Cr, WorkId, WorkStatus, TEEVersion};
 use sp_runtime::DispatchError;
 
 pub struct BadOrigin;
@@ -43,7 +43,7 @@ impl<RuntimeCall: Clone> PalletGet<RuntimeCall> for () {
 pub trait WorkExt<AccountId, Balance> {
     fn work_info(
         work: WorkId,
-    ) -> result::Result<(AccountId, Cr, ClusterLevel, WorkStatus), DispatchError>;
+    ) -> result::Result<(AccountId, Cr, ClusterLevel, WorkStatus, TEEVersion), DispatchError>;
     fn set_work_status(w: WorkId, status: u8) -> result::Result<bool, DispatchError>;
     fn calculate_fee(work: WorkId) -> result::Result<Balance, DispatchError>;
     fn pay_run_fee(work: WorkId, to: AccountId, fee: Balance) -> result::Result<u8, DispatchError>;

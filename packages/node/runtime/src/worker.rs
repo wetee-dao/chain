@@ -14,7 +14,7 @@ use scale_info::TypeInfo;
 
 use wetee_primitives::{
     traits::{UHook, WorkExt},
-    types::{WorkId, WorkType},
+    types::{TEEVersion, WorkId, WorkType},
     vec2bytes,
 };
 
@@ -96,7 +96,7 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
     fn work_info(
         work: WorkId,
     ) -> core::result::Result<
-        (AccountId, wetee_primitives::types::Cr, u8, u8),
+        (AccountId, wetee_primitives::types::Cr, u8, u8, TEEVersion),
         sp_runtime::DispatchError,
     > {
         match work.wtype {
@@ -105,21 +105,39 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
                 let app = wetee_app::TEEApps::<Runtime>::get(account.clone(), work.clone().id)
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
-                return Ok((account, app.cr.clone(), app.level, app.status));
+                return Ok((
+                    account,
+                    app.cr.clone(),
+                    app.level,
+                    app.status,
+                    app.tee_version,
+                ));
             }
             WorkType::TASK => {
                 let account = wetee_task::TaskIdAccounts::<Runtime>::get(work.id)
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
                 let task = wetee_task::TEETasks::<Runtime>::get(account.clone(), work.clone().id)
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
-                return Ok((account, task.cr.clone(), task.level, task.status));
+                return Ok((
+                    account,
+                    task.cr.clone(),
+                    task.level,
+                    task.status,
+                    task.tee_version,
+                ));
             }
             WorkType::GPU => {
                 let account = wetee_gpu::AppIdAccounts::<Runtime>::get(work.id)
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
                 let app = wetee_gpu::GPUApps::<Runtime>::get(account.clone(), work.clone().id)
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
-                return Ok((account, app.cr.clone(), app.level, app.status));
+                return Ok((
+                    account,
+                    app.cr.clone(),
+                    app.level,
+                    app.status,
+                    app.tee_version,
+                ));
             }
         }
     }
