@@ -25,6 +25,7 @@ pub fn create_cluster() {
         vec![Ip {
             ipv4: Some(2130706433),
             ipv6: None,
+            domain: None,
         }],
         8080,
         1,
@@ -133,6 +134,7 @@ pub fn cluster_register_should_fail2() {
             vec![Ip {
                 ipv4: Some(2130706433),
                 ipv6: None,
+                domain: None,
             }],
             8080,
             1,
@@ -151,6 +153,7 @@ pub fn cluster_register_should_fail3() {
             vec![Ip {
                 ipv4: Some(2130706433),
                 ipv6: None,
+                domain: None,
             }],
             1,
             1,

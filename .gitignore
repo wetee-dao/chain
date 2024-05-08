@@ -65,3 +65,4 @@ tmp
 **/node_modules/**
 /tools
 /native-nostd-hasher
+/orml
