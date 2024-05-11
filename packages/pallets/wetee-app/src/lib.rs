@@ -61,9 +61,6 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// port of service
     /// 服务端口号
     pub port: Vec<Service>,
-    /// State of the App
-    /// App状态 0: created, 1: running, 2: stop
-    pub status: WorkStatus,
     /// cpu memory disk
     /// cpu memory disk
     pub cr: Cr,
@@ -73,6 +70,9 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// tee version
     /// tee 版本
     pub tee_version: TEEVersion,
+    /// State of the App
+    /// App状态 0: created, 1: running, 2: stop
+    pub status: WorkStatus,
 }
 
 /// 价格
@@ -280,22 +280,24 @@ pub mod pallet {
             let app = TeeApp {
                 id,
                 name,
+
                 image,
-                meta,
                 port,
                 command,
-                tee_version,
-                creator: who.clone(),
-                start_block: <frame_system::Pallet<T>>::block_number(),
-                status: 0,
                 cr: Cr {
                     cpu,
                     mem: memory,
                     disk: disk.clone(),
                     gpu: 0,
                 },
+
+                meta,
+                start_block: <frame_system::Pallet<T>>::block_number(),
                 contract_id: Self::app_id_account(id),
                 level,
+                tee_version,
+                creator: who.clone(),
+                status: 0,
             };
 
             <NextTeeId<T>>::mutate(|id| *id += 1);
@@ -594,12 +596,7 @@ pub mod pallet {
 
             // transfer fee to target account
             // 将抵押转移到目标账户
-            wetee_assets::Pallet::<T>::try_transfer(
-                0,
-                account.clone(),
-                to.clone(),
-                fee,
-            )?;
+            wetee_assets::Pallet::<T>::try_transfer(0, account.clone(), to.clone(), fee)?;
 
             Self::deposit_event(Event::<T>::PayRunFee {
                 from: account,

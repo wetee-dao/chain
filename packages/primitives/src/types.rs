@@ -215,3 +215,23 @@ pub enum TEEVersion {
     SGX,
     CVM,
 }
+
+pub type GPUtype = u16;
+
+/// App specific information
+/// 程序信息
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct Container {
+    /// img of the App.
+    /// image 目标宗旨
+    pub image: Vec<u8>,
+    /// command of service
+    /// 执行命令
+    pub command: Command,
+    /// port of service
+    /// 服务端口号
+    pub port: Vec<Service>,
+    /// cpu memory disk
+    /// cpu memory disk
+    pub cr: Cr,
+}

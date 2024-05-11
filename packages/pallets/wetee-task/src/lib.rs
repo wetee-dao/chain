@@ -314,7 +314,6 @@ pub mod pallet {
             let deposit = wetee_assets::Pallet::<T>::free_balance(0, &who.clone());
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
-
             Self::deposit_event(Event::<T>::CreatedTask {
                 id,
                 creator: who.clone(),
@@ -342,10 +341,7 @@ pub mod pallet {
             let account = <TaskIdAccounts<T>>::get(id).ok_or(Error::<T>::TaskNotExists)?;
             ensure!(who == account, Error::<T>::Task403);
 
-            let deposit = wetee_assets::Pallet::<T>::free_balance(
-                wetee_assets::NATIVE_ASSET_ID,
-                &Self::task_id_account(id),
-            );
+            let deposit = wetee_assets::Pallet::<T>::free_balance(0, &account);
 
             let task = Self::tee_apps(who.clone(), id).unwrap();
             ensure!(task.status == 2, Error::<T>::TaskStatusMismatch);
@@ -491,118 +487,6 @@ pub mod pallet {
                     wtype: WorkType::TASK,
                     id: app_id,
                 },
-            });
-
-            Ok(().into())
-        }
-
-        /// Task settings
-        /// 任务设置
-        #[pallet::call_index(004)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn set_settings(
-            origin: OriginFor<T>,
-            app_id: TeeAppId,
-            value: Vec<EnvInput>,
-            // with restart
-            // 是否重启
-            with_restart: bool,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            let app_account = <TaskIdAccounts<T>>::get(app_id).ok_or(Error::<T>::TaskNotExists)?;
-            ensure!(who == app_account, Error::<T>::Task403);
-
-            let mut iter = Envs::<T>::iter_prefix(app_id);
-            let mut id = 0;
-
-            // 遍历设置
-            while let Some(setting) = iter.next() {
-                id = setting.0;
-
-                // 处理更新和删除设置
-                value.iter().for_each(|v| {
-                    match v.etype {
-                        // update
-                        // 更新设置
-                        EditType::UPDATE(index) => {
-                            if index == setting.0 {
-                                <Envs<T>>::insert(
-                                    app_id,
-                                    setting.0,
-                                    Env {
-                                        k: v.k.clone(),
-                                        v: v.v.clone(),
-                                    },
-                                );
-                            }
-                        }
-                        // remove
-                        // 删除设置
-                        EditType::REMOVE(index) => {
-                            if index == setting.0 {
-                                <Envs<T>>::remove(app_id, setting.0);
-                            }
-                        }
-                        _ => {}
-                    };
-                });
-            }
-
-            // inster
-            // 新增设置
-            value.iter().for_each(|v| {
-                if v.etype == EditType::INSERT {
-                    id = id + 1;
-                    <Envs<T>>::insert(
-                        app_id,
-                        id,
-                        Env {
-                            k: v.k.clone(),
-                            v: v.v.clone(),
-                        },
-                    );
-                }
-            });
-
-            if with_restart {
-                <TaskVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
-            }
-
-            Self::deposit_event(Event::WorkUpdated {
-                user: app_account,
-                work_id: WorkId {
-                    wtype: WorkType::TASK,
-                    id: app_id,
-                },
-            });
-
-            Ok(().into())
-        }
-
-        /// Task charge
-        /// 任务充值
-        #[pallet::call_index(005)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn charge(
-            origin: OriginFor<T>,
-            id: TeeAppId,
-            deposit: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-
-            // Transfer fee to task account
-            // 将抵押转移到目标账户
-            wetee_assets::Pallet::<T>::try_transfer(
-                wetee_assets::NATIVE_ASSET_ID,
-                who.clone(),
-                Self::task_id_account(id),
-                deposit,
-            )?;
-
-            Self::deposit_event(Event::<T>::Charge {
-                from: who.clone(),
-                to: Self::task_id_account(id),
-                amount: deposit,
             });
 
             Ok(().into())
