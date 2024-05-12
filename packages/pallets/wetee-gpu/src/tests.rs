@@ -30,6 +30,7 @@ pub fn do_create() {
             size: 10,
         }],
         1,
+        vec![],
         1,
         TEEVersion::SGX,
     )
@@ -62,6 +63,7 @@ pub fn create() {
                 size: 10,
             }],
             1,
+            vec![],
             1,
             TEEVersion::SGX,
         )

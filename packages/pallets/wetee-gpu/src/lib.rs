@@ -11,7 +11,8 @@ use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        Command, Cr, Disk, EditType, Env, EnvInput, Service, TEEVersion, TeeAppId, WorkId, WorkType,
+        Command, Container, Cr, Disk, EditType, Env, EnvInput, Service, TEEVersion, TeeAppId,
+        WorkId, WorkType,
     },
 };
 
@@ -71,6 +72,9 @@ pub struct GpuApp<AccountId, BlockNumber> {
     /// tee version
     /// tee 版本
     pub tee_version: TEEVersion,
+    /// side container
+    /// 附属容器
+    pub side_container: Vec<Container>,
 }
 
 /// 价格
@@ -258,11 +262,15 @@ pub mod pallet {
             command: Command,
             // setting of the App
             env: Vec<EnvInput>,
-            // cpu memory disk
+            // cpu memory disk gpu
             cpu: u32,
+            // memory
             memory: u32,
+            // disk
             disk: Vec<Disk>,
             gpu: u32,
+            // side container
+            side_container: Vec<Container>,
             // min score of the App
             level: u8,
             // tee version
@@ -292,6 +300,7 @@ pub mod pallet {
                     disk: disk.clone(),
                     gpu: gpu,
                 },
+                side_container,
                 contract_id: Self::app_id_account(id),
                 level,
             };
@@ -318,16 +327,7 @@ pub mod pallet {
 
             // check deposit
             // 检查抵押金额是否足够
-            let p = <Prices<T>>::get(level).ok_or(Error::<T>::LevelNotExist)?;
-            let disk_all = disk
-                .clone()
-                .iter()
-                .map(|d| d.size)
-                .fold(0, |acc, size| acc + size);
-            let fee_unit = BalanceOf::<T>::from(
-                p.cpu_per * cpu + p.memory_per * memory + p.disk_per * disk_all,
-            );
-
+            let fee_unit = Self::get_fee(id)?;
             let deposit = wetee_assets::Pallet::<T>::free_balance(0, &who.clone());
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
@@ -583,12 +583,7 @@ pub mod pallet {
 
             // transfer fee to target account
             // 将抵押转移到目标账户
-            wetee_assets::Pallet::<T>::try_transfer(
-                0,
-                account.clone(),
-                to.clone(),
-                fee,
-            )?;
+            wetee_assets::Pallet::<T>::try_transfer(0, account.clone(), to.clone(), fee)?;
 
             Self::deposit_event(Event::<T>::PayRunFee {
                 from: account,
@@ -616,9 +611,22 @@ pub mod pallet {
                 .map(|d| d.size)
                 .fold(0, |acc, size| acc + size);
 
-            return Ok(BalanceOf::<T>::from(
-                p.cpu_per * app.cr.cpu + p.memory_per * app.cr.mem + p.disk_per * disk_all,
-            ));
+            let mut fee =
+                p.cpu_per * app.cr.cpu + p.memory_per * app.cr.mem + p.disk_per * disk_all;
+            for i in 0..app.side_container.len() {
+                let side_container = &app.side_container[i];
+                let side_disk_all = side_container
+                    .cr
+                    .disk
+                    .iter()
+                    .map(|d| d.size)
+                    .fold(0, |acc, size| acc + size);
+                fee += p.cpu_per * side_container.cr.cpu
+                    + p.memory_per * side_container.cr.mem
+                    + p.disk_per * side_disk_all;
+            }
+
+            return Ok(BalanceOf::<T>::from(fee));
         }
 
         /// Get app

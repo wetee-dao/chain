@@ -29,6 +29,7 @@ pub fn do_create() {
             path: DiskClass::SSD("test".as_bytes().to_vec()),
             size: 10,
         }],
+        vec![],
         1,
         TEEVersion::SGX,
     )
@@ -60,6 +61,7 @@ pub fn create() {
                 path: DiskClass::SSD("test".as_bytes().to_vec()),
                 size: 10,
             }],
+            vec![],
             1,
             TEEVersion::SGX,
         )

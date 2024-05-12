@@ -56,6 +56,7 @@ pub fn create_work() {
             path: DiskClass::SSD("test".as_bytes().to_vec()),
             size: 10,
         }],
+        vec![],
         1,
         TEEVersion::SGX,
     )
