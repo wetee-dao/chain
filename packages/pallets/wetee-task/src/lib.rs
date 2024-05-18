@@ -301,6 +301,7 @@ pub mod pallet {
                         id,
                         sid,
                         Env {
+                            index: v.index.clone(),
                             k: v.k.clone(),
                             v: v.v.clone(),
                         },
@@ -444,6 +445,7 @@ pub mod pallet {
                                     app_id,
                                     setting.0,
                                     Env {
+                                        index: v.index.clone(),
                                         k: v.k.clone(),
                                         v: v.v.clone(),
                                     },
@@ -470,6 +472,7 @@ pub mod pallet {
                         app_id,
                         id,
                         Env {
+                            index: v.index.clone(),
                             k: v.k.clone(),
                             v: v.v.clone(),
                         },

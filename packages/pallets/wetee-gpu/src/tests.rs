@@ -84,6 +84,7 @@ pub fn update() {
             None,
             vec![EnvInput {
                 etype: EditType::INSERT,
+                index: 0,
                 k: EnvKey::Env("test".as_bytes().to_vec()),
                 v: "test".as_bytes().to_vec(),
             }],
@@ -107,6 +108,7 @@ pub fn update_should_fail() {
             None,
             vec![EnvInput {
                 etype: EditType::INSERT,
+                index: 0,
                 k: EnvKey::Env("test".as_bytes().to_vec()),
                 v: "test".as_bytes().to_vec(),
             }],

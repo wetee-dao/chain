@@ -172,6 +172,8 @@ impl Default for EnvKey {
 /// 应用设置
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct Env {
+    /// container index
+    pub index: u16,
     /// key
     pub k: EnvKey,
     /// value
@@ -184,6 +186,8 @@ pub struct Env {
 pub struct EnvInput {
     /// edit type
     pub etype: EditType,
+    /// container index
+    pub index: u16,
     /// key
     pub k: EnvKey,
     /// value
