@@ -47,6 +47,7 @@ pub type ClusterLevel = u8;
 
 /// status
 /// 状态
+/// App状态 0: created, 1: deploying, 2: stop, 3: deoloyed
 pub type WorkStatus = u8;
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]

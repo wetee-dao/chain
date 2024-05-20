@@ -74,7 +74,7 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// tee 版本
     pub tee_version: TEEVersion,
     /// State of the App
-    /// App状态 0: created, 1: running, 2: stop
+    /// App状态
     pub status: WorkStatus,
 }
 

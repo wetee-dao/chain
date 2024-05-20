@@ -606,8 +606,17 @@ pub mod pallet {
             // 保存工作证明
             ProofsOfWork::<T>::insert(work_id.clone(), number, proof.unwrap());
         
-            let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
-            .ok_or(Error::<T>::WorkNotExists)?;
+            // 查询工作合约状态
+            let state = WorkContractState::<T>::get(work_id.clone(), cluster_id).ok_or(Error::<T>::WorkNotExists)?;
+
+            // 查询 work info
+            let (owner_account,cr,work_status,_,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            
+            // check status
+            // 检查work的状态,如果未开始状态，则报错
+            if work_status == 0 || work_status == 2 {
+                return Err(Error::<T>::WorkNotStarted.into());
+            }
 
             // pay fee
             // 支付费用
@@ -618,14 +627,30 @@ pub mod pallet {
 
                 // 检查是否是重复提交状态
                 if number - state.block_number < stage.into() {
-                    return Err(Error::<T>::WorkBlockNumberError.into());
+                    // 未到达再次提交工作量证明的时间
+                    if work_status == 3 {
+                        return Err(Error::<T>::WorkBlockNumberError.into());
+                    }  else if work_status == 1 {
+                        // 更新合约工作状态
+                        WorkContractState::<T>::insert(
+                            work_id.clone(),
+                            cluster_id,
+                            ContractState {
+                                block_number: number,
+                                minted: state.minted,
+                                withdrawal: state.withdrawal,
+                            },
+                        );
+                        // 设置工作的状态
+                        <T as pallet::Config>::WorkExt::set_work_status(work_id.clone(), 3)?;
+                        return Ok(().into());
+                    }
                 } else if number - state.block_number > (stage * 2).into() {
                     // More than 2 cycles, only pay once, TODO, reduce service points
                     // TODO，超过2个周期，只支付一次费用，减少服务积分
                 }
             }
 
-            let (owner_account,cr,_,_,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             let fee = <T as pallet::Config>::WorkExt::calculate_fee(work_id.clone())?;
             let to = Self::get_mint_account(work_id.clone(), cluster_id);
             let status = <T as pallet::Config>::WorkExt::pay_run_fee(
