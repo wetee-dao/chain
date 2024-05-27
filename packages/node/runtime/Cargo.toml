@@ -74,6 +74,7 @@ frame-system-benchmarking = {workspace = true, default-features = false, optiona
 # Local Dependencies
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
+pallet-contracts = {workspace = true}
 pallet-insecure-randomness-collective-flip = {workspace = true}
 pallet-message-queue = {workspace = true}
 pallet-utility = {workspace = true}
@@ -132,6 +133,7 @@ std = [
   "pallet-insecure-randomness-collective-flip/std",
   "pallet-message-queue/std",
   "pallet-utility/std",
+  "pallet-contracts/std",
   "orml-traits/std",
   "orml-tokens/std",
   "wetee-primitives/std",

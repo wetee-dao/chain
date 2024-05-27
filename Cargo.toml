@@ -99,6 +99,7 @@ pallet-balances = {git = "https://github.com/paritytech/polkadot-sdk.git", tag =
 pallet-bounties = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 pallet-collator-selection = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 pallet-collective = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
+pallet-contracts = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 pallet-conviction-voting = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 pallet-democracy = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 pallet-elections-phragmen = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}

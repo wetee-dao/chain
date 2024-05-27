@@ -49,6 +49,8 @@ mod worker;
 pub use worker::*;
 mod wetee;
 pub use wetee::*;
+mod contracts;
+pub use contracts::*;
 
 pub use wetee_app::Call as WeteeAppCall;
 pub use wetee_assets::Call as WeteeAssetsCall;
@@ -202,8 +204,6 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<32>;
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
-
-    #[cfg(feature = "experimental")]
     type SlotDuration = pallet_aura::MinimumPeriodTimesTwo<Runtime>;
 }
 
@@ -244,8 +244,8 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
     type FreezeIdentifier = ();
     type MaxFreezes = ();
-    type RuntimeHoldReason = ();
-    type RuntimeFreezeReason = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
 }
 
 parameter_types! {
@@ -304,6 +304,9 @@ mod runtime {
 
     #[runtime::pallet_index(6)]
     pub type Sudo = pallet_sudo;
+
+    #[runtime::pallet_index(22)]
+    pub type Contracts = pallet_contracts;
 
     // WETEE
     #[runtime::pallet_index(7)]
@@ -376,6 +379,17 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
     Migrations,
+    // pallet_contracts::Migration<Runtime>,
+>;
+
+const CONTRACTS_DEBUG_OUTPUT: pallet_contracts::DebugInfo =
+    pallet_contracts::DebugInfo::UnsafeDebug;
+const CONTRACTS_EVENTS: pallet_contracts::CollectEvents =
+    pallet_contracts::CollectEvents::UnsafeCollect;
+
+type EventRecord = frame_system::EventRecord<
+    <Runtime as frame_system::Config>::RuntimeEvent,
+    <Runtime as frame_system::Config>::Hash,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -391,6 +405,75 @@ mod benches {
 }
 
 impl_runtime_apis! {
+    // WeTEE
+    impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord>
+        for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            input_data: Vec<u8>,
+        ) -> pallet_contracts::ContractExecResult<Balance, EventRecord> {
+            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
+            Contracts::bare_call(
+                origin,
+                dest,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                input_data,
+                CONTRACTS_DEBUG_OUTPUT,
+                CONTRACTS_EVENTS,
+                pallet_contracts::Determinism::Enforced,
+            )
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            code: pallet_contracts::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_contracts::ContractInstantiateResult<AccountId, Balance, EventRecord>
+        {
+            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
+            Contracts::bare_instantiate(
+                origin,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                code,
+                data,
+                salt,
+                CONTRACTS_DEBUG_OUTPUT,
+                CONTRACTS_EVENTS,
+            )
+        }
+
+        fn upload_code(
+            origin: AccountId,
+            code: Vec<u8>,
+            storage_deposit_limit: Option<Balance>,
+            determinism: pallet_contracts::Determinism,
+        ) -> pallet_contracts::CodeUploadResult<Hash, Balance>
+        {
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
+        }
+
+        fn get_storage(
+            address: AccountId,
+            key: Vec<u8>,
+        ) -> pallet_contracts::GetStorageResult {
+            Contracts::get_storage(address, key)
+        }
+    }
+    // WeTEE end
+
     impl sp_api::Core<Block> for Runtime {
         fn version() -> RuntimeVersion {
             VERSION
@@ -462,7 +545,7 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            pallet_aura::Authorities::<Runtime>::get().into_inner()
         }
     }
 
