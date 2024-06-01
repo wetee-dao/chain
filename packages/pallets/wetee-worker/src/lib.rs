@@ -217,7 +217,7 @@ pub mod pallet {
         /// Work contract has been withdrawn. [user]
         WorkContractWithdrawaled { work_id: WorkId },
         /// Work stoped
-        WorkStoped { work_id: WorkId, cluster_id: ClusterId },
+        WorkStoped { user: T::AccountId, work_id: WorkId, cluster_id: ClusterId },
     }
 
     // Errors inform users that something went wrong.
@@ -875,12 +875,18 @@ pub mod pallet {
    
             // 删除合约
             Self::try_stop_work(
-                cid, 
+                cid.clone(), 
                 work_id.clone(), 
                 cr,
-                owner_account,
+                owner_account.clone(),
                 tee_version
             )?;
+
+            Self::deposit_event(Event::WorkStoped {
+                user: owner_account,
+                work_id: work_id,
+                cluster_id: cid,
+            });
 
             Ok(().into())
         }
