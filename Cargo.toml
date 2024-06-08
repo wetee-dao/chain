@@ -2,17 +2,22 @@
 authors = ["WeTEE DAO"]
 edition = "2021"
 homepage = "https://wetee.app"
-license = "MIT-0"
+license = "Apache 2.0"
 repository = "https://github.com/wetee-dao/chain"
+version = "0.1.0"
 
 [workspace]
 
 exclude = ["native-nostd-hasher"]
 
 members = [
-  # POS
+  # local node
   "packages/node/node",
-  "packages/node/runtime",
+  "packages/node/runtime", #
+  # parachain node
+  "packages/parachain/node",
+  "packages/parachain/runtime", #
+  # pallets
   "packages/pallets/wetee-org",
   "packages/pallets/wetee-sudo",
   "packages/pallets/wetee-gov",
@@ -26,7 +31,8 @@ members = [
   "packages/pallets/wetee-app",
   "packages/pallets/wetee-task",
   "packages/pallets/wetee-task",
-  "packages/pallets/wetee-gpu", # 工具
+  "packages/pallets/wetee-gpu", #
+  # 工具
   # "tools/hash",
   # "tools/subkey",
   # "tools/chain-spec-builder",
@@ -75,10 +81,12 @@ cumulus-pallet-dmp-queue = {git = "https://github.com/paritytech/polkadot-sdk.gi
 cumulus-pallet-parachain-system = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false, features = [
   "parameterized-consensus-hook",
 ]}
+cumulus-pallet-session-benchmarking = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 cumulus-pallet-xcm = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 cumulus-pallet-xcmp-queue = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 cumulus-primitives-core = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 cumulus-primitives-parachain-inherent = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
+cumulus-primitives-storage-weight-reclaim = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 cumulus-primitives-timestamp = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 cumulus-primitives-utility = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 cumulus-test-relay-sproof-builder = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
@@ -131,6 +139,7 @@ pallet-vesting = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = 
 pallet-whitelist = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 pallet-xcm = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 parachain-info = {package = "staging-parachain-info", git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
+parachains-common = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 polkadot-core-primitives = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 polkadot-parachain-primitives = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 polkadot-primitives = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
@@ -221,7 +230,6 @@ cumulus-test-relay-validation-worker-provider = {git = "https://github.com/parit
 frame-benchmarking-cli = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0"}
 node-inspect = {package = "staging-node-inspect", git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0"}
 pallet-transaction-payment-rpc = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0"}
-parachains-common = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0"}
 polkadot-cli = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0"}
 polkadot-service = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0"}
 sc-basic-authorship = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0"}
@@ -239,13 +247,15 @@ clap = {version = "4.5.3"}
 codec = {package = "parity-scale-codec", version = "3.6.5", default-features = false, features = [
   "derive",
 ]}
+color-print = "0.3.5"
 futures = {version = "0.3.30"}
 jsonrpsee = {version = "0.22"}
 log = {version = "0.4.20", default-features = false}
 parity-scale-codec = {version = "3.6.5", default-features = false, features = ["max-encoded-len"]}
 scale-info = {version = "2.10.0", default-features = false, features = ["derive"]}
-serde = {version = "1.0.189"}
-serde_json = {version = "1.0.189"}
+serde = {version = "1.0.195"}
+serde_json = {version = "1.0.111"}
+wasmtime = "8.0.1"
 
 # Orml
 orml-auction = {path = "orml/auction", default-features = false}

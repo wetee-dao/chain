@@ -213,7 +213,7 @@ pub mod pallet {
         /// A new app has been runed. [user]
         WorkRuning { user: T::AccountId, work_id: WorkId, cluster_id: ClusterId },
         /// Work contract has been updated. [user]
-        WorkContractUpdated { work_id: WorkId },
+        WorkContractUpdated { user: T::AccountId, work_id: WorkId, cluster_id: ClusterId },
         /// Work contract has been withdrawn. [user]
         WorkContractWithdrawaled { work_id: WorkId },
         /// Work stoped
@@ -668,7 +668,7 @@ pub mod pallet {
                     cluster_id, 
                     work_id.clone(), 
                     cr,
-                    owner_account,
+                    owner_account.clone(),
                     tee_version
                 )?;
             }else {
@@ -683,7 +683,9 @@ pub mod pallet {
                 );  
 
                 Self::deposit_event(Event::WorkContractUpdated {
-                    work_id: work_id.clone(),
+                    user: owner_account,
+                    work_id: work_id,
+                    cluster_id: cluster_id,
                 });
             }
 
