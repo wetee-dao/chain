@@ -3,6 +3,7 @@
 #![warn(missing_docs)]
 
 mod chain_spec;
+mod rococo;
 mod cli;
 mod command;
 mod rpc;

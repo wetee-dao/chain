@@ -18,6 +18,7 @@ members = [
   "packages/parachain/node",
   "packages/parachain/runtime", #
   # pallets
+  "packages/pallets/message-queue",
   "packages/pallets/wetee-org",
   "packages/pallets/wetee-sudo",
   "packages/pallets/wetee-gov",
@@ -155,6 +156,7 @@ sp-consensus = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "p
 sp-consensus-aura = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 sp-consensus-slots = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 sp-core = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
+sp-crypto-hashing = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 sp-debug-derive = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 sp-externalities = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}
 sp-genesis-builder = {git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.10.0", default-features = false}

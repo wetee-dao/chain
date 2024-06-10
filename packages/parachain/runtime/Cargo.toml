@@ -85,6 +85,29 @@ pallet-collator-selection = {workspace = true, default-features = false}
 parachain-info = {workspace = true, default-features = false}
 parachains-common = {workspace = true, default-features = false}
 
+# Local Dependencies
+orml-tokens = {workspace = true}
+orml-traits = {workspace = true}
+pallet-contracts = {workspace = true}
+pallet-insecure-randomness-collective-flip = {workspace = true}
+pallet-utility = {workspace = true}
+
+wetee-message-queue = {path = "../../pallets/message-queue", default-features = false}
+
+wetee-app = {path = "../../pallets/wetee-app", default-features = false}
+wetee-assets = {path = "../../pallets/wetee-assets", default-features = false}
+wetee-gov = {path = "../../pallets/wetee-gov", default-features = false}
+wetee-gpu = {path = "../../pallets/wetee-gpu", default-features = false}
+wetee-guild = {path = "../../pallets/wetee-guild", default-features = false}
+wetee-org = {path = "../../pallets/wetee-org", default-features = false}
+wetee-primitives = {path = "../../primitives", default-features = false}
+wetee-project = {path = "../../pallets/wetee-project", default-features = false}
+wetee-runtime-api = {path = "../../pallets/wetee-rpc/runtime-api", default-features = false, optional = true}
+wetee-sudo = {path = "../../pallets/wetee-sudo", default-features = false}
+wetee-task = {path = "../../pallets/wetee-task", default-features = false}
+wetee-treasury = {path = "../../pallets/wetee-treasury", default-features = false}
+wetee-worker = {path = "../../pallets/wetee-worker", default-features = false}
+
 [features]
 default = ["std"]
 std = [
@@ -137,6 +160,26 @@ std = [
   "xcm-builder/std",
   "xcm-executor/std",
   "xcm/std",
+  "wetee-message-queue/std",
+  "pallet-insecure-randomness-collective-flip/std",
+  "pallet-message-queue/std",
+  "pallet-utility/std",
+  "pallet-contracts/std",
+  "orml-traits/std",
+  "orml-tokens/std",
+  "wetee-primitives/std",
+  "wetee-org/std",
+  "wetee-sudo/std",
+  "wetee-gov/std",
+  "wetee-assets/std",
+  "wetee-guild/std",
+  "wetee-project/std",
+  "wetee-worker/std",
+  "wetee-app/std",
+  "wetee-task/std",
+  "wetee-gpu/std",
+  "wetee-treasury/std",
+  "wetee-runtime-api/std",
 ]
 
 runtime-benchmarks = [
@@ -162,6 +205,12 @@ runtime-benchmarks = [
   "sp-runtime/runtime-benchmarks",
   "xcm-builder/runtime-benchmarks",
   "xcm-executor/runtime-benchmarks",
+  "wetee-org/runtime-benchmarks",
+  "wetee-sudo/runtime-benchmarks",
+  "wetee-guild/runtime-benchmarks",
+  "wetee-treasury/runtime-benchmarks",
+  "wetee-gov/runtime-benchmarks",
+  "wetee-gpu/runtime-benchmarks",
 ]
 
 try-runtime = [

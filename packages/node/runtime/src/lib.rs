@@ -382,6 +382,7 @@ pub type Executive = frame_executive::Executive<
     // pallet_contracts::Migration<Runtime>,
 >;
 
+// Contracts
 const CONTRACTS_DEBUG_OUTPUT: pallet_contracts::DebugInfo =
     pallet_contracts::DebugInfo::UnsafeDebug;
 const CONTRACTS_EVENTS: pallet_contracts::CollectEvents =
@@ -391,6 +392,7 @@ type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
     <Runtime as frame_system::Config>::Hash,
 >;
+// end Contracts
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {

@@ -4,6 +4,7 @@
 # Local Dependencies
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
+pallet-contracts = {workspace = true}
 pallet-insecure-randomness-collective-flip = {workspace = true}
 pallet-message-queue = {workspace = true}
 pallet-utility = {workspace = true}
@@ -112,6 +113,25 @@ pub use wetee_worker::Call as WeteeWorkerCall;
     pub type WeteeGpu = wetee_gpu;
     #[runtime::pallet_index(21)]
     pub type WeteeWorker = wetee_worker;
+    // WETEE end
+
+    // WETEE
+		Tokens: orml_tokens = 107,
+		RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 108,
+		MessageQueue: pallet_message_queue = 109,
+		Utility : pallet_utility = 110,
+		WeteeOrg : wetee_org = 111,
+		WeteeAsset : wetee_assets = 112,
+		WeteeSudo : wetee_sudo = 113,
+		WeteeGuild : wetee_guild = 114,
+		WeteeProject : wetee_project = 115,
+		WeteeGov : wetee_gov = 116,
+		WeteeTreasury : wetee_treasury = 117,
+		WeteeApp : wetee_app = 118,
+		WeteeTask : wetee_task = 119,
+		WeteeGpu : wetee_gpu = 120,
+		WeteeWorker : wetee_worker = 121,
+    Contracts: pallet_contracts = 122,
     // WETEE end
 ```
 

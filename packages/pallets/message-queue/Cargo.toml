@@ -1,0 +1,66 @@
+[package]
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "wetee-message-queue"
+publish = false
+repository.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+codec = {package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"]}
+environmental = {version = "1.1.4", default-features = false}
+log = {workspace = true}
+scale-info = {version = "2.11.1", default-features = false, features = ["derive"]}
+serde = {optional = true, features = ["derive"], workspace = true, default-features = true}
+
+sp-arithmetic = {workspace = true, default-features = false}
+sp-core = {workspace = true, default-features = false}
+sp-io = {workspace = true, default-features = false}
+sp-runtime = {workspace = true, default-features = false}
+sp-std = {workspace = true, default-features = false}
+sp-weights = {workspace = true, default-features = false}
+
+frame-benchmarking = {workspace = true, default-features = false, optional = true}
+frame-support = {workspace = true, default-features = false}
+frame-system = {workspace = true, default-features = false}
+
+[dev-dependencies]
+rand = "0.8.5"
+rand_distr = "0.4.3"
+sp-crypto-hashing = {workspace = true}
+sp-tracing = {workspace = true}
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+]
+std = [
+  "codec/std",
+  "environmental/std",
+  "frame-benchmarking?/std",
+  "frame-support/std",
+  "frame-system/std",
+  "log/std",
+  "scale-info/std",
+  "sp-arithmetic/std",
+  "sp-core/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "sp-tracing/std",
+  "sp-weights/std",
+]
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+  "sp-runtime/try-runtime",
+]
