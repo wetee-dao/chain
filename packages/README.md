@@ -145,3 +145,15 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 [wetee_treasury, WeteeTreasury]
 
 ```
+
+
+./target/release/parachain-node --collator \
+--alice \
+--chain ./wetee-rococo.json \
+--force-authoring \
+--base-path  ./db \
+-- \
+--chain=rococo \
+--sync fast-unsafe \
+--blocks-pruning 256 \
+--state-pruning 256
