@@ -145,8 +145,14 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 [wetee_treasury, WeteeTreasury]
 
 ```
+### build genesis
+./target/release/parachain-node export-genesis-state genesis --chain wetee-rococo
+### build wasm
+./target/release/parachain-node export-genesis-wasm genesis-wasm --chain wetee-rococo
+### build spec
+./target/release/parachain-node build-spec --disable-default-bootnode --chain wetee-rococo > wetee-rococo.json
 
-
+### 平行链启动命令
 ./target/release/parachain-node --collator \
 --alice \
 --chain ./wetee-rococo.json \

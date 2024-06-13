@@ -3,12 +3,12 @@
 #![warn(missing_docs)]
 
 mod chain_spec;
-mod rococo;
 mod cli;
 mod command;
 mod rpc;
 mod service;
+mod test_net;
 
 fn main() -> sc_cli::Result<()> {
-	command::run()
+    command::run()
 }

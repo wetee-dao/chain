@@ -8,7 +8,7 @@ use crate::chain_spec::*;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
-const TEST_PARACHAIN_ID: u32 = 4433;
+const TEST_PARACHAIN_ID: u32 = 4447;
 pub fn rococo_config() -> ChainSpec {
     // Give your base currency a unit name and decimal places
     let mut properties = sc_chain_spec::Properties::new();

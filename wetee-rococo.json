@@ -11,7 +11,7 @@
     "tokenSymbol": "WTE"
   },
   "relay_chain": "rococo",
-  "para_id": 4433,
+  "para_id": 4447,
   "codeSubstitutes": {},
   "genesis": {
     "runtimeGenesis": {
@@ -72,12 +72,11 @@
         "collatorSelection": {
           "candidacyBond": 16000000000,
           "invulnerables": [
-            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-            "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
           ]
         },
         "parachainInfo": {
-          "parachainId": 4433
+          "parachainId": 4447
         },
         "polkadotXcm": {
           "safeXcmVersion": 4
@@ -89,13 +88,6 @@
               "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
               {
                 "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
-              }
-            ],
-            [
-              "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-              "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-              {
-                "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
               }
             ]
           ]
