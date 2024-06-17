@@ -96,6 +96,8 @@ pub enum Service {
     Tcp(u16),
     /// UDP
     Udp(u16),
+    /// TCP
+    Https(u16),
     /// Project Tcp
     ProjectTcp(u16),
     /// Project Udp
