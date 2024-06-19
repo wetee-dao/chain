@@ -51,6 +51,7 @@ mod wetee;
 pub use wetee::*;
 mod contracts;
 pub use contracts::*;
+mod contract_extension;
 
 pub use wetee_app::Call as WeteeAppCall;
 pub use wetee_assets::Call as WeteeAssetsCall;
