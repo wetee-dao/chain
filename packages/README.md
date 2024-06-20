@@ -143,16 +143,31 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 // [wetee_project, WeteeProject]
 [wetee_gov, WeteeGov]
 [wetee_treasury, WeteeTreasury]
-
 ```
+
+## 编译创始区块
+
 ### build genesis
+
+```shell
 ./target/release/parachain-node export-genesis-state genesis --chain wetee-rococo
+```
+
 ### build wasm
+
+```shell
 ./target/release/parachain-node export-genesis-wasm genesis-wasm --chain wetee-rococo
+```
+
 ### build spec
+
+```shell
 ./target/release/parachain-node build-spec --disable-default-bootnode --chain wetee-rococo > wetee-rococo.json
+```
 
 ### 平行链启动命令
+
+```shell
 ./target/release/parachain-node --collator \
 --alice \
 --chain ./wetee-rococo.json \
@@ -163,3 +178,4 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 --sync fast-unsafe \
 --blocks-pruning 256 \
 --state-pruning 256
+```

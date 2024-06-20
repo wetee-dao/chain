@@ -10,12 +10,19 @@ RUN cargo build --locked --release
 FROM ubuntu:22.04
 
 ## copy bin from builder
-COPY  --from=builder  /target/release/wetee-node /usr/local/bin
+COPY  --from=builder  /target/release/parachain-node /usr/local/bin
+COPY /wetee-rococo.json /
 
-## ubuntu update
-RUN apt-get update
+EXPOSE 9933 9944 9615
+VOLUME ["/chain-data"]
 
-
-EXPOSE 30333 9933 9944 9615
-
-CMD ["/bin/sh", "-c" ,"/usr/local/bin/wetee-node --dev --rpc-external --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all"]
+CMD ["/bin/sh", "-c" ,"/parachain-node --collator \
+--alice \
+--chain /wetee-rococo.json \
+--force-authoring \
+--base-path  /chain-data \
+-- \
+--chain=rococo \
+--sync fast-unsafe \
+--blocks-pruning 256 \
+--state-pruning 256 --rpc-external --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all"]

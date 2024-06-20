@@ -23,7 +23,10 @@ if [ $# -gt 0 ]; then
 fi
 
 # 编译
-cargo build --release -p wetee-node
+cargo build --release -p parachain-node
 
-docker build . -f pos_from_bin.Dockerfile -t "wetee/wetee-node:$TAG"
-docker push "wetee/wetee-node:$TAG"
+docker build . -f pos_from_bin.Dockerfile -t "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:$TAG"
+
+docker login --username=wetee registry.cn-hangzhou.aliyuncs.com
+
+docker push "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:$TAG"

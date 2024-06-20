@@ -5,3 +5,6 @@
 **/target/**/deps
 **/target/**/build
 **/target/**/wbuild
+**/target/**/incremental
+**/target/cxxbridge
+
