@@ -16,13 +16,4 @@ COPY /wetee-rococo.json /
 EXPOSE 9933 9944 9615
 VOLUME ["/chain-data"]
 
-CMD ["/bin/sh", "-c" ,"/parachain-node --collator \
---alice \
---chain /wetee-rococo.json \
---force-authoring \
---base-path  /chain-data \
--- \
---chain=rococo \
---sync fast-unsafe \
---blocks-pruning 256 \
---state-pruning 256 --rpc-external --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all"]
+CMD ["/bin/sh", "-c" ,"/parachain-node --collator --alice --rpc-external --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all --chain /wetee-rococo.json --force-authoring --base-path  /chain-data -- --chain=rococo --sync fast-unsafe --blocks-pruning 256 --state-pruning 256"]
