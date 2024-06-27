@@ -10,5 +10,5 @@ mod service;
 mod test_net;
 
 fn main() -> sc_cli::Result<()> {
-    command::run()
+	command::run()
 }

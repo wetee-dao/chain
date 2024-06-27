@@ -64,9 +64,6 @@ frame-benchmarking-cli = {workspace = true}
 # Local Dependencies
 wetee-runtime = {path = "../runtime"}
 
-# CLI-specific dependencies
-try-runtime-cli = {workspace = true, optional = true}
-
 [build-dependencies]
 substrate-build-script-utils = {workspace = true}
 
@@ -87,5 +84,4 @@ try-runtime = [
   "pallet-transaction-payment/try-runtime",
   "wetee-runtime/try-runtime",
   "sp-runtime/try-runtime",
-  "try-runtime-cli/try-runtime",
 ]
