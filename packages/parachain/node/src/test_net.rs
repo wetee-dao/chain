@@ -1,4 +1,5 @@
 use cumulus_primitives_core::ParaId;
+use hex_literal::hex;
 use parachain_wetee_runtime as runtime;
 use runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT};
 use sc_service::ChainType;
@@ -8,7 +9,7 @@ use crate::chain_spec::*;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
-const TEST_PARACHAIN_ID: u32 = 4447;
+const TEST_PARACHAIN_ID: u32 = 4465;
 pub fn rococo_config() -> ChainSpec {
     // Give your base currency a unit name and decimal places
     let mut properties = sc_chain_spec::Properties::new();
@@ -34,20 +35,10 @@ pub fn rococo_config() -> ChainSpec {
             get_collator_keys_from_seed("Alice"),
         )],
         vec![
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Bob"),
-            get_account_id_from_seed::<sr25519::Public>("Charlie"),
-            get_account_id_from_seed::<sr25519::Public>("Dave"),
-            get_account_id_from_seed::<sr25519::Public>("Eve"),
-            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-            get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+            // 5FhHywUv7W4pMMXQdm48cm6tiaAEGMikXHoMtu7wnptVLQX4
+            hex!["a09c6940fdeff0eaedc50df055f987fb6a308eaa0b622c8c24e16b1c86694c3e"].into(),
         ],
-        get_account_id_from_seed::<sr25519::Public>("Alice"),
+        hex!["a09c6940fdeff0eaedc50df055f987fb6a308eaa0b622c8c24e16b1c86694c3e"].into(),
         TEST_PARACHAIN_ID.into(),
     ))
     .with_protocol_id("wetee")

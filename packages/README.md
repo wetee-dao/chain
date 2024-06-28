@@ -147,21 +147,14 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 
 ## 编译创始区块
 
-### build genesis
-
 ```shell
+### build genesis
 ./target/release/parachain-node export-genesis-state genesis --chain wetee-rococo
-```
 
 ### build wasm
-
-```shell
 ./target/release/parachain-node export-genesis-wasm genesis-wasm --chain wetee-rococo
-```
 
 ### build spec
-
-```shell
 ./target/release/parachain-node build-spec --disable-default-bootnode --chain wetee-rococo > wetee-rococo.json
 ```
 
