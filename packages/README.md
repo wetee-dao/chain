@@ -149,13 +149,13 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 
 ```shell
 ### build genesis
-./target/release/parachain-node export-genesis-state genesis --chain wetee-rococo
+./target/release/parachain-node export-genesis-state --chain wetee-rococo ./meta/rococo/genesis
 
 ### build wasm
-./target/release/parachain-node export-genesis-wasm genesis-wasm --chain wetee-rococo
+./target/release/parachain-node export-genesis-wasm --chain wetee-rococo ./meta/rococo/genesis-wasm
 
 ### build spec
-./target/release/parachain-node build-spec --disable-default-bootnode --chain wetee-rococo > wetee-rococo.json
+./target/release/parachain-node build-spec --disable-default-bootnode --chain wetee-rococo > ./meta/rococo/wetee-rococo.json
 ```
 
 ### 平行链启动命令
@@ -163,7 +163,7 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 ```shell
 ./target/release/parachain-node --collator \
 --alice \
---chain ./wetee-rococo.json \
+--chain ./meta/rococo/wetee-rococo.json \
 --force-authoring \
 --base-path  ./db \
 -- \
