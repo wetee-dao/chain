@@ -8,7 +8,7 @@ RUN apt-get update
 
 # 复制
 COPY /target/release/parachain-node /
-COPY /wetee-rococo.json /
+COPY /meta/rococo/wetee-rococo.json /
 
 
 EXPOSE 9933 9944 9615

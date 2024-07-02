@@ -12,7 +12,7 @@ cd "$DIR/../"
 pwd
 
 current=`date "+%Y-%m-%d-%H_%M"`
-TAG="dev.$current"
+TAG="rococo.$current"
 ENV=`git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3`
 
 if [ $# -gt 0 ]; then

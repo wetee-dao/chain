@@ -18,7 +18,7 @@ parameter_types! {
     pub ServiceWeight: Option<Weight> = Some(Perbill::from_percent(20) * BlockWeights::get().max_block);
 }
 
-impl pallet_message_queue::Config for Runtime {
+impl wetee_message_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type MessageProcessor = WorkerMessageProcessor;
@@ -35,11 +35,11 @@ pub struct GovFunc;
 impl GovIsJoin<RuntimeCall> for GovFunc {
     fn is_join(call: RuntimeCall) -> bool {
         match call {
-            RuntimeCall::WeteeGuild(func) => match func {
+            RuntimeCall::WeTEEGuild(func) => match func {
                 wetee_guild::Call::guild_join { .. } => true,
                 _ => false,
             },
-            RuntimeCall::WeteeProject(func) => match func {
+            RuntimeCall::WeTEEProject(func) => match func {
                 wetee_project::Call::project_join_request { .. } => true,
                 _ => false,
             },

@@ -18,7 +18,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use frame_support::genesis_builder_helper::{build_config, create_default_config};
+use frame_support::genesis_builder_helper::{build_state, get_preset};
 pub use frame_support::{
     construct_runtime, derive_impl, parameter_types,
     traits::{
@@ -36,7 +36,7 @@ pub use frame_support::{
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier};
+use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -53,17 +53,17 @@ mod contracts;
 pub use contracts::*;
 mod contract_extension;
 
-pub use wetee_app::Call as WeteeAppCall;
-pub use wetee_assets::Call as WeteeAssetsCall;
-pub use wetee_gov::Call as WeteeGovCall;
-pub use wetee_gpu::Call as WeteeGpuCall;
-pub use wetee_guild::Call as WeteeGuildCall;
-pub use wetee_org::Call as WeteeOrgCall;
-pub use wetee_project::Call as WeteeProjectCall;
-pub use wetee_sudo::Call as WeteeSudoCall;
-pub use wetee_task::Call as WeteeTaskCall;
-pub use wetee_treasury::Call as WeteeTreasuryCall;
-pub use wetee_worker::Call as WeteeWorkerCall;
+pub use wetee_app::Call as WeTEEAppCall;
+pub use wetee_assets::Call as WeTEEAssetsCall;
+pub use wetee_gov::Call as WeTEEGovCall;
+pub use wetee_gpu::Call as WeTEEGpuCall;
+pub use wetee_guild::Call as WeTEEGuildCall;
+pub use wetee_org::Call as WeTEEOrgCall;
+pub use wetee_project::Call as WeTEEProjectCall;
+pub use wetee_sudo::Call as WeTEESudoCall;
+pub use wetee_task::Call as WeTEETaskCall;
+pub use wetee_treasury::Call as WeTEETreasuryCall;
+pub use wetee_worker::Call as WeTEEWorkerCall;
 // End WETEE pallet.
 
 /// An index to a block.
@@ -113,15 +113,15 @@ pub mod opaque {
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("WeTEE"),
-    impl_name: create_runtime_str!("WeTEE runtime"),
+    spec_name: create_runtime_str!("WeTEE-dev"),
+    impl_name: create_runtime_str!("WeTEE-dev-runtime"),
     authoring_version: 1,
     // The version of the runtime specification. A full node will not attempt to use its native
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 123,
+    spec_version: 102,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -173,7 +173,7 @@ parameter_types! {
 /// The default types are being injected by [`derive_impl`](`frame_support::derive_impl`) from
 /// [`SoloChainDefaultConfig`](`struct@frame_system::config_preludes::SolochainDefaultConfig`),
 /// but overridden as needed.
-#[derive_impl(frame_system::config_preludes::SolochainDefaultConfig as frame_system::DefaultConfig)]
+#[derive_impl(frame_system::config_preludes::SolochainDefaultConfig)]
 impl frame_system::Config for Runtime {
     /// The block type for the runtime.
     type Block = Block;
@@ -255,7 +255,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+    type OnChargeTransaction = FungibleAdapter<Balances, ()>;
     type OperationalFeeMultiplier = ConstU8<5>;
     type WeightToFee = IdentityFee<Balance>;
     type LengthToFee = IdentityFee<Balance>;
@@ -315,31 +315,31 @@ mod runtime {
     #[runtime::pallet_index(8)]
     pub type RandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
     #[runtime::pallet_index(9)]
-    pub type MessageQueue = pallet_message_queue;
+    pub type WeTEEMessageQueue = wetee_message_queue;
     #[runtime::pallet_index(10)]
     pub type Utility = pallet_utility;
     #[runtime::pallet_index(11)]
-    pub type WeteeOrg = wetee_org;
+    pub type WeTEEOrg = wetee_org;
     #[runtime::pallet_index(12)]
-    pub type WeteeAsset = wetee_assets;
+    pub type WeTEEAsset = wetee_assets;
     #[runtime::pallet_index(13)]
-    pub type WeteeSudo = wetee_sudo;
+    pub type WeTEESudo = wetee_sudo;
     #[runtime::pallet_index(14)]
-    pub type WeteeGuild = wetee_guild;
+    pub type WeTEEGuild = wetee_guild;
     #[runtime::pallet_index(15)]
-    pub type WeteeProject = wetee_project;
+    pub type WeTEEProject = wetee_project;
     #[runtime::pallet_index(16)]
-    pub type WeteeGov = wetee_gov;
+    pub type WeTEEGov = wetee_gov;
     #[runtime::pallet_index(17)]
-    pub type WeteeTreasury = wetee_treasury;
+    pub type WeTEETreasury = wetee_treasury;
     #[runtime::pallet_index(18)]
-    pub type WeteeApp = wetee_app;
+    pub type WeTEEApp = wetee_app;
     #[runtime::pallet_index(19)]
-    pub type WeteeTask = wetee_task;
+    pub type WeTEETask = wetee_task;
     #[runtime::pallet_index(20)]
-    pub type WeteeGpu = wetee_gpu;
+    pub type WeTEEGpu = wetee_gpu;
     #[runtime::pallet_index(21)]
-    pub type WeteeWorker = wetee_worker;
+    pub type WeTEEWorker = wetee_worker;
     // WETEE end
 }
 
@@ -380,20 +380,7 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
     Migrations,
-    // pallet_contracts::Migration<Runtime>,
 >;
-
-// Contracts
-const CONTRACTS_DEBUG_OUTPUT: pallet_contracts::DebugInfo =
-    pallet_contracts::DebugInfo::UnsafeDebug;
-const CONTRACTS_EVENTS: pallet_contracts::CollectEvents =
-    pallet_contracts::CollectEvents::UnsafeCollect;
-
-type EventRecord = frame_system::EventRecord<
-    <Runtime as frame_system::Config>::RuntimeEvent,
-    <Runtime as frame_system::Config>::Hash,
->;
-// end Contracts
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
@@ -408,75 +395,6 @@ mod benches {
 }
 
 impl_runtime_apis! {
-    // WeTEE
-    impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord>
-        for Runtime
-    {
-        fn call(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: Option<Weight>,
-            storage_deposit_limit: Option<Balance>,
-            input_data: Vec<u8>,
-        ) -> pallet_contracts::ContractExecResult<Balance, EventRecord> {
-            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-            Contracts::bare_call(
-                origin,
-                dest,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                input_data,
-                CONTRACTS_DEBUG_OUTPUT,
-                CONTRACTS_EVENTS,
-                pallet_contracts::Determinism::Enforced,
-            )
-        }
-
-        fn instantiate(
-            origin: AccountId,
-            value: Balance,
-            gas_limit: Option<Weight>,
-            storage_deposit_limit: Option<Balance>,
-            code: pallet_contracts::Code<Hash>,
-            data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_contracts::ContractInstantiateResult<AccountId, Balance, EventRecord>
-        {
-            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-            Contracts::bare_instantiate(
-                origin,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                code,
-                data,
-                salt,
-                CONTRACTS_DEBUG_OUTPUT,
-                CONTRACTS_EVENTS,
-            )
-        }
-
-        fn upload_code(
-            origin: AccountId,
-            code: Vec<u8>,
-            storage_deposit_limit: Option<Balance>,
-            determinism: pallet_contracts::Determinism,
-        ) -> pallet_contracts::CodeUploadResult<Hash, Balance>
-        {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
-        }
-
-        fn get_storage(
-            address: AccountId,
-            key: Vec<u8>,
-        ) -> pallet_contracts::GetStorageResult {
-            Contracts::get_storage(address, key)
-        }
-    }
-    // WeTEE end
-
     impl sp_api::Core<Block> for Runtime {
         fn version() -> RuntimeVersion {
             VERSION
@@ -708,12 +626,16 @@ impl_runtime_apis! {
     }
 
     impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
-        fn create_default_config() -> Vec<u8> {
-            create_default_config::<RuntimeGenesisConfig>()
+        fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+            build_state::<RuntimeGenesisConfig>(config)
         }
 
-        fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
-            build_config::<RuntimeGenesisConfig>(config)
+        fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+        }
+
+        fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
+            vec![]
         }
     }
 }

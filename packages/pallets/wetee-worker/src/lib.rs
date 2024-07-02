@@ -653,15 +653,16 @@ pub mod pallet {
 
             let fee = <T as pallet::Config>::WorkExt::calculate_fee(work_id.clone())?;
             let to = Self::get_mint_account(work_id.clone(), cluster_id);
+            
+            log::warn!(
+                "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?} {:?} {:?} {:?}",
+                work_id.wtype,work_id.id,to,fee
+            );
             let status = <T as pallet::Config>::WorkExt::pay_run_fee(
                 work_id.clone(),
                 to,
                 fee,
             )?;
-            log::warn!(
-                "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?} {:?} {:?}",
-                work_id.wtype,work_id.id,fee
-            );
 
             if status == 2 {
                 Self::try_stop_work(
@@ -684,8 +685,8 @@ pub mod pallet {
 
                 Self::deposit_event(Event::WorkContractUpdated {
                     user: owner_account,
-                    work_id: work_id,
-                    cluster_id: cluster_id,
+                    work_id,
+                    cluster_id,
                 });
             }
 
@@ -870,8 +871,14 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let (owner_account,cr,_,_,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,cr,_,status,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
+
+            if status == 0 {
+                // 删除应用
+                <T as pallet::Config>::WorkExt::try_stop(owner_account.clone(),work_id.clone())?;
+                return Ok(().into());
+            }
 
             let cid = WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
    
@@ -884,9 +891,10 @@ pub mod pallet {
                 tee_version
             )?;
 
+
             Self::deposit_event(Event::WorkStoped {
                 user: owner_account,
-                work_id: work_id,
+                work_id,
                 cluster_id: cid,
             });
 

@@ -172,3 +172,7 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 --blocks-pruning 256 \
 --state-pruning 256
 ```
+
+### 升级平行链
+
+- https://decentration.medium.com/how-to-make-a-parachain-runtime-upgrade-2b0e063fe1f7

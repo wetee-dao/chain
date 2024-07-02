@@ -76,8 +76,9 @@ orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
 pallet-contracts = {workspace = true}
 pallet-insecure-randomness-collective-flip = {workspace = true}
-pallet-message-queue = {workspace = true}
 pallet-utility = {workspace = true}
+
+wetee-message-queue = {path = "../../pallets/message-queue", default-features = false}
 
 wetee-app = {path = "../../pallets/wetee-app", default-features = false}
 wetee-assets = {path = "../../pallets/wetee-assets", default-features = false}
@@ -131,7 +132,7 @@ std = [
   "sp-version/std",
   "substrate-wasm-builder",
   "pallet-insecure-randomness-collective-flip/std",
-  "pallet-message-queue/std",
+  "wetee-message-queue/std",
   "pallet-utility/std",
   "pallet-contracts/std",
   "orml-traits/std",
@@ -176,5 +177,3 @@ try-runtime = [
   "pallet-transaction-payment/try-runtime",
   "sp-runtime/try-runtime",
 ]
-
-experimental = ["pallet-aura/experimental"]

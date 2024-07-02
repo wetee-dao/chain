@@ -22,8 +22,8 @@ use crate::{
     sp_api_hidden_includes_construct_runtime::hidden_include::traits::EnqueueMessage, Balance,
     Runtime,
 };
-use crate::{AccountId, MessageQueue, WeteeWorker};
-use pallet_message_queue::OnQueueChanged;
+use crate::{AccountId, WeTEEMessageQueue, WeTEEWorker};
+use wetee_message_queue::OnQueueChanged;
 
 /// Mocked message origin for testing.
 /// 消息来源
@@ -38,7 +38,7 @@ pub struct WorkerQueueHook;
 impl UHook<WorkId, AccountId> for WorkerQueueHook {
     fn run_hook(id: WorkId, _: AccountId) {
         // 添加消息到队列
-        MessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::Work);
+        WeTEEMessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::Work);
     }
 }
 
@@ -68,9 +68,9 @@ impl ProcessMessage for WorkerMessageProcessor {
         log::warn!("process_message {:?}", id);
         let ok: bool = match origin {
             MessageOrigin::Work => match msg_id.wtype {
-                WorkType::APP => WeteeWorker::match_deploy(msg_id, None).unwrap(),
-                WorkType::TASK => WeteeWorker::match_deploy(msg_id, None).unwrap(),
-                WorkType::GPU => WeteeWorker::match_deploy(msg_id, None).unwrap(),
+                WorkType::APP => WeTEEWorker::match_deploy(msg_id, None).unwrap(),
+                WorkType::TASK => WeTEEWorker::match_deploy(msg_id, None).unwrap(),
+                WorkType::GPU => WeTEEWorker::match_deploy(msg_id, None).unwrap(),
             },
         };
 

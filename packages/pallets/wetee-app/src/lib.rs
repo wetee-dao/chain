@@ -523,6 +523,25 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        /// update price
+        /// 更新价格
+        #[pallet::call_index(007)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn update_price(
+            origin: OriginFor<T>,
+            // level
+            // 服务 level
+            level: ClusterLevel,
+            // Price
+            // 价格
+            price: Price,
+        ) -> DispatchResultWithPostInfo {
+            let _who = ensure_signed(origin)?;
+            Prices::<T>::insert(level, price);
+
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {

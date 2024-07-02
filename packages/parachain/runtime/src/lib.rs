@@ -186,7 +186,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("WeTEE"),
     impl_name: create_runtime_str!("WeTEE"),
     authoring_version: 1,
-    spec_version: 1,
+    spec_version: 3,
     impl_version: 0,
     apis: apis::RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -243,10 +243,10 @@ const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 
 /// Aura consensus hook
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
-	Runtime,
-	RELAY_CHAIN_SLOT_DURATION_MILLIS,
-	BLOCK_PROCESSING_VELOCITY,
-	UNINCLUDED_SEGMENT_CAPACITY,
+    Runtime,
+    RELAY_CHAIN_SLOT_DURATION_MILLIS,
+    BLOCK_PROCESSING_VELOCITY,
+    UNINCLUDED_SEGMENT_CAPACITY,
 >;
 
 /// The version information used to identify this runtime when compiled natively.
@@ -285,7 +285,7 @@ construct_runtime!(
         XcmpQueue: cumulus_pallet_xcmp_queue = 30,
         PolkadotXcm: pallet_xcm = 31,
         CumulusXcm: cumulus_pallet_xcm = 32,
-        MessageQueue: pallet_message_queue = 33,
+        WeTEEMessageQueue: pallet_message_queue = 33,
 
         // WETEE
         Tokens: orml_tokens = 107,
@@ -315,7 +315,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_timestamp, Timestamp]
-        [pallet_message_queue, MessageQueue]
+        [pallet_message_queue, WeTEEMessageQueue]
         [pallet_sudo, Sudo]
         [pallet_collator_selection, CollatorSelection]
         [cumulus_pallet_parachain_system, ParachainSystem]
