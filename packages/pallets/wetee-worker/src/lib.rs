@@ -66,8 +66,11 @@ pub mod pallet {
     /// user's K8sCluster information
     #[pallet::storage]
     #[pallet::getter(fn k8s_cluster_accounts)]
-    pub type K8sClusterAccounts<T: Config> =
-        StorageMap<_, Identity, T::AccountId, ClusterId, OptionQuery>;
+    pub type K8sClusterAccounts<T: Config> = StorageDoubleMap<
+        _, Identity, T::AccountId,
+        Identity, BlockNumberFor<T>, 
+        ClusterId, ValueQuery,
+    >;
 
     #[pallet::type_value]
     pub fn DefaultForm1() -> ClusterId {
@@ -336,13 +339,6 @@ pub mod pallet {
             ensure!(ip.len() > 0, Error::<T>::ClusterRegisterMissIp);
             ensure!(port > 0, Error::<T>::ClusterRegisterMissIp);
 
-            // check cluster
-            // 检查集群是否存在
-            ensure!(
-                K8sClusterAccounts::<T>::contains_key(creator.clone()) == false,
-                Error::<T>::ClusterIsExists
-            );
-
             // check level
             // 检查等级是否存在
             let _ = DepositPrices::<T>::get(level).ok_or(Error::<T>::LevelNotExists)?;
@@ -350,13 +346,14 @@ pub mod pallet {
             // get new id
             // 获取最新的id
             let cid = NextClusterId::<T>::get();
+            let t = <frame_system::Pallet<T>>::block_number();
 
             // cluster
             // 集群
             let cluster = K8sCluster {
                 id: cid.clone(),
                 account: creator.clone(),
-                start_block: <frame_system::Pallet<T>>::block_number(),
+                start_block: t,
                 stop_block: None,
                 terminal_block: None,
                 name,
@@ -367,7 +364,7 @@ pub mod pallet {
 
             // save cluster user info
             // 保存集群用户信息
-            K8sClusterAccounts::<T>::insert(creator.clone(), cid.clone());
+            K8sClusterAccounts::<T>::insert(creator.clone(), t, cid.clone());
             // save cluster info
             // 保存集群信息
             K8sClusters::<T>::insert(cid.clone(), cluster);
@@ -574,13 +571,17 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn work_proof_upload(
             origin: OriginFor<T>,
+            cluster_id: ClusterId,
             work_id: WorkId,
             proof: Option<ProofOfWork>,
             report: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            let cluster_id =
-                K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
+            let clusters:Vec<ClusterId> = K8sClusterAccounts::<T>::iter_prefix_values(who).collect();
+            if !clusters.contains(&cluster_id) {
+                return Err(Error::<T>::ClusterNotExists.into());
+            }
+
             let contract_cluster_id =
                 WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
 
@@ -699,12 +700,16 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(10, 20)  + Weight::from_all(40_000))]
         pub fn cluster_withdrawal(
             origin: OriginFor<T>,
+            cluster_id: ClusterId,
             work_id: WorkId,
             amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            let cluster_id =
-                K8sClusterAccounts::<T>::get(who.clone()).ok_or(Error::<T>::ClusterNotExists)?;
+            let clusters:Vec<ClusterId> = K8sClusterAccounts::<T>::iter_prefix_values(who.clone()).collect();
+            if !clusters.contains(&cluster_id) {
+                return Err(Error::<T>::ClusterNotExists.into());
+            }
+
             let contract_cluster_id =
                 WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
 
@@ -755,14 +760,13 @@ pub mod pallet {
         /// 停止集群
         #[pallet::call_index(007)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_stop(origin: OriginFor<T>, id: ClusterId) -> DispatchResultWithPostInfo {
+        pub fn cluster_stop(origin: OriginFor<T>, cluster_id: ClusterId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            // get user cluster
-            // 获取当前账户的集群
-            let cluster_id =
-                K8sClusterAccounts::<T>::get(who.clone()).ok_or(Error::<T>::ClusterNotExists)?;
-            ensure!(cluster_id == id, Error::<T>::ClusterNotExists);
+            let clusters:Vec<ClusterId> = K8sClusterAccounts::<T>::iter_prefix_values(who.clone()).collect();
+            if !clusters.contains(&cluster_id) {
+                return Err(Error::<T>::ClusterNotExists.into());
+            }
 
             let mut cluster =
                 K8sClusters::<T>::get(cluster_id).ok_or(Error::<T>::ClusterNotExists)?;
