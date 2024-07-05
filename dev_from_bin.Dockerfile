@@ -13,4 +13,4 @@ COPY /target/release/wetee-node /
 EXPOSE 9933 9944 9615
 VOLUME ["/chain-data"]
 
-CMD ["/bin/sh", "-c" ,"/wetee-node --dev --rpc-external --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all"]
+CMD ["/bin/sh", "-c" ,"/wetee-node --dev --base-path  /chain-data --rpc-external --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all"]
