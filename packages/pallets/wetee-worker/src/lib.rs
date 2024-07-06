@@ -168,6 +168,7 @@ pub mod pallet {
     pub fn DefaultForm3() -> u32 {
         600
     }
+
     /// Work 结算周期
     /// Work settle period
     #[pallet::storage]
@@ -355,7 +356,6 @@ pub mod pallet {
             // 集群
             let cluster = K8sCluster {
                 id: cid.clone(),
-                account: creator.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 stop_block: None,
                 terminal_block: None,

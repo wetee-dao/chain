@@ -11,9 +11,6 @@ pub struct K8sCluster<AccountId, BlockNumber> {
     /// 节点id
     /// 节点id
     pub id: ClusterId,
-    /// creator of K8sCluster
-    /// 创建者
-    pub account: AccountId,
     /// The block that creates the K8sCluster
     /// App创建的区块
     pub start_block: BlockNumber,
