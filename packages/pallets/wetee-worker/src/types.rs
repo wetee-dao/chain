@@ -7,7 +7,7 @@ use wetee_primitives::types::{ClusterId, ComCr, WorkId};
 /// K8sCluster specific information
 /// 集群信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct K8sCluster<AccountId, BlockNumber> {
+pub struct K8sCluster<BlockNumber> {
     /// 节点id
     /// 节点id
     pub id: ClusterId,

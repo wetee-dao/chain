@@ -87,7 +87,7 @@ pub mod pallet {
         _,
         Identity,
         ClusterId,
-        K8sCluster<T::AccountId, BlockNumberFor<T>>,
+        K8sCluster<BlockNumberFor<T>>,
         OptionQuery,
     >;
 
@@ -413,14 +413,15 @@ pub mod pallet {
             proof: ProofOfCluster,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
-            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
+            let cid = K8sClusterAccounts::<T>::get(creator.clone()).ok_or(Error::<T>::ClusterNotExists)?;
 
             // check user
             // 检查是否是集群的主人
             ensure!(
-                cluster.account == creator.clone(),
+                id == cid,
                 Error::<T>::ClusterIsExists
             );
+
 
             let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
@@ -451,14 +452,14 @@ pub mod pallet {
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
-            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
-
+            let cid = K8sClusterAccounts::<T>::get(creator.clone()).ok_or(Error::<T>::ClusterNotExists)?;
             // check user
             // 检查是否是集群的主人
             ensure!(
-                cluster.account == creator.clone(),
+                id == cid,
                 Error::<T>::ClusterIsExists
             );
+
 
             let score = Scores::<T>::get(id).ok_or(Error::<T>::LevelNotExists)?;
             let price = Self::get_level_price(score.0, cpu, mem, disk,gpu)?;
@@ -529,12 +530,11 @@ pub mod pallet {
             let creator = ensure_signed(origin)?;
             let d = Deposits::<T>::get(id, block_num).ok_or(Error::<T>::ClusterNotExists)?;
 
-            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
-
+            let cid = K8sClusterAccounts::<T>::get(creator.clone()).ok_or(Error::<T>::ClusterNotExists)?;
             // check user
             // 检查是否是集群的主人
             ensure!(
-                cluster.account == creator.clone(),
+                id == cid,
                 Error::<T>::ClusterIsExists
             );
 
