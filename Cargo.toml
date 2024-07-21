@@ -12,8 +12,8 @@ exclude = ["native-nostd-hasher"]
 
 members = [
   # local node
-  "packages/node/node",
-  "packages/node/runtime", #
+  "packages/localchain/node",
+  "packages/localchain/runtime", #
   # parachain node
   "packages/parachain/node",
   "packages/parachain/runtime", #

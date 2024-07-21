@@ -1,0 +1,6 @@
+[package]
+authors = ["WeTEE DAO"]
+edition = "2021"
+license = "Apache-2.0"
+name = "wetee-token"
+version = "1.0.0"
