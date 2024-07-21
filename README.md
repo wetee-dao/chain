@@ -1,4 +1,4 @@
-<img width="800" src="./docs/images/w3f.png" />
+<img width="800" src="./docs/images/w3f.svg" />
 
 # WeTEE
 
