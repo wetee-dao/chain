@@ -14971,6 +14971,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "wetee-dsecret"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 14.0.0",
+ "wetee-org",
+]
+
+[[package]]
 name = "wetee-gov"
 version = "1.0.0"
 dependencies = [

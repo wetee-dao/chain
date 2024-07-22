@@ -32,7 +32,8 @@ members = [
   "packages/pallets/wetee-app",
   "packages/pallets/wetee-task",
   "packages/pallets/wetee-task",
-  "packages/pallets/wetee-gpu", #
+  "packages/pallets/wetee-gpu",
+  "packages/pallets/wetee-dsecret", #
   # 工具
   # "tools/hash",
   # "tools/subkey",

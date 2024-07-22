@@ -1,14 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use parity_scale_codec::{Decode, Encode};
-use frame_support::traits::UnfilteredDispatchable;
-use scale_info::prelude::boxed::Box;
+use frame_support::traits::{ConstU32};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
-use sp_std::result;
+use sp_runtime::{BoundedVec};
 
 use wetee_org::{self};
-use wetee_primitives::types::DaoAssetId;
 
 #[cfg(test)]
 mod mock;
@@ -27,7 +25,10 @@ pub use pallet::*;
 /// DKG node
 /// DKG 节点
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct Node {
+pub struct Node<AccountId> {
+    /// Node root account
+    /// 节点管理账户
+    pub root: AccountId,
     /// Node dkg public key
     /// 节点公钥
     pub pubkey: BoundedVec<u8, ConstU32<32>>,
@@ -37,7 +38,6 @@ pub struct Node {
 pub mod pallet {
 
     use super::*;
-    use crate::Event::{CloseSudo, SetSudo, SudoDone};
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     use frame_system::pallet_prelude::*;
 
@@ -57,6 +57,16 @@ pub mod pallet {
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
+    /// 代码版本
+    #[pallet::storage]
+    #[pallet::getter(fn code_mrenclave)]
+    pub type CodeMrenclave<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    
+    /// 代码打包签名人
+    #[pallet::storage]
+    #[pallet::getter(fn code_mrsigner)]
+    pub type CodeMrsigner<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+
     /// The id of the next node to be created.
     /// 获取下一个 node id
     #[pallet::storage]
@@ -70,8 +80,8 @@ pub mod pallet {
         _,
         Identity,
         u64,
-        Node,
-        ValueQuery,
+        Node<T::AccountId>,
+        OptionQuery,
     >;
 
     #[pallet::event]
@@ -80,7 +90,6 @@ pub mod pallet {
         /// root executes external transaction successfully.
         SudoDone {
             sudo: T::AccountId,
-            sudo_result: DispatchResult,
         },
     }
 
@@ -93,16 +102,42 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Execute external transactions as root
-        /// 以 root 账户执行函数
+        /// 注册 dkg 节点
+        /// register dkg node
         #[pallet::call_index(001)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
-        pub fn create_node(
+        pub fn register_node(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
-            call: Box<<T as wetee_org::Config>::RuntimeCall>,
+            pubkey: BoundedVec<u8, ConstU32<32>>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let nid = <NextNodeId<T>>::get();
+
+            // 添加节点
+            <Nodes<T>>::insert(nid, Node{
+                root: who,
+                pubkey: pubkey,
+            });
+
+            // 增加 node id
+            <NextNodeId<T>>::mutate(|id| *id += 1);
+            Ok(().into())
+        }
+
+        /// 上传共识节点代码
+        /// update consensus node code
+        #[pallet::call_index(002)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
+        pub fn upload_code(
+            origin: OriginFor<T>,
+            mrenclave: BoundedVec<u8, ConstU32<64>>,
+            mrsigner: BoundedVec<u8, ConstU32<64>>
         ) -> DispatchResultWithPostInfo {
 
+            // 更新代码hash
+            <CodeMrenclave<T>>::set(mrenclave);
+            // 更新代码签名人
+            <CodeMrsigner<T>>::set(mrsigner);
             Ok(().into())
         }
     }
