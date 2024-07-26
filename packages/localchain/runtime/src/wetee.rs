@@ -143,6 +143,16 @@ impl wetee_sudo::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl wetee_dsecret::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+}
+
+impl wetee_tee_bridge::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+}
+
 impl wetee_guild::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();

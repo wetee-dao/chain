@@ -1,59 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 
-use ink::env::Environment;
+mod ext;
+use crate::ext::*;
 
+#[ink::contract(env = crate::ext::TbExtEnvironment)]
+mod test_contract {
+    use super::BtExtErr;
 
-#[ink::chain_extension(extension = 666)]
-pub trait InkExt {
-    type ErrorCode = InkExtErr;
-
-
-    #[ink(function = 1101)]
-    fn test_func(subject: [u8; 32]) -> [u8; 32];
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[ink::scale_derive(Encode, Decode, TypeInfo)]
-pub enum InkExtErr {
-    FailGetInkomSource,
-}
-
-impl ink::env::chain_extension::FromStatusCode for InkExtErr {
-    fn from_status_code(status_code: u32) -> Result<(), Self> {
-        match status_code {
-            0 => Ok(()),
-            1 => Err(Self::FailGetInkomSource),
-            _ => panic!("encountered unknown status code"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[ink::scale_derive(TypeInfo)]
-pub enum LinkExtEnvironment {}
-
-impl Environment for LinkExtEnvironment {
-    const MAX_EVENT_TOPICS: usize =
-        <ink::env::DefaultEnvironment as Environment>::MAX_EVENT_TOPICS;
-
-    type AccountId = <ink::env::DefaultEnvironment as Environment>::AccountId;
-    type Balance = <ink::env::DefaultEnvironment as Environment>::Balance;
-    type Hash = <ink::env::DefaultEnvironment as Environment>::Hash;
-    type BlockNumber = <ink::env::DefaultEnvironment as Environment>::BlockNumber;
-    type Timestamp = <ink::env::DefaultEnvironment as Environment>::Timestamp;
-
-    type ChainExtension = InkExt;
-}
-
-#[ink::contract(env = crate::LinkExtEnvironment)]
-mod ink_extension {
-    use super::InkExtErr;
-
-    /// Defines the storage of our contract.
-    ///
-    /// Here we store the inkom seed fetched from the chain.
     #[ink(storage)]
-    pub struct InkExtension {
+    pub struct TStore {
         /// Stores a single `bool` value on the storage.
         value: [u8; 32],
     }
@@ -64,7 +19,7 @@ mod ink_extension {
         new: [u8; 32],
     }
 
-    impl InkExtension {
+    impl TStore {
         /// Constructor that initializes the `bool` value to the given `init_value`.
         #[ink(constructor)]
         pub fn new(init_value: [u8; 32]) -> Self {
@@ -83,7 +38,7 @@ mod ink_extension {
         /// inkom source. Then, update the current `value` stored in this contract with
         /// the new inkom value.
         #[ink(message)]
-        pub fn update(&mut self, subject: [u8; 32]) -> Result<(), InkExtErr> {
+        pub fn update(&mut self, subject: [u8; 32]) -> Result<(), BtExtErr> {
             // Get the on-chain inkom seed
             let new_inkom = self.env().extension().test_func(subject)?;
             self.value = new_inkom;
@@ -109,15 +64,15 @@ mod ink_extension {
         /// We test if the default constructor does its job.
         #[ink::test]
         fn default_works() {
-            let ink_extension = InkExtension::new_default();
+            let ink_extension = TStore::new_default();
             assert_eq!(ink_extension.get(), [0; 32]);
         }
 
         #[ink::test]
         fn chain_extension_works() {
             // given
-            struct MockedInkExtension;
-            impl ink::env::test::ChainExtension for MockedInkExtension {
+            struct MockedBtExtension;
+            impl ink::env::test::ChainExtension for MockedBtExtension {
                 /// The static function id of the chain extension.
                 fn ext_id(&self) -> u16 {
                     666
@@ -128,7 +83,7 @@ mod ink_extension {
                 /// Returns an error code and may fill the `output` buffer with a
                 /// SCALE encoded result. The error code is taken from the
                 /// `ink::env::chain_extension::FromStatusCode` implementation for
-                /// `InkExtErr`.
+                /// `BtExtErr`.
                 fn call(
                     &mut self,
                     _func_id: u16,
@@ -140,8 +95,8 @@ mod ink_extension {
                     0
                 }
             }
-            ink::env::test::register_chain_extension(MockedInkExtension);
-            let mut ink_extension = InkExtension::new_default();
+            ink::env::test::register_chain_extension(MockedBtExtension);
+            let mut ink_extension = BtExtension::new_default();
             assert_eq!(ink_extension.get(), [0; 32]);
 
             // when

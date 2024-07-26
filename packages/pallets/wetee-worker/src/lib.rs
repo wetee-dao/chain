@@ -80,6 +80,16 @@ pub mod pallet {
     #[pallet::getter(fn next_cluster_id)]
     pub type NextClusterId<T: Config> = StorageValue<_, ClusterId, ValueQuery, DefaultForm1>;
 
+    /// 代码版本
+    #[pallet::storage]
+    #[pallet::getter(fn code_mrenclave)]
+    pub type CodeMrenclave<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    
+    /// 代码打包签名人
+    #[pallet::storage]
+    #[pallet::getter(fn code_mrsigner)]
+    pub type CodeMrsigner<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+
     /// 集群信息
     #[pallet::storage]
     #[pallet::getter(fn k8s_clusters)]

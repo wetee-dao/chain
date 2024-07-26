@@ -31,7 +31,7 @@ pub struct Node<AccountId> {
     pub root: AccountId,
     /// Node dkg public key
     /// 节点公钥
-    pub pubkey: BoundedVec<u8, ConstU32<32>>,
+    pub pubkey: AccountId,
 }
 
 #[frame_support::pallet]
@@ -108,7 +108,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
         pub fn register_node(
             origin: OriginFor<T>,
-            pubkey: BoundedVec<u8, ConstU32<32>>,
+            pubkey: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let nid = <NextNodeId<T>>::get();
@@ -129,7 +129,7 @@ pub mod pallet {
         #[pallet::call_index(002)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
         pub fn upload_code(
-            origin: OriginFor<T>,
+            _origin: OriginFor<T>,
             mrenclave: BoundedVec<u8, ConstU32<64>>,
             mrsigner: BoundedVec<u8, ConstU32<64>>
         ) -> DispatchResultWithPostInfo {

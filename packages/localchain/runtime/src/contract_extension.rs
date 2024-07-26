@@ -1,4 +1,4 @@
-use crate::Runtime;
+use crate::{WeTEEBridge,Runtime};
 use codec::Encode;
 use frame_support::traits::Randomness;
 use log::{error, trace};
@@ -19,9 +19,12 @@ impl ChainExtension<Runtime> for TeeExtension {
     {
         let func_id = env.func_id();
         match func_id {
-            1101 => {
+            1001 => {
                 let mut env = env.buf_in_buf_out();
                 let arg: [u8; 32] = env.read_as()?;
+
+                WeTEEBridge::call_app().unwrap();
+
                 let random_seed = crate::RandomnessCollectiveFlip::random(&arg).0;
                 let random_slice = random_seed.encode();
                 trace!(

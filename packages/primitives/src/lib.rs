@@ -1,5 +1,4 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![recursion_limit = "128"]
 
 use frame_support::traits::{DefensiveTruncateFrom, Get};
 use scale_info::prelude::vec::Vec;

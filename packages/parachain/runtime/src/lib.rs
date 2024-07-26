@@ -304,6 +304,7 @@ construct_runtime!(
         WeTEEGpu: wetee_gpu = 120,
         WeTEEWorker: wetee_worker = 121,
         Contracts: pallet_contracts = 122,
+        WeTEEDSecret: wetee_dsecret = 123,
         // WETEE end
     }
 );

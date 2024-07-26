@@ -58,9 +58,9 @@ type EventRecord = frame_system::EventRecord<
 // WeTEE end Contracts
 
 impl_runtime_apis! {
-	    // WeTEE
-		impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord>
-        for Runtime
+	// WeTEE
+	impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord>
+    for Runtime
     {
         fn call(
             origin: AccountId,

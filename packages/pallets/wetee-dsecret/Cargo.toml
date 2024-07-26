@@ -1,9 +1,11 @@
 
 [package]
-authors = ["WeTEE DAO"]
-edition = "2021"
-license = "Apache-2.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
 name = "wetee-dsecret"
+publish = false
+repository.workspace = true
 version = "1.0.0"
 
 [package.metadata.docs.rs]

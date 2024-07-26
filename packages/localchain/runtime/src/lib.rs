@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![recursion_limit = "256"]
 
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -121,7 +122,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 102,
+    spec_version: 103,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -340,6 +341,10 @@ mod runtime {
     pub type WeTEEGpu = wetee_gpu;
     #[runtime::pallet_index(21)]
     pub type WeTEEWorker = wetee_worker;
+    #[runtime::pallet_index(23)]
+    pub type WeTEEDsecret = wetee_dsecret;
+    #[runtime::pallet_index(24)]
+    pub type WeTEEBridge = wetee_tee_bridge;
     // WETEE end
 }
 
@@ -381,6 +386,18 @@ pub type Executive = frame_executive::Executive<
     AllPalletsWithSystem,
     Migrations,
 >;
+
+// WeTEE Contracts
+const CONTRACTS_DEBUG_OUTPUT: pallet_contracts::DebugInfo =
+    pallet_contracts::DebugInfo::UnsafeDebug;
+const CONTRACTS_EVENTS: pallet_contracts::CollectEvents =
+    pallet_contracts::CollectEvents::UnsafeCollect;
+
+type EventRecord = frame_system::EventRecord<
+    <Runtime as frame_system::Config>::RuntimeEvent,
+    <Runtime as frame_system::Config>::Hash,
+>;
+// WeTEE end Contracts
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
@@ -638,4 +655,73 @@ impl_runtime_apis! {
             vec![]
         }
     }
+
+    // WeTEE
+	impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord>
+    for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            input_data: Vec<u8>,
+        ) -> pallet_contracts::ContractExecResult<Balance, EventRecord> {
+            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
+            Contracts::bare_call(
+                origin,
+                dest,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                input_data,
+                CONTRACTS_DEBUG_OUTPUT,
+                CONTRACTS_EVENTS,
+                pallet_contracts::Determinism::Enforced,
+            )
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            code: pallet_contracts::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_contracts::ContractInstantiateResult<AccountId, Balance, EventRecord>
+        {
+            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
+            Contracts::bare_instantiate(
+                origin,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                code,
+                data,
+                salt,
+                CONTRACTS_DEBUG_OUTPUT,
+                CONTRACTS_EVENTS,
+            )
+        }
+
+        fn upload_code(
+            origin: AccountId,
+            code: Vec<u8>,
+            storage_deposit_limit: Option<Balance>,
+            determinism: pallet_contracts::Determinism,
+        ) -> pallet_contracts::CodeUploadResult<Hash, Balance>
+        {
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
+        }
+
+        fn get_storage(
+            address: AccountId,
+            key: Vec<u8>,
+        ) -> pallet_contracts::GetStorageResult {
+            Contracts::get_storage(address, key)
+        }
+    }
+    // WeTEE end
 }
