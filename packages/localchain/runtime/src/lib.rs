@@ -65,6 +65,8 @@ pub use wetee_sudo::Call as WeTEESudoCall;
 pub use wetee_task::Call as WeTEETaskCall;
 pub use wetee_treasury::Call as WeTEETreasuryCall;
 pub use wetee_worker::Call as WeTEEWorkerCall;
+pub use wetee_dsecret::Call as WeTEEDSecretCall;
+pub use wetee_tee_bridge::Call as WeTEETeeBridgeCall;
 // End WETEE pallet.
 
 /// An index to a block.

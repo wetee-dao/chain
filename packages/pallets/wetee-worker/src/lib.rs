@@ -9,7 +9,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::{traits::WorkExt,types::{ClusterId, ComCr, MintId,Cr, TeeAppId, WorkId, WorkType,ClusterLevel,TEEVersion}};
+use wetee_primitives::{traits::WorkExt,types::{ClusterId, ComCr, MintId,Cr, TeeAppId, WorkId, WorkType,ClusterLevel,TEEVersion,P2PAddr}};
 
 #[cfg(test)]
 mod mock;
@@ -89,6 +89,11 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn code_mrsigner)]
     pub type CodeMrsigner<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+
+    /// 侧链boot peers
+    #[pallet::storage]
+    #[pallet::getter(fn boot_peers)]
+    pub type BootPeers<T: Config> = StorageValue<_, BoundedVec<P2PAddr<T::AccountId>, ConstU32<16>>, ValueQuery>;
 
     /// 集群信息
     #[pallet::storage]
@@ -303,6 +308,9 @@ pub mod pallet {
         /// Work type not exists
         /// 工作类型不存在
         WorkTypeNotExists,
+        /// Boot peers too long
+        /// 启动节点过多
+        BootPeersTooLong
     }
 
     #[derive(frame_support::DefaultNoBound)]
@@ -910,6 +918,22 @@ pub mod pallet {
 
             Ok(().into())
         }
+    
+        #[pallet::call_index(011)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn set_boot_peers(
+            origin: OriginFor<T>,
+            boots: Vec<P2PAddr<T::AccountId>>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            ensure!(boots.len() <= 16, Error::<T>::BootPeersTooLong);
+            
+            
+            let bts = BoundedVec::try_from(boots).unwrap();
+            BootPeers::<T>::put(bts);
+
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -1096,7 +1120,7 @@ pub mod pallet {
                 .unwrap();
 
             log::warn!(
-                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++get_random_cluster {:?} ===> {:?}",
+                "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ get_random_cluster {:?} ===> {:?}",
                 randoms,randoms[index]
             );
             return Ok(randoms[index]);
@@ -1108,6 +1132,7 @@ pub mod pallet {
             let (random_seed, _) = <pallet_insecure_randomness_collective_flip::Pallet<T>>::random(
                 &(T::PalletId::get(), seed).encode(),
             );
+            
             let random_number = <u64>::decode(&mut random_seed.as_ref())
                 .expect("secure hashes should always be bigger than u64; qed");
 
@@ -1154,6 +1179,7 @@ pub mod pallet {
             // 如果app状态为已停止，则删除工作合约
             WorkContracts::<T>::remove(work_id.clone());
             ClusterContracts::<T>::remove(cluster_id,work_id.clone());
+
             // 更新抵押数据
             Crs::<T>::try_mutate_exists(
                 cluster_id,

@@ -242,3 +242,22 @@ pub struct Container {
     /// cpu memory disk
     pub cr: Cr,
 }
+
+/// Ip 信息
+/// Ip
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct Ip {
+    pub ipv4: Option<u32>,
+    pub ipv6: Option<u128>,
+    pub domain: Option<Vec<u8>>,
+}
+
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct P2PAddr<AccountId> {
+    /// ip of the p2p
+    pub ip: Ip,
+    /// port of the p2p
+    pub port: u16,
+    /// p2p id
+    pub id: AccountId,
+}

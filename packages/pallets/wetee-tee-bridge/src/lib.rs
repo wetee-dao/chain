@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::traits::ConstU32;
 use parity_scale_codec::{Decode, Encode};
-use frame_support::traits::{ConstU32};
 use scale_info::TypeInfo;
+use sp_runtime::BoundedVec;
 use sp_runtime::RuntimeDebug;
-use sp_runtime::{BoundedVec};
 use sp_std::result;
 
 use wetee_org::{self};
@@ -46,13 +46,15 @@ pub mod pallet {
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
+    #[pallet::storage]
+    #[pallet::getter(fn next_id)]
+    pub type NextId<T: Config> = StorageValue<_, u64, ValueQuery>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// root executes external transaction successfully.
-        SudoDone {
-            sudo: T::AccountId,
-        },
+        SudoDone { sudo: T::AccountId },
     }
 
     // Errors inform users that something went wrong.
@@ -68,10 +70,7 @@ pub mod pallet {
         /// register dkg node
         #[pallet::call_index(001)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
-        pub fn test(
-            origin: OriginFor<T>,
-            pubkey: T::AccountId,
-        ) -> DispatchResultWithPostInfo {
+        pub fn test(origin: OriginFor<T>, pubkey: T::AccountId) -> DispatchResultWithPostInfo {
             let _who = ensure_signed(origin)?;
 
             Ok(().into())
@@ -79,11 +78,10 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        pub fn call_app(
-            // origin: T::AccountId,
+        pub fn call_app(// origin: T::AccountId,
             // params: Vec<u8>,
         ) -> result::Result<bool, DispatchError> {
-
+            <NextId<T>>::mutate(|id| *id += 1);
             Ok(true)
         }
     }

@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::traits::ConstU32;
 use parity_scale_codec::{Decode, Encode};
-use frame_support::traits::{ConstU32};
 use scale_info::TypeInfo;
+use sp_runtime::BoundedVec;
 use sp_runtime::RuntimeDebug;
-use sp_runtime::{BoundedVec};
 
 use wetee_org::{self};
 
@@ -61,7 +61,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn code_mrenclave)]
     pub type CodeMrenclave<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
-    
+
     /// 代码打包签名人
     #[pallet::storage]
     #[pallet::getter(fn code_mrsigner)]
@@ -76,21 +76,13 @@ pub mod pallet {
     /// dkg 节点列表
     #[pallet::storage]
     #[pallet::getter(fn nodes)]
-    pub type Nodes<T: Config> = StorageMap<
-        _,
-        Identity,
-        u64,
-        Node<T::AccountId>,
-        OptionQuery,
-    >;
+    pub type Nodes<T: Config> = StorageMap<_, Identity, u64, Node<T::AccountId>, OptionQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// root executes external transaction successfully.
-        SudoDone {
-            sudo: T::AccountId,
-        },
+        SudoDone { sudo: T::AccountId },
     }
 
     // Errors inform users that something went wrong.
@@ -114,10 +106,7 @@ pub mod pallet {
             let nid = <NextNodeId<T>>::get();
 
             // 添加节点
-            <Nodes<T>>::insert(nid, Node{
-                root: who,
-                pubkey: pubkey,
-            });
+            <Nodes<T>>::insert(nid, Node { root: who, pubkey });
 
             // 增加 node id
             <NextNodeId<T>>::mutate(|id| *id += 1);
@@ -131,8 +120,9 @@ pub mod pallet {
         pub fn upload_code(
             _origin: OriginFor<T>,
             mrenclave: BoundedVec<u8, ConstU32<64>>,
-            mrsigner: BoundedVec<u8, ConstU32<64>>
+            mrsigner: BoundedVec<u8, ConstU32<64>>,
         ) -> DispatchResultWithPostInfo {
+            let _who = ensure_signed(origin)?;
 
             // 更新代码hash
             <CodeMrenclave<T>>::set(mrenclave);
@@ -141,5 +131,4 @@ pub mod pallet {
             Ok(().into())
         }
     }
-
 }
