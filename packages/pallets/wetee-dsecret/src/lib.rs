@@ -118,7 +118,7 @@ pub mod pallet {
         #[pallet::call_index(002)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
         pub fn upload_code(
-            _origin: OriginFor<T>,
+            origin: OriginFor<T>,
             mrenclave: BoundedVec<u8, ConstU32<64>>,
             mrsigner: BoundedVec<u8, ConstU32<64>>,
         ) -> DispatchResultWithPostInfo {

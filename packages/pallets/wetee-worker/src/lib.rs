@@ -102,7 +102,7 @@ pub mod pallet {
         _,
         Identity,
         ClusterId,
-        K8sCluster<BlockNumberFor<T>>,
+        K8sCluster<T::AccountId, BlockNumberFor<T>>,
         OptionQuery,
     >;
 
@@ -374,6 +374,7 @@ pub mod pallet {
             // 集群
             let cluster = K8sCluster {
                 id: cid.clone(),
+                account: creator.clone(),
                 start_block: <frame_system::Pallet<T>>::block_number(),
                 stop_block: None,
                 terminal_block: None,
@@ -440,7 +441,6 @@ pub mod pallet {
                 Error::<T>::ClusterIsExists
             );
 
-
             let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
             // check status
@@ -477,7 +477,6 @@ pub mod pallet {
                 id == cid,
                 Error::<T>::ClusterIsExists
             );
-
 
             let score = Scores::<T>::get(id).ok_or(Error::<T>::LevelNotExists)?;
             let price = Self::get_level_price(score.0, cpu, mem, disk,gpu)?;
