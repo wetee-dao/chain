@@ -1,21 +1,26 @@
 use ink::env::Environment;
 
-#[ink::chain_extension(extension = 666)]
-pub trait BtExt {
-    type ErrorCode = BtExtErr;
-
+#[ink::chain_extension(extension = 2)]
+pub trait TbExt {
+    type ErrorCode = TbExtErr;
 
     #[ink(function = 1001)]
-    fn test_func(subject: [u8; 32]) -> [u8; 32];
+    fn call_tee(tee: WorkId, method: u16, params: [u8; 500]) -> Result<u128, TbExtErr>;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[ink::scale_derive(Encode, Decode, TypeInfo)]
-pub enum BtExtErr {
+pub enum TbExtErr {
     FailGetInkomSource,
 }
 
-impl ink::env::chain_extension::FromStatusCode for BtExtErr {
+impl From<ink::scale::Error> for TbExtErr {
+    fn from(_: ink::scale::Error) -> Self {
+        panic!("encountered unexpected invalid SCALE encoding")
+    }
+}
+
+impl ink::env::chain_extension::FromStatusCode for TbExtErr {
     fn from_status_code(status_code: u32) -> Result<(), Self> {
         match status_code {
             0 => Ok(()),
@@ -30,8 +35,7 @@ impl ink::env::chain_extension::FromStatusCode for BtExtErr {
 pub enum TbExtEnvironment {}
 
 impl Environment for TbExtEnvironment {
-    const MAX_EVENT_TOPICS: usize =
-        <ink::env::DefaultEnvironment as Environment>::MAX_EVENT_TOPICS;
+    const MAX_EVENT_TOPICS: usize = <ink::env::DefaultEnvironment as Environment>::MAX_EVENT_TOPICS;
 
     type AccountId = <ink::env::DefaultEnvironment as Environment>::AccountId;
     type Balance = <ink::env::DefaultEnvironment as Environment>::Balance;
@@ -39,5 +43,25 @@ impl Environment for TbExtEnvironment {
     type BlockNumber = <ink::env::DefaultEnvironment as Environment>::BlockNumber;
     type Timestamp = <ink::env::DefaultEnvironment as Environment>::Timestamp;
 
-    type ChainExtension = BtExt;
+    type ChainExtension = TbExt;
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[ink::scale_derive(Encode, Decode, TypeInfo)]
+pub enum WorkType {
+    /// APP
+    App = 0,
+    /// TASK
+    Task,
+    /// GPU
+    Gpu,
+}
+
+/// WorkId
+/// 工作ID
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[ink::scale_derive(Encode, Decode, TypeInfo)]
+pub struct WorkId {
+    pub wtype: WorkType,
+    pub id: u64,
 }

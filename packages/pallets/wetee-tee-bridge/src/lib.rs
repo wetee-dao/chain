@@ -41,7 +41,9 @@ pub struct TEECall<AccountId> {
     // tee call from chain index
     pub chain_id: Option<u64>,
     // tee call from contract
-    pub org_id: AccountId,
+    pub org_contract: AccountId,
+    // tee call from contract
+    pub org_caller: AccountId,
     // tee call type
     pub call_type: TEECallType,
     // tee call to
@@ -116,10 +118,15 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             let call = TEECalls::<T>::get(call_id).unwrap();
 
+            // check call type
+            if call.call_type != TEECallType::Ink {
+                return Err(Error::<T>::Call404.into());
+            }
+
             let gas_limit = Weight::from_all(40_000);
             let result = pallet_contracts::Pallet::<T>::bare_call(
                 who,
-                call.org_id,
+                call.org_contract,
                 value,
                 gas_limit,
                 None,
@@ -135,20 +142,24 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         pub fn call_from_ink(
-            org: T::AccountId,
+            // tee caller contract
+            org_contract: T::AccountId,
+            // tee caller
+            org_caller: T::AccountId,
             // tee call to
             work_id: WorkId,
             // tee call method index
             method: u16,
             // tee call params
             params: Vec<u8>,
-        ) -> result::Result<bool, DispatchError> {
+        ) -> result::Result<u128, DispatchError> {
             let id = <NextId<T>>::get();
 
             let tee_call = TEECall {
                 id,
                 chain_id: None,
-                org_id: org.clone(),
+                org_contract: org_contract.clone(),
+                org_caller: org_caller.clone(),
                 call_type: TEECallType::Ink,
                 work_id,
                 method,
@@ -157,7 +168,7 @@ pub mod pallet {
             <TEECalls<T>>::insert(id, tee_call);
 
             <NextId<T>>::set(id + 1);
-            Ok(true)
+            Ok(id)
         }
     }
 }

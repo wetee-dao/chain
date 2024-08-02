@@ -1,12 +1,14 @@
 use crate::{Runtime, WeTEEBridge};
-use codec::Encode;
-use frame_support::traits::Randomness;
+use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::traits::{ConstU32, Randomness};
 use log::{error, trace};
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, SysConfig,
 };
+use scale_info::prelude::vec::Vec;
 use sp_core::crypto::UncheckedFrom;
-use sp_runtime::{AccountId32, DispatchError};
+use sp_runtime::{AccountId32, BoundedVec, DispatchError};
+
 use wetee_primitives::types::{WorkId, WorkType};
 
 /// Contract extension for `Ink`
@@ -19,32 +21,33 @@ impl ChainExtension<Runtime> for TeeExtension {
         <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
         E: Ext<T = Runtime>,
     {
+        // get func id
         let func_id = env.func_id();
+        // get contract address
         let origin = env.ext().address().clone();
+        // get contract sender
+        let binding = env.ext().caller().clone();
+        let sender = binding.account_id()?;
         match func_id {
+            // call tee from ink
             1001 => {
                 let mut env = env.buf_in_buf_out();
-                let arg: [u8; 32] = env.read_as()?;
 
-                WeTEEBridge::call_from_ink(
+                // read input
+                let input: TEECallInput = env.read_as()?;
+
+                // call tee bridge
+                let id = WeTEEBridge::call_from_ink(
                     origin,
-                    WorkId {
-                        wtype: WorkType::APP,
-                        id: 1,
-                    },
-                    1,
-                    arg.to_vec(),
+                    sender.clone(),
+                    input.tee,
+                    input.method,
+                    input.params.into(),
                 )
                 .unwrap();
 
-                let random_seed = crate::RandomnessCollectiveFlip::random(&arg).0;
-                let random_slice = random_seed.encode();
-                trace!(
-                    target: "runtime",
-                    "[ChainExtension]|call|func_id:{:}",
-                    func_id
-                );
-                env.write(&random_slice, false, None)
+                // return call id
+                env.write(&id.encode(), false, None)
                     .map_err(|_| DispatchError::Other("ChainExtension failed to call random"))?;
             }
 
@@ -59,4 +62,11 @@ impl ChainExtension<Runtime> for TeeExtension {
     fn enabled() -> bool {
         true
     }
+}
+
+#[derive(Debug, PartialEq, Encode, Decode, MaxEncodedLen)]
+struct TEECallInput {
+    pub tee: WorkId,
+    pub method: u16,
+    pub params: [u8; 256],
 }

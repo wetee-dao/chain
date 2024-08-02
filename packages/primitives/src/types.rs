@@ -1,4 +1,4 @@
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
 
@@ -50,11 +50,11 @@ pub type ClusterLevel = u8;
 /// App状态 0: created, 1: deploying, 2: stop, 3: deoloyed
 pub type WorkStatus = u8;
 
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum WorkType {
     #[default]
     /// APP
-    APP,
+    APP = 0,
     /// TASK
     TASK,
     /// GPU
@@ -63,7 +63,7 @@ pub enum WorkType {
 
 /// WorkId
 /// 工作ID
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct WorkId {
     pub wtype: WorkType,
     pub id: TeeAppId,
