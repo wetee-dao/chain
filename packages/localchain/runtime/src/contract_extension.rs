@@ -42,7 +42,8 @@ impl ChainExtension<Runtime> for TeeExtension {
                     sender.clone(),
                     input.tee,
                     input.method,
-                    input.params.into(),
+                    input.callback_method,
+                    input.args.into(),
                 )
                 .unwrap();
 
@@ -68,5 +69,6 @@ impl ChainExtension<Runtime> for TeeExtension {
 struct TEECallInput {
     pub tee: WorkId,
     pub method: u16,
-    pub params: [u8; 256],
+    pub callback_method: [u8; 4],
+    pub args: [u8; 256],
 }

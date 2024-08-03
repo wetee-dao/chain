@@ -40,11 +40,19 @@ mod test_contract {
                         id: 0,
                     },
                     1,
+                    [0, 0, 0, 42],
                     [0; 500],
                 )
                 .unwrap();
             self.value = res;
             self.env().emit_event(InkUpdated { new: res });
+            Ok(())
+        }
+
+        #[ink(message, selector = 42)]
+        pub fn callback(&mut self) -> Result<(), TbExtErr> {
+            self.value = 10000;
+            self.env().emit_event(InkUpdated { new: 10000 });
             Ok(())
         }
 

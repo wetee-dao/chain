@@ -1,10 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::{fungible::Inspect, ConstU32};
+use frame_support::traits::fungible::Inspect;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
-use sp_runtime::BoundedVec;
 use sp_runtime::RuntimeDebug;
 use sp_std::result;
 
@@ -50,8 +49,10 @@ pub struct TEECall<AccountId> {
     pub work_id: WorkId,
     // tee call method index
     pub method: u16,
-    // tee call params
-    pub params: Vec<u8>,
+    // tee call args
+    pub args: Vec<u8>,
+    // callback method index
+    pub callback_method: [u8; 4],
 }
 
 #[frame_support::pallet]
@@ -112,16 +113,23 @@ pub mod pallet {
         pub fn ink_callback(
             origin: OriginFor<T>,
             call_id: u128,
-            data: Vec<u8>,
+            args: Vec<u8>,
             value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+
+            // get call
             let call = TEECalls::<T>::get(call_id).unwrap();
 
             // check call type
             if call.call_type != TEECallType::Ink {
                 return Err(Error::<T>::Call404.into());
             }
+
+            let call_data = {
+                let args: ([u8; 4], Vec<u8>) = (call.callback_method, args.to_vec());
+                args.encode()
+            };
 
             let gas_limit = Weight::from_all(40_000);
             let result = pallet_contracts::Pallet::<T>::bare_call(
@@ -130,7 +138,7 @@ pub mod pallet {
                 value,
                 gas_limit,
                 None,
-                data,
+                call_data,
                 pallet_contracts::DebugInfo::UnsafeDebug,
                 pallet_contracts::CollectEvents::UnsafeCollect,
                 pallet_contracts::Determinism::Enforced,
@@ -150,8 +158,10 @@ pub mod pallet {
             work_id: WorkId,
             // tee call method index
             method: u16,
-            // tee call params
-            params: Vec<u8>,
+            // tee call method index
+            callback_method: [u8; 4],
+            // tee call args
+            args: Vec<u8>,
         ) -> result::Result<u128, DispatchError> {
             let id = <NextId<T>>::get();
 
@@ -163,7 +173,8 @@ pub mod pallet {
                 call_type: TEECallType::Ink,
                 work_id,
                 method,
-                params,
+                callback_method,
+                args,
             };
             <TEECalls<T>>::insert(id, tee_call);
 

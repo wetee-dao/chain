@@ -56,6 +56,7 @@ mod contract_extension;
 
 pub use wetee_app::Call as WeTEEAppCall;
 pub use wetee_assets::Call as WeTEEAssetsCall;
+pub use wetee_dsecret::Call as WeTEEDSecretCall;
 pub use wetee_gov::Call as WeTEEGovCall;
 pub use wetee_gpu::Call as WeTEEGpuCall;
 pub use wetee_guild::Call as WeTEEGuildCall;
@@ -63,10 +64,9 @@ pub use wetee_org::Call as WeTEEOrgCall;
 pub use wetee_project::Call as WeTEEProjectCall;
 pub use wetee_sudo::Call as WeTEESudoCall;
 pub use wetee_task::Call as WeTEETaskCall;
+pub use wetee_tee_bridge::Call as WeTEETeeBridgeCall;
 pub use wetee_treasury::Call as WeTEETreasuryCall;
 pub use wetee_worker::Call as WeTEEWorkerCall;
-pub use wetee_dsecret::Call as WeTEEDSecretCall;
-pub use wetee_tee_bridge::Call as WeTEETeeBridgeCall;
 // End WETEE pallet.
 
 /// An index to a block.
@@ -124,7 +124,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 103,
+    spec_version: 105,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -659,7 +659,7 @@ impl_runtime_apis! {
     }
 
     // WeTEE
-	impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord>
+    impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord>
     for Runtime
     {
         fn call(

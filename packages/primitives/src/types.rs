@@ -261,3 +261,15 @@ pub struct P2PAddr<AccountId> {
     /// p2p id
     pub id: AccountId,
 }
+
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct ApiMeta {
+    pub port: u16,
+    pub apis: Vec<Api>,
+}
+
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct Api {
+    pub url: Vec<u8>,
+    pub method: u8,
+}

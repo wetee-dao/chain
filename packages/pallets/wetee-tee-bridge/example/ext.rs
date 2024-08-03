@@ -5,7 +5,12 @@ pub trait TbExt {
     type ErrorCode = TbExtErr;
 
     #[ink(function = 1001)]
-    fn call_tee(tee: WorkId, method: u16, params: [u8; 500]) -> Result<u128, TbExtErr>;
+    fn call_tee(
+        tee: WorkId,
+        method: u16,
+        callback_method: [u8; 4],
+        args: [u8; 500],
+    ) -> Result<u128, TbExtErr>;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

@@ -11,8 +11,8 @@ use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        ClusterLevel, Command, Container, Cr, Disk, EditType, Env, EnvInput, Service, TEEVersion,
-        TeeAppId, WorkId, WorkStatus, WorkType,
+        ApiMeta, ClusterLevel, Command, Container, Cr, Disk, EditType, Env, EnvInput, Service,
+        TEEVersion, TeeAppId, WorkId, WorkStatus, WorkType,
     },
 };
 
@@ -157,6 +157,12 @@ pub mod pallet {
         TeeAppId,
         TeeApp<T::AccountId, BlockNumberFor<T>>,
     >;
+
+    /// App
+    /// 应用
+    #[pallet::storage]
+    #[pallet::getter(fn api_metas)]
+    pub type ApiMetas<T: Config> = StorageMap<_, Identity, TeeAppId, ApiMeta>;
 
     /// Price of resource
     /// 价格
@@ -539,6 +545,27 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let _who = ensure_signed(origin)?;
             Prices::<T>::insert(level, price);
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(008)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn set_apimeta(
+            origin: OriginFor<T>,
+            // App id
+            // 应用id
+            app_id: TeeAppId,
+            // Env
+            // 环境变量
+            meta: ApiMeta,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
+            ensure!(who == account, Error::<T>::App403);
+
+            // set api meta
+            <ApiMetas<T>>::set(app_id, Some(meta));
 
             Ok(().into())
         }
