@@ -62,6 +62,7 @@ pub mod pallet {
     use super::*;
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     use frame_system::pallet_prelude::*;
+    use wetee_primitives::types::ClusterId;
 
     type BalanceOf<T> = <<T as pallet_contracts::Config>::Currency as Inspect<
         <T as frame_system::Config>::AccountId,
@@ -69,7 +70,11 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config:
-        frame_system::Config + wetee_org::Config + pallet_contracts::Config + wetee_assets::Config
+        frame_system::Config
+        + wetee_org::Config
+        + pallet_contracts::Config
+        + wetee_assets::Config
+        + wetee_worker::Config
     {
         /// pallet event
         /// 组件消息
@@ -96,8 +101,15 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn tee_calls)]
-    pub type TEECalls<T: Config> =
-        StorageDoubleMap<_, Identity, u128, Identity, u128, TEECall<T::AccountId>, OptionQuery>;
+    pub type TEECalls<T: Config> = StorageDoubleMap<
+        _,
+        Identity,
+        ClusterId,
+        Identity,
+        u128,
+        TEECall<T::AccountId>,
+        OptionQuery,
+    >;
 
     /// App
     /// 应用
@@ -132,6 +144,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
         pub fn ink_callback(
             origin: OriginFor<T>,
+            cluster_id: ClusterId,
             call_id: u128,
             args: Vec<u8>,
             value: BalanceOf<T>,
@@ -139,7 +152,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             // get call
-            let call = TEECalls::<T>::get(call_id).unwrap();
+            let call = TEECalls::<T>::get(cluster_id, call_id).unwrap();
 
             // check call type
             if call.call_type != TEECallType::Ink {
@@ -215,6 +228,9 @@ pub mod pallet {
         ) -> result::Result<u128, DispatchError> {
             let id = <NextId<T>>::get();
 
+            let cid = wetee_worker::Pallet::<T>::work_contracts(work_id.clone())
+                .ok_or(Error::<T>::Call404)?;
+
             let tee_call = TEECall {
                 id,
                 chain_id: None,
@@ -226,7 +242,7 @@ pub mod pallet {
                 callback_method,
                 args,
             };
-            <TEECalls<T>>::insert(id, tee_call);
+            <TEECalls<T>>::insert(cid, id, tee_call);
 
             <NextId<T>>::set(id + 1);
             Ok(id)
