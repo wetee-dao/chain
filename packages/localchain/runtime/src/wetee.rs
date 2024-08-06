@@ -151,6 +151,7 @@ impl wetee_dsecret::Config for Runtime {
 impl wetee_tee_bridge::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    type WorkExt = WorkExtIns;
 }
 
 impl wetee_guild::Config for Runtime {

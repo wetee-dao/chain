@@ -1,15 +1,13 @@
 use crate::{Runtime, WeTEEBridge};
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::traits::{ConstU32, Randomness};
-use log::{error, trace};
+use log::error;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, SysConfig,
 };
-use scale_info::prelude::vec::Vec;
 use sp_core::crypto::UncheckedFrom;
-use sp_runtime::{AccountId32, BoundedVec, DispatchError};
+use sp_runtime::DispatchError;
 
-use wetee_primitives::types::{WorkId, WorkType};
+use wetee_primitives::types::WorkId;
 
 /// Contract extension for `Ink`
 #[derive(Default)]

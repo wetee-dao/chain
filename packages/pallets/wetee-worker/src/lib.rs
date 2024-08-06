@@ -918,6 +918,8 @@ pub mod pallet {
             Ok(().into())
         }
     
+        /// Set boot peers
+        /// 设置引导节点
         #[pallet::call_index(011)]
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn set_boot_peers(
@@ -926,7 +928,6 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             ensure!(boots.len() <= 16, Error::<T>::BootPeersTooLong);
-            
             
             let bts = BoundedVec::try_from(boots).unwrap();
             BootPeers::<T>::put(bts);

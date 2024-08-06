@@ -7,8 +7,10 @@ use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::result;
 
-use orml_traits::MultiCurrency;
-use wetee_primitives::types::WorkId;
+use wetee_primitives::{
+    traits::WorkExt,
+    types::{ApiMeta, WorkId},
+};
 
 use wetee_org::{self};
 
@@ -72,8 +74,13 @@ pub mod pallet {
         /// pallet event
         /// 组件消息
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
+
+        /// work ext function
+        /// 工作扩展函数
+        type WorkExt: WorkExt<Self::AccountId, BalanceOf<Self>>;
     }
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -90,7 +97,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn tee_calls)]
     pub type TEECalls<T: Config> =
-        StorageMap<_, Identity, u128, TEECall<T::AccountId>, OptionQuery>;
+        StorageDoubleMap<_, Identity, u128, Identity, u128, TEECall<T::AccountId>, OptionQuery>;
+
+    /// App
+    /// 应用
+    #[pallet::storage]
+    #[pallet::getter(fn api_metas)]
+    pub type ApiMetas<T: Config> = StorageMap<_, Identity, WorkId, ApiMeta>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -104,10 +117,17 @@ pub mod pallet {
     pub enum Error<T> {
         /// Not a sudo account, nor a dao account.
         Call404,
+        /// Call error.
+        CallBackError,
+        // Not allowed.
+        NotAllowed403,
+        // Worker status error.
+        WorkStatusError,
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        // ink call tee callback function
         #[pallet::call_index(001)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
         pub fn ink_callback(
@@ -126,13 +146,16 @@ pub mod pallet {
                 return Err(Error::<T>::Call404.into());
             }
 
+            // encode args
             let call_data = {
                 let args: ([u8; 4], Vec<u8>) = (call.callback_method, args.to_vec());
                 args.encode()
             };
 
             let gas_limit = Weight::from_all(40_000);
-            let result = pallet_contracts::Pallet::<T>::bare_call(
+
+            // call contract
+            let call_result = pallet_contracts::Pallet::<T>::bare_call(
                 who,
                 call.org_contract,
                 value,
@@ -144,11 +167,38 @@ pub mod pallet {
                 pallet_contracts::Determinism::Enforced,
             );
 
+            match call_result.result {
+                Ok(_success) => Ok(().into()),
+                Err(_error) => Err(Error::<T>::CallBackError.into()),
+            }
+        }
+
+        #[pallet::call_index(008)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn set_tee_api(
+            origin: OriginFor<T>,
+            // App id
+            // 应用id
+            work_id: WorkId,
+            // Env
+            // 环境变量
+            meta: ApiMeta,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            let (owner_account, _, _, _, _) =
+                <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            ensure!(owner_account == who, Error::<T>::NotAllowed403);
+
+            // set api meta
+            <ApiMetas<T>>::set(work_id, Some(meta));
+
             Ok(().into())
         }
     }
 
     impl<T: Config> Pallet<T> {
+        // handle call from ink
         pub fn call_from_ink(
             // tee caller contract
             org_contract: T::AccountId,

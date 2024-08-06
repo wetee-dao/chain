@@ -17674,6 +17674,7 @@ dependencies = [
  "wetee-assets",
  "wetee-org",
  "wetee-primitives",
+ "wetee-worker",
 ]
 
 [[package]]

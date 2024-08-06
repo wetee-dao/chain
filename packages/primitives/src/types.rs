@@ -270,6 +270,8 @@ pub struct ApiMeta {
 
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct Api {
+    // url
     pub url: Vec<u8>,
+    // 0: get, 1: post, 2: put, 3: delete
     pub method: u8,
 }
