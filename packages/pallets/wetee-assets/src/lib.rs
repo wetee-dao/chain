@@ -21,11 +21,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
-use parity_scale_codec::{Codec, Decode, Encode, MaxEncodedLen};
 use frame_support::{
     dispatch::DispatchResult,
     ensure,
     pallet_prelude::*,
+    sp_runtime::SaturatedConversion,
     traits::{
         Currency as PalletCurrency, ExistenceRequirement, Get,
         LockableCurrency as PalletLockableCurrency, ReservableCurrency as PalletReservableCurrency,
@@ -39,6 +39,7 @@ use orml_traits::{
     BasicReservableCurrency, LockIdentifier, MultiCurrency, MultiCurrencyExtended,
     MultiLockableCurrency, MultiReservableCurrency,
 };
+use parity_scale_codec::{Codec, Decode, Encode, MaxEncodedLen};
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
 
@@ -487,6 +488,27 @@ pub mod pallet {
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
             <Self as MultiCurrency<T::AccountId>>::transfer(dao_id, &from, &to, value)?;
+            Ok(())
+        }
+
+        /// 转帐
+        pub fn try_burn(
+            dao_id: DaoAssetId,
+            from: T::AccountId,
+            value: BalanceOf<T>,
+        ) -> result::Result<(), DispatchError> {
+            <Self as MultiCurrency<T::AccountId>>::withdraw(dao_id, &from, value)?;
+            Ok(())
+        }
+
+        /// 转帐
+        pub fn int_burn(
+            dao_id: DaoAssetId,
+            from: T::AccountId,
+            value: u128,
+        ) -> result::Result<(), DispatchError> {
+            let amount: BalanceOf<T> = value.saturated_into::<BalanceOf<T>>();
+            <Self as MultiCurrency<T::AccountId>>::withdraw(dao_id, &from, amount)?;
             Ok(())
         }
     }

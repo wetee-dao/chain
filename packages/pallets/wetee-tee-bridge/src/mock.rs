@@ -58,11 +58,6 @@ impl wetee_org::Config for Test {
     type MaxMembers = ConstU32<1000000>;
 }
 
-impl sudo::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-}
-
 pub fn new_test_run() -> sp_io::TestExternalities {
     let t = frame_system::GenesisConfig::<Test>::default()
         .build_storage()

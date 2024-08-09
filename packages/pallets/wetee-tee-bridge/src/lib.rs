@@ -5,6 +5,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
+
 use sp_std::result;
 
 use wetee_primitives::{
@@ -120,8 +121,27 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// root executes external transaction successfully.
-        SudoDone { sudo: T::AccountId },
+        /// tee call started
+        TEECallStarted {
+            cluster_id: ClusterId,
+            call_id: u128,
+        },
+        /// tee call successed
+        TEECallSuccessed {
+            cluster_id: ClusterId,
+            call_id: u128,
+        },
+        /// tee call started
+        TEECallFailed {
+            cluster_id: ClusterId,
+            call_id: u128,
+            error: Vec<u8>,
+        },
+        /// tee call started
+        TEECallBackFailed {
+            cluster_id: ClusterId,
+            call_id: u128,
+        },
     }
 
     // Errors inform users that something went wrong.
@@ -148,15 +168,32 @@ pub mod pallet {
             call_id: u128,
             args: Vec<u8>,
             value: BalanceOf<T>,
+            error: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
             // get call
             let call = TEECalls::<T>::get(cluster_id, call_id).unwrap();
 
+            // get deploy key of worker
+            let deploy = wetee_worker::DeployKeys::<T>::get(call.work_id.clone());
+            if deploy.is_none() || deploy.unwrap() != who {
+                return Err(Error::<T>::NotAllowed403.into());
+            }
+
             // check call type
             if call.call_type != TEECallType::Ink {
                 return Err(Error::<T>::Call404.into());
+            }
+
+            if error.is_some() {
+                Self::deposit_event(Event::TEECallFailed {
+                    cluster_id,
+                    call_id,
+                    error: error.unwrap(),
+                });
+                TEECalls::<T>::remove(cluster_id, call_id);
+                return Ok(().into());
             }
 
             // encode args
@@ -165,7 +202,7 @@ pub mod pallet {
                 args.encode()
             };
 
-            let gas_limit = Weight::from_all(40_000);
+            let gas_limit = Weight::from_all(40000000000000000);
 
             // call contract
             let call_result = pallet_contracts::Pallet::<T>::bare_call(
@@ -180,10 +217,35 @@ pub mod pallet {
                 pallet_contracts::Determinism::Enforced,
             );
 
+            // get work account
+            let (owner_account, _, _, _, _) =
+                <T as pallet::Config>::WorkExt::work_info(call.work_id.clone())?;
+
+            // get fee
+            let gas = Self::weight_to_fee(call_result.gas_consumed);
+
+            // transfer fee to target account
+            // 将抵押转移到目标账户
+            wetee_assets::Pallet::<T>::int_burn(0, owner_account, gas.into())?;
+
+            TEECalls::<T>::remove(cluster_id, call_id);
+
             match call_result.result {
-                Ok(_success) => Ok(().into()),
-                Err(_error) => Err(Error::<T>::CallBackError.into()),
+                Ok(_success) => {
+                    Self::deposit_event(Event::TEECallSuccessed {
+                        cluster_id,
+                        call_id,
+                    });
+                }
+                Err(_error) => {
+                    Self::deposit_event(Event::TEECallBackFailed {
+                        cluster_id,
+                        call_id,
+                    });
+                }
             }
+
+            Ok(Pays::No.into())
         }
 
         #[pallet::call_index(008)]
@@ -244,8 +306,17 @@ pub mod pallet {
             };
             <TEECalls<T>>::insert(cid, id, tee_call);
 
+            Self::deposit_event(Event::<T>::TEECallStarted {
+                cluster_id: cid,
+                call_id: id,
+            });
+
             <NextId<T>>::set(id + 1);
             Ok(id)
+        }
+
+        fn weight_to_fee(weight: Weight) -> u64 {
+            weight.ref_time() * 1000 + weight.proof_size() * 10
         }
     }
 }

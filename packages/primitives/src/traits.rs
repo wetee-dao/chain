@@ -1,6 +1,6 @@
 use core::result;
 
-use crate::types::{ClusterLevel, Cr, WorkId, WorkStatus, TEEVersion};
+use crate::types::{ClusterLevel, Cr, TEEVersion, WorkId, WorkStatus};
 use sp_runtime::DispatchError;
 
 pub struct BadOrigin;
@@ -18,7 +18,6 @@ pub trait UHook<AccountId, DaoAssetId> {
 impl<AccountId: Clone, DaoAssetId: Clone> UHook<AccountId, DaoAssetId> for () {
     fn run_hook(_a: AccountId, _b: DaoAssetId) {}
 }
-
 
 pub trait GovIsJoin<RuntimeCall> {
     fn is_join(cll: RuntimeCall) -> bool;

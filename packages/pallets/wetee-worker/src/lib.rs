@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use parity_scale_codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::Randomness};
+use frame_support::{sp_runtime::SaturatedConversion,dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::Randomness};
 use frame_system::pallet_prelude::*;
 use scale_info::prelude::vec::Vec;
 use sp_runtime::traits::AccountIdConversion;
@@ -179,6 +179,12 @@ pub mod pallet {
         OptionQuery,
     >;
 
+    /// 程序使用部署密钥，每次部署都会生成新的部署密钥
+    /// smart deplopy key
+    #[pallet::storage]
+    #[pallet::getter(fn deplopy_keys)]
+    pub type DeployKeys<T: Config> = StorageMap<_, Identity, WorkId, T::AccountId, OptionQuery>;
+
     #[pallet::type_value]
     pub fn DefaultForm3() -> u32 {
         600
@@ -209,11 +215,6 @@ pub mod pallet {
     #[pallet::getter(fn report_of_work)]
     pub type ReportOfWork<T: Config> = StorageMap<_, Identity, WorkId, Vec<u8>, OptionQuery>;
 
-    /// work report
-    #[pallet::storage]
-    #[pallet::getter(fn report_of_work_time)]
-    pub type ReportOfWorkTime<T: Config> = StorageMap<_, Identity, WorkId, BlockNumberFor<T>, OptionQuery>;
-
     /// 投诉信息
     /// reports of work / cluster
     #[pallet::storage]
@@ -226,6 +227,8 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// A new cluster has been created. [creator]
         ClusterCreated { creator: T::AccountId },
+        /// A new cluster has been assigned. [creator]
+        WorkAssigned { user: T::AccountId, work_id: WorkId, cluster_id: ClusterId },
         /// A new app has been runed. [user]
         WorkRuning { user: T::AccountId, work_id: WorkId, cluster_id: ClusterId },
         /// Work contract has been updated. [user]
@@ -310,7 +313,10 @@ pub mod pallet {
         WorkTypeNotExists,
         /// Boot peers too long
         /// 启动节点过多
-        BootPeersTooLong
+        BootPeersTooLong,
+        /// Tee report 404
+        /// tee 报告缺失
+        TeeReport404
     }
 
     #[derive(frame_support::DefaultNoBound)]
@@ -585,6 +591,101 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// 启动或重启服务
+        /// 启动或重启服务
+        #[pallet::call_index(013)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn work_start(
+            origin: OriginFor<T>,
+            work_id: WorkId,
+            report: Option<Vec<u8>>,
+            deploy_key: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            let cluster_id =
+                K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
+            let contract_cluster_id =
+                WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
+
+            // check cluster is match for work
+            // 检查集群是否匹配任务
+            ensure!(contract_cluster_id == cluster_id, Error::<T>::NotAllowed403);
+
+            // 查询 work info
+            let (owner_account,_,work_status,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            
+
+            // check status
+            // 检查work的状态,如果未开始状态，则报错
+            // App状态 0: created, 1: deploying, 2: stop, 3: deoloyed
+            if work_status != 1 && work_status != 3 {
+                return Err(Error::<T>::WorkNotStarted.into());
+            }
+
+            // check and set TEE report 
+            // 设置 TEE 报告
+            let new_report = report.unwrap();
+            let creport = ReportOfWork::<T>::get(work_id.clone());
+            if creport.is_none() || creport.unwrap() != new_report {
+                ReportOfWork::<T>::insert(work_id.clone(),new_report);
+            }
+
+            // 检查程序的DEPLOY_KEY是否有变化
+            let old_deploy_key = DeployKeys::<T>::get(work_id.clone());
+            match old_deploy_key {
+                // 如果有，则检查是否一致，不一致就更新，然后转移帐户基本 token
+                Some(old_deploy_key) => {
+                    if old_deploy_key != deploy_key {
+                        // 更新部署密钥
+                        DeployKeys::<T>::insert(work_id.clone(), deploy_key.clone());
+                        let amount = wetee_assets::Pallet::<T>::get_balance(0, old_deploy_key.clone())?;
+                        wetee_assets::Pallet::<T>::try_transfer(0, old_deploy_key, deploy_key.clone(), amount)?;
+                    }
+                },
+                None => {
+                    // 如果没有，则更新部署密钥，并初始化基本 token
+                    DeployKeys::<T>::insert(work_id.clone(), deploy_key.clone());
+                    let amount_i = 10_000_000_000u64;
+                    let amount: BalanceOf<T> = amount_i.saturated_into::<BalanceOf<T>>();
+                    wetee_assets::Pallet::<T>::try_transfer(0, owner_account.clone(), deploy_key.clone(),amount)?;
+                }
+            }
+
+            // get block number
+            // 获取当前区块号
+            let number = <frame_system::Pallet<T>>::block_number();
+
+            // 查询工作合约状态
+            let state = WorkContractState::<T>::get(work_id.clone(), cluster_id).ok_or(Error::<T>::WorkNotExists)?;
+
+            // 更新合约工作状态
+            WorkContractState::<T>::insert(
+                work_id.clone(),
+                cluster_id,
+                ContractState {
+                    block_number: number,
+                    minted: state.minted,
+                    withdrawal: state.withdrawal,
+                },
+            );
+
+            if work_status == 1 {
+                // 设置工作的状态
+                <T as pallet::Config>::WorkExt::set_work_status(work_id.clone(), 3)?;
+            }
+
+            // Runing event
+            // 运行事件
+            Self::deposit_event(Event::WorkRuning {
+                user: owner_account,
+                work_id,
+                cluster_id:cluster_id,
+            });
+  
+            Ok(().into())
+        }
+
         /// Work proof of work data upload
         /// 提交工作证明
         #[pallet::call_index(005)]
@@ -596,33 +697,37 @@ pub mod pallet {
             report: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+
             let cluster_id =
                 K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
             let contract_cluster_id =
                 WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
 
+            // check cluster is match for work
+            // 检查集群是否匹配任务
             ensure!(contract_cluster_id == cluster_id, Error::<T>::NotAllowed403);
 
+            // get block number
+            // 获取当前区块号
             let number = <frame_system::Pallet<T>>::block_number();
 
-            if report.is_some() {
-                let new_report = report.unwrap();
-                let creport = ReportOfWork::<T>::get(work_id.clone());
-                if creport.is_none() || creport.unwrap() != new_report {
-                    ReportOfWork::<T>::insert(work_id.clone(),new_report);
-                    ReportOfWorkTime::<T>::insert(work_id.clone(),number);
-                }
+            if report.is_none() {
+                // 如果未提交证明，则直接返回，不继续计费和更新证明
+                return Err(Error::<T>::TeeReport404.into());
             }
 
-            // 如果未提交证明，则直接返回，不继续计费和更新证明
-            if proof.is_none() {
-                return Ok(().into());
+            // check and set TEE report 
+            // 设置 TEE 报告
+            let new_report = report.unwrap();
+            let creport = ReportOfWork::<T>::get(work_id.clone());
+            if creport.is_none() || creport.unwrap() != new_report {
+                ReportOfWork::<T>::insert(work_id.clone(),new_report);
             }
-
+    
             // check status
             // 保存工作证明
             ProofsOfWork::<T>::insert(work_id.clone(), number, proof.unwrap());
-        
+
             // 查询工作合约状态
             let state = WorkContractState::<T>::get(work_id.clone(), cluster_id).ok_or(Error::<T>::WorkNotExists)?;
 
@@ -631,7 +736,8 @@ pub mod pallet {
             
             // check status
             // 检查work的状态,如果未开始状态，则报错
-            if work_status == 0 || work_status == 2 {
+            // App状态 0: created, 1: deploying, 2: stop, 3: deoloyed
+            if work_status != 3 {
                 return Err(Error::<T>::WorkNotStarted.into());
             }
 
@@ -645,23 +751,7 @@ pub mod pallet {
                 // 检查是否是重复提交状态
                 if number - state.block_number < stage.into() {
                     // 未到达再次提交工作量证明的时间
-                    if work_status == 3 {
-                        return Err(Error::<T>::WorkBlockNumberError.into());
-                    }  else if work_status == 1 {
-                        // 更新合约工作状态
-                        WorkContractState::<T>::insert(
-                            work_id.clone(),
-                            cluster_id,
-                            ContractState {
-                                block_number: number,
-                                minted: state.minted,
-                                withdrawal: state.withdrawal,
-                            },
-                        );
-                        // 设置工作的状态
-                        <T as pallet::Config>::WorkExt::set_work_status(work_id.clone(), 3)?;
-                        return Ok(().into());
-                    }
+                    return Err(Error::<T>::WorkBlockNumberError.into());    
                 } else if number - state.block_number > (stage * 2).into() {
                     // More than 2 cycles, only pay once, TODO, reduce service points
                     // TODO，超过2个周期，只支付一次费用，减少服务积分
@@ -722,10 +812,6 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             let cluster_id =
                 K8sClusterAccounts::<T>::get(who.clone()).ok_or(Error::<T>::ClusterNotExists)?;
-            let contract_cluster_id =
-                WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
-
-            ensure!(contract_cluster_id == cluster_id, Error::<T>::NotAllowed403);
 
             let mint_account = Self::get_mint_account(work_id.clone(), cluster_id);
             ensure!(
@@ -926,12 +1012,26 @@ pub mod pallet {
             origin: OriginFor<T>,
             boots: Vec<P2PAddr<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
+            // TODO
             let who = ensure_signed(origin)?;
             ensure!(boots.len() <= 16, Error::<T>::BootPeersTooLong);
             
             let bts = BoundedVec::try_from(boots).unwrap();
             BootPeers::<T>::put(bts);
 
+            Ok(().into())
+        }
+    
+        #[pallet::call_index(012)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn set_stage(
+            origin: OriginFor<T>,
+            stage: u32,
+        ) -> DispatchResultWithPostInfo {
+            // TODO
+            let who =ensure_signed(origin)?;
+
+            Stage::<T>::put(stage);
             Ok(().into())
         }
     }
@@ -957,10 +1057,10 @@ pub mod pallet {
                 mem = cr.mem;
             }
             let app_cr = ComCr{
-                cpu: cpu,
-                mem: mem,
-                cvm_cpu: cvm_cpu,
-                cvm_mem: cvm_mem,
+                cpu,
+                mem,
+                cvm_cpu,
+                cvm_mem,
                 disk: disk_all,
                 gpu: cr.gpu,
             };
@@ -1031,7 +1131,7 @@ pub mod pallet {
 
                 // Runing event
                 // 运行事件
-                Self::deposit_event(Event::WorkRuning {
+                Self::deposit_event(Event::WorkAssigned {
                     user: account,
                     work_id,
                     cluster_id:id,
