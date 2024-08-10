@@ -457,17 +457,23 @@ pub mod pallet {
 
             if with_restart {
                 <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
-            }
+                let mut app =
+                    <TEEApps<T>>::get(account.clone(), app_id).ok_or(Error::<T>::AppNotExist)?;
+                if app.status == 2 {
+                    app.status = 0;
+                    <TEEApps<T>>::insert(account.clone(), app_id, app);
 
-            // run after create hook
-            // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::UHook::run_hook(
-                WorkId {
-                    wtype: WorkType::APP,
-                    id: app_id,
-                },
-                who,
-            );
+                    // run after create hook
+                    // 执行 App 创建后回调,部署任务添加到消息中间件
+                    <T as pallet::Config>::UHook::run_hook(
+                        WorkId {
+                            wtype: WorkType::APP,
+                            id: app_id,
+                        },
+                        who,
+                    );
+                }
+            }
 
             Self::deposit_event(Event::WorkUpdated {
                 user: account,
@@ -494,33 +500,31 @@ pub mod pallet {
             let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
             ensure!(who == account, Error::<T>::App403);
 
-            // 停止任务后,将任务状态设置为 2
-            <TEEApps<T>>::try_mutate_exists(
-                account.clone(),
-                app_id,
-                |app_wrap| -> result::Result<(), DispatchError> {
-                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExist)?;
-                    app.status = 0;
-                    *app_wrap = Some(app);
-                    Ok(())
-                },
-            )?;
+            let mut app =
+                <TEEApps<T>>::get(account.clone(), app_id).ok_or(Error::<T>::AppNotExist)?;
+            if app.status == 2 {
+                app.status = 0;
+                <TEEApps<T>>::insert(account.clone(), app_id, app);
+
+                // run after create hook
+                // 执行 App 创建后回调,部署任务添加到消息中间件
+                <T as pallet::Config>::UHook::run_hook(
+                    WorkId {
+                        wtype: WorkType::APP,
+                        id: app_id,
+                    },
+                    who,
+                );
+            }
+
             <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
-
-            Self::deposit_event(Event::<T>::CreatedApp {
-                id: app_id,
-                creator: who.clone(),
-            });
-
-            // Run UHook hook
-            // 执行 Task 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::UHook::run_hook(
-                WorkId {
+            Self::deposit_event(Event::WorkUpdated {
+                user: account,
+                work_id: WorkId {
                     wtype: WorkType::APP,
                     id: app_id,
                 },
-                who,
-            );
+            });
 
             Ok(().into())
         }

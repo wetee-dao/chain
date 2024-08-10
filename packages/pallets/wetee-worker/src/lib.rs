@@ -613,7 +613,7 @@ pub mod pallet {
             ensure!(contract_cluster_id == cluster_id, Error::<T>::NotAllowed403);
 
             // 查询 work info
-            let (owner_account,_,work_status,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,_,_,work_status,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             
 
             // check status
@@ -729,10 +729,10 @@ pub mod pallet {
             ProofsOfWork::<T>::insert(work_id.clone(), number, proof.unwrap());
 
             // 查询工作合约状态
-            let state = WorkContractState::<T>::get(work_id.clone(), cluster_id).ok_or(Error::<T>::WorkNotExists)?;
+            let state = WorkContractState::<T>::get(work_id.clone(), contract_cluster_id).ok_or(Error::<T>::WorkNotExists)?;
 
             // 查询 work info
-            let (owner_account,cr,work_status,_,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,cr,_,work_status,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             
             // check status
             // 检查work的状态,如果未开始状态，则报错
@@ -759,7 +759,7 @@ pub mod pallet {
             }
 
             let fee = <T as pallet::Config>::WorkExt::calculate_fee(work_id.clone())?;
-            let to = Self::get_mint_account(work_id.clone(), cluster_id);
+            let to = Self::get_mint_account(work_id.clone(), contract_cluster_id);
             
             log::warn!(
                 "pay_run_fee ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?} {:?} {:?} {:?}",
@@ -773,7 +773,7 @@ pub mod pallet {
 
             if status == 2 {
                 Self::try_stop_work(
-                    cluster_id, 
+                    contract_cluster_id, 
                     work_id.clone(), 
                     cr,
                     owner_account.clone(),
@@ -782,7 +782,7 @@ pub mod pallet {
             }else {
                 WorkContractState::<T>::insert(
                     work_id.clone(),
-                    cluster_id,
+                    contract_cluster_id,
                     ContractState {
                         block_number: number,
                         minted: state.minted + fee,
@@ -793,7 +793,7 @@ pub mod pallet {
                 Self::deposit_event(Event::WorkContractUpdated {
                     user: owner_account,
                     work_id,
-                    cluster_id,
+                    cluster_id: contract_cluster_id,
                 });
             }
 

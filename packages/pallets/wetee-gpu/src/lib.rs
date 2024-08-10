@@ -456,6 +456,22 @@ pub mod pallet {
 
             if with_restart {
                 <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
+                let mut app =
+                    <GPUApps<T>>::get(account.clone(), app_id).ok_or(Error::<T>::AppNotExist)?;
+                if app.status == 2 {
+                    app.status = 0;
+                    <GPUApps<T>>::insert(account.clone(), app_id, app);
+
+                    // run after create hook
+                    // 执行 App 创建后回调,部署任务添加到消息中间件
+                    <T as pallet::Config>::UHook::run_hook(
+                        WorkId {
+                            wtype: WorkType::APP,
+                            id: app_id,
+                        },
+                        who,
+                    );
+                }
             }
 
             Self::deposit_event(Event::WorkUpdated {
@@ -495,22 +511,31 @@ pub mod pallet {
                 },
             )?;
 
+            let mut app =
+                <GPUApps<T>>::get(account.clone(), app_id).ok_or(Error::<T>::AppNotExist)?;
+            if app.status == 2 {
+                app.status = 0;
+                <GPUApps<T>>::insert(account.clone(), app_id, app);
+
+                // run after create hook
+                // 执行 App 创建后回调,部署任务添加到消息中间件
+                <T as pallet::Config>::UHook::run_hook(
+                    WorkId {
+                        wtype: WorkType::APP,
+                        id: app_id,
+                    },
+                    who,
+                );
+            }
+
             <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());
-
-            Self::deposit_event(Event::<T>::CreatedApp {
-                id: app_id,
-                creator: who.clone(),
-            });
-
-            // Run UHook hook
-            // 执行 Task 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::UHook::run_hook(
-                WorkId {
-                    wtype: WorkType::GPU,
+            Self::deposit_event(Event::WorkUpdated {
+                user: account,
+                work_id: WorkId {
+                    wtype: WorkType::APP,
                     id: app_id,
                 },
-                who,
-            );
+            });
 
             Ok(().into())
         }
