@@ -11,8 +11,8 @@ use sp_std::result;
 use wetee_primitives::{
     traits::UHook,
     types::{
-        Command, Container, Cr, Disk, EditType, Env, EnvInput, Service, TEEVersion, TeeAppId,
-        WorkId, WorkType,
+        Command, Container, Cr, Disk, EditType, Env, EnvHash, EnvInput, Service, TEEVersion,
+        TeeAppId, WorkId, WorkType,
     },
 };
 
@@ -177,6 +177,12 @@ pub mod pallet {
     pub type Envs<T: Config> =
         StorageDoubleMap<_, Identity, TeeAppId, Identity, u16, Env, OptionQuery>;
 
+    /// Secret app setting
+    /// 加密设置
+    #[pallet::storage]
+    #[pallet::getter(fn secret_settings)]
+    pub type SecretEnvs<T: Config> = StorageMap<_, Identity, TeeAppId, EnvHash, OptionQuery>;
+
     /// App version
     /// App 版本
     #[pallet::storage]
@@ -262,6 +268,8 @@ pub mod pallet {
             command: Command,
             // setting of the App
             env: Vec<EnvInput>,
+            // secret env
+            secret_env: Option<EnvHash>,
             // cpu memory disk gpu
             cpu: u32,
             // memory
@@ -309,6 +317,9 @@ pub mod pallet {
             <GPUApps<T>>::insert(who.clone(), id, app);
             <AppIdAccounts<T>>::insert(id, who.clone());
             <AppVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
+            if secret_env.is_some() {
+                <SecretEnvs<T>>::insert(id, secret_env.unwrap());
+            }
 
             let mut sid = 0;
             env.iter().for_each(|v| {
@@ -373,6 +384,8 @@ pub mod pallet {
             // setting
             // 设置
             new_env: Vec<EnvInput>,
+            // secret env
+            secret_env: Option<EnvHash>,
             // with restart
             // 是否重启
             with_restart: bool,
@@ -402,6 +415,9 @@ pub mod pallet {
                     Ok(())
                 },
             )?;
+            if secret_env.is_some() {
+                <SecretEnvs<T>>::insert(app_id, secret_env.unwrap());
+            }
 
             let mut iter = Envs::<T>::iter_prefix(app_id);
             let mut id = 0;

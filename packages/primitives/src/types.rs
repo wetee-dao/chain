@@ -164,7 +164,6 @@ pub enum EnvKey {
     /// UPDATE
     File(Vec<u8>),
 }
-
 impl Default for EnvKey {
     fn default() -> Self {
         EnvKey::Env("".as_bytes().to_vec()) // 默认为TCP协议，端口为0
@@ -196,6 +195,10 @@ pub struct EnvInput {
     /// value
     pub v: Vec<u8>,
 }
+
+/// 加密配置 hash
+/// secret setting hash
+pub type EnvHash = Vec<u8>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum Command {

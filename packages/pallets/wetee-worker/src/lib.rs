@@ -1029,7 +1029,7 @@ pub mod pallet {
             stage: u32,
         ) -> DispatchResultWithPostInfo {
             // TODO
-            let who =ensure_signed(origin)?;
+            let who = ensure_signed(origin)?;
 
             Stage::<T>::put(stage);
             Ok(().into())
