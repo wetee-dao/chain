@@ -502,7 +502,7 @@ pub mod pallet {
         }
 
         /// 转帐
-        pub fn int_burn(
+        pub fn burn_with_number(
             dao_id: DaoAssetId,
             from: T::AccountId,
             value: u128,

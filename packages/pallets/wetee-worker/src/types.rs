@@ -60,14 +60,6 @@ pub struct Deposit<Balance> {
     pub gpu: u32,
 }
 
-/// 集群证明
-/// proof of K8sCluster
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct ProofOfCluster {
-    /// tee public key
-    pub public_key: Vec<u8>,
-}
-
 /// 工作证明
 /// proof of K8sCluster
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]

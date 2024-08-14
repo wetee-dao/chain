@@ -226,7 +226,8 @@ pub mod pallet {
 
             // transfer fee to target account
             // 将抵押转移到目标账户
-            wetee_assets::Pallet::<T>::int_burn(0, owner_account, gas.into())?;
+            // TODO 帐户余额检测
+            wetee_assets::Pallet::<T>::burn_with_number(0, owner_account, gas.into())?;
 
             TEECalls::<T>::remove(cluster_id, call_id);
 

@@ -2,7 +2,7 @@ use crate::*;
 
 use frame_support::{traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{Verify, Zero};
 use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
 use wetee_primitives::{
     traits::{GovIsJoin, UHook},
@@ -146,6 +146,9 @@ impl wetee_sudo::Config for Runtime {
 impl wetee_dsecret::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+
+    type OffchainSignature = Signature;
+    type OffchainPublic = <Signature as Verify>::Signer;
 }
 
 impl wetee_tee_bridge::Config for Runtime {

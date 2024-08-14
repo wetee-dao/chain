@@ -111,7 +111,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn proofs_of_cluster)]
     pub type ProofOfClusters<T: Config> =
-        StorageMap<_, Identity, ClusterId, ProofOfCluster, OptionQuery>;
+        StorageMap<_, Identity, ClusterId, Vec<u8>, OptionQuery>;
 
     /// 计算资源 抵押/使用
     /// computing resource
@@ -430,35 +430,35 @@ pub mod pallet {
 
         /// Worker cluster upload proof of work data
         /// 提交集群的工作证明
-        #[pallet::call_index(004)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn cluster_proof_upload(
-            origin: OriginFor<T>,
-            id: ClusterId,
-            proof: ProofOfCluster,
-        ) -> DispatchResultWithPostInfo {
-            let creator = ensure_signed(origin)?;
-            let cid = K8sClusterAccounts::<T>::get(creator.clone()).ok_or(Error::<T>::ClusterNotExists)?;
+        // #[pallet::call_index(004)]
+        // #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        // pub fn cluster_proof_upload(
+        //     origin: OriginFor<T>,
+        //     id: ClusterId,
+        //     proof: ProofOfCluster,
+        // ) -> DispatchResultWithPostInfo {
+        //     let creator = ensure_signed(origin)?;
+        //     let cid = K8sClusterAccounts::<T>::get(creator.clone()).ok_or(Error::<T>::ClusterNotExists)?;
 
-            // check user
-            // 检查是否是集群的主人
-            ensure!(
-                id == cid,
-                Error::<T>::ClusterIsExists
-            );
+        //     // check user
+        //     // 检查是否是集群的主人
+        //     ensure!(
+        //         id == cid,
+        //         Error::<T>::ClusterIsExists
+        //     );
 
-            let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
+        //     let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
 
-            // check status
-            // 检查集群是否已经开始
-            ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
+        //     // check status
+        //     // 检查集群是否已经开始
+        //     ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
 
-            // save proof
-            // 保存工作证明
-            ProofOfClusters::<T>::insert(cluster.id.clone(), proof);
+        //     // save proof
+        //     // 保存工作证明
+        //     ProofOfClusters::<T>::insert(cluster.id.clone(), proof);
 
-            Ok(().into())
-        }
+        //     Ok(().into())
+        // }
 
         /// Worker cluster mortgage
         /// 质押硬件
@@ -1012,8 +1012,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             boots: Vec<P2PAddr<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
-            // TODO
-            let who = ensure_signed(origin)?;
+            // TODO 更新治理模块后更新
+            ensure_signed_or_root(origin)?;
+
             ensure!(boots.len() <= 16, Error::<T>::BootPeersTooLong);
             
             let bts = BoundedVec::try_from(boots).unwrap();
@@ -1028,10 +1029,30 @@ pub mod pallet {
             origin: OriginFor<T>,
             stage: u32,
         ) -> DispatchResultWithPostInfo {
-            // TODO
-            let who = ensure_signed(origin)?;
+            // TODO 更新治理模块后更新
+            ensure_signed_or_root(origin)?;
 
             Stage::<T>::put(stage);
+            Ok(().into())
+        }
+
+        /// 上传共识节点代码
+        /// update consensus node code
+        #[pallet::call_index(014)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        pub fn upload_code(
+            origin: OriginFor<T>,
+            mrenclave: BoundedVec<u8, ConstU32<64>>,
+            mrsigner: BoundedVec<u8, ConstU32<64>>,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_signed_or_root(origin)?;
+
+            // 更新代码hash
+            <CodeMrenclave<T>>::set(mrenclave);
+            // 更新代码签名人
+            <CodeMrsigner<T>>::set(mrsigner);
+
             Ok(().into())
         }
     }

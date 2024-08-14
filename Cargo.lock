@@ -17339,6 +17339,8 @@ dependencies = [
  "sp-runtime 31.0.1",
  "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-v1.13.0)",
  "wetee-org",
+ "wetee-primitives",
+ "wetee-worker",
 ]
 
 [[package]]
