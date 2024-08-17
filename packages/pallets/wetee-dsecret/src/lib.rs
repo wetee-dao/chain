@@ -82,7 +82,19 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        NodeRegister { node: T::AccountId },
+        NodeRegister {
+            node: T::AccountId,
+        },
+        CodeUpload {
+            mrenclave: Vec<u8>,
+            mrsigner: Vec<u8>,
+        },
+        ClusterProofUpload {
+            cid: ClusterId,
+            report: Vec<u8>,
+            pubs: Vec<T::AccountId>,
+            sigs: Vec<T::OffchainSignature>,
+        },
     }
 
     // Errors inform users that something went wrong.
@@ -92,6 +104,8 @@ pub mod pallet {
         Call403,
         /// 无效的签名
         OffchainSigError,
+        /// 签名数量不够
+        OffchainSigNotEnough,
     }
 
     #[pallet::call]
@@ -132,9 +146,14 @@ pub mod pallet {
             ensure_signed_or_root(origin)?;
 
             // 更新代码hash
-            <CodeMrenclave<T>>::set(mrenclave);
+            <CodeMrenclave<T>>::set(mrenclave.clone());
             // 更新代码签名人
-            <CodeMrsigner<T>>::set(mrsigner);
+            <CodeMrsigner<T>>::set(mrsigner.clone());
+
+            Self::deposit_event(Event::CodeUpload {
+                mrenclave: mrenclave.to_vec(),
+                mrsigner: mrsigner.to_vec(),
+            });
 
             Ok(().into())
         }
@@ -147,7 +166,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             cid: ClusterId,
             report: Vec<u8>,
-            pubs: Vec<u64>,
+            pubs: Vec<T::AccountId>,
             sigs: Vec<T::OffchainSignature>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -155,15 +174,20 @@ pub mod pallet {
             let mut sender_in_pubs = false;
             let mut pubkeys: Vec<T::AccountId> = Vec::new();
             let mut csigs: Vec<T::OffchainSignature> = Vec::new();
-            for i in 0..pubs.len() {
-                let p = pubs[i];
-                let key = Nodes::<T>::get(p).unwrap();
-                if who == key {
+
+            // dsecret 节点列表
+            // dsecret node list
+            let dpubs = Nodes::<T>::iter_values().collect::<Vec<_>>();
+            for j in 0..dpubs.len() {
+                for i in 0..pubs.len() {
+                    if dpubs[j] == pubs[i] {
+                        pubkeys.push(pubs[i].clone());
+                        csigs.push(sigs[i].clone());
+                    }
+                }
+                if dpubs[j] == who {
                     sender_in_pubs = true;
                 }
-
-                pubkeys.push(key);
-                csigs.push(sigs[i].clone());
             }
 
             // 必须是节点列表中的节点提交申请
@@ -171,20 +195,29 @@ pub mod pallet {
                 return Err(Error::<T>::Call403.into());
             }
 
-            ensure!(sigs.len() == pubs.len(), Error::<T>::OffchainSigError);
-
-            let prefix = cid.to_be_bytes();
-            let mut wrapped: Vec<u8> = Vec::with_capacity(report.len());
-            wrapped.extend(prefix);
-            wrapped.extend(report.clone());
+            ensure!(
+                csigs.len() >= pubs.len() * 2 / 3,
+                Error::<T>::OffchainSigNotEnough
+            );
 
             for (i, sig) in sigs.iter().enumerate() {
-                if !sig.verify(&*wrapped, &pubkeys[i]) {
+                if !sig.verify(&*report, &pubkeys[i]) {
                     return Err(Error::<T>::OffchainSigError.into());
                 }
             }
 
-            wetee_worker::ProofOfClusters::<T>::insert(cid.clone(), report);
+            wetee_worker::ProofOfClusters::<T>::insert(cid.clone(), report.clone());
+            wetee_worker::ProofOfClusterTimes::<T>::insert(
+                cid.clone(),
+                <frame_system::Pallet<T>>::block_number(),
+            );
+
+            Self::deposit_event(Event::ClusterProofUpload {
+                cid,
+                report,
+                pubs,
+                sigs,
+            });
 
             Ok(().into())
         }

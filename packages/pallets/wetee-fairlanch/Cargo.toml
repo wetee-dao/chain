@@ -2,5 +2,5 @@
 authors = ["WeTEE DAO"]
 edition = "2021"
 license = "Apache-2.0"
-name = "wetee-token"
+name = "wetee-fairlanch"
 version = "1.0.0"

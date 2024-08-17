@@ -113,6 +113,13 @@ pub mod pallet {
     pub type ProofOfClusters<T: Config> =
         StorageMap<_, Identity, ClusterId, Vec<u8>, OptionQuery>;
 
+    /// 集群工作证明时间
+    /// K8sCluster proof of work time
+    #[pallet::storage]
+    #[pallet::getter(fn proof_of_cluster_time)]
+    pub type ProofOfClusterTimes<T: Config> =
+        StorageMap<_, Identity, ClusterId, BlockNumberFor<T>, OptionQuery>;
+
     /// 计算资源 抵押/使用
     /// computing resource
     #[pallet::storage]
@@ -612,10 +619,21 @@ pub mod pallet {
             // 检查集群是否匹配任务
             ensure!(contract_cluster_id == cluster_id, Error::<T>::NotAllowed403);
 
+
+            // get block number
+            // 获取当前区块号
+            let number = <frame_system::Pallet<T>>::block_number();
+            
+            // 获取证明的有效时间
+            // let report_time = ProofOfClusterTimes::<T>::get(contract_cluster_id).ok_or(Error::<T>::NotAllowed403)?;
+            // let n30: BlockNumberFor<T> = 30u32.into();
+            // if  number - n30  > report_time {
+            //     // return Err(Error::<T>::NotAllowed403.into());
+            // }
+
             // 查询 work info
             let (owner_account,_,_,work_status,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             
-
             // check status
             // 检查work的状态,如果未开始状态，则报错
             // App状态 0: created, 1: deploying, 2: stop, 3: deoloyed
@@ -651,10 +669,6 @@ pub mod pallet {
                     wetee_assets::Pallet::<T>::try_transfer(0, owner_account.clone(), deploy_key.clone(),amount)?;
                 }
             }
-
-            // get block number
-            // 获取当前区块号
-            let number = <frame_system::Pallet<T>>::block_number();
 
             // 查询工作合约状态
             let state = WorkContractState::<T>::get(work_id.clone(), cluster_id).ok_or(Error::<T>::WorkNotExists)?;
@@ -710,6 +724,13 @@ pub mod pallet {
             // get block number
             // 获取当前区块号
             let number = <frame_system::Pallet<T>>::block_number();
+
+            // 获取证明的有效时间
+            // let report_time = ProofOfClusterTimes::<T>::get(contract_cluster_id).ok_or(Error::<T>::NotAllowed403)?;
+            // let n30: BlockNumberFor<T> = 30u32.into();
+            // if  number - n30  > report_time {
+            //     return Err(Error::<T>::NotAllowed403.into());
+            // }
 
             if report.is_none() {
                 // 如果未提交证明，则直接返回，不继续计费和更新证明

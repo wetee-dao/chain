@@ -15,7 +15,7 @@ type Amount = i128;
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
-    pub ServiceWeight: Option<Weight> = Some(Perbill::from_percent(20) * BlockWeights::get().max_block);
+    pub ServiceWeight: Option<Weight> = Some(Perbill::from_percent(10) * BlockWeights::get().max_block);
 }
 
 impl wetee_message_queue::Config for Runtime {
