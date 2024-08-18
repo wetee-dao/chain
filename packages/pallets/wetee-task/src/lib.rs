@@ -184,6 +184,18 @@ pub mod pallet {
     #[pallet::getter(fn secret_settings)]
     pub type SecretEnvs<T: Config> = StorageMap<_, Identity, TeeAppId, EnvHash, OptionQuery>;
 
+    /// 代码版本
+    #[pallet::storage]
+    #[pallet::getter(fn code_signature)]
+    pub type CodeSignature<T: Config> =
+        StorageMap<_, Identity, TeeAppId, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+
+    /// 代码打包签名人
+    #[pallet::storage]
+    #[pallet::getter(fn code_signer)]
+    pub type CodeSigner<T: Config> =
+        StorageMap<_, Identity, TeeAppId, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+
     /// Task version
     /// Task 版本
     #[pallet::storage]
@@ -258,6 +270,10 @@ pub mod pallet {
             origin: OriginFor<T>,
             name: Vec<u8>,
             image: Vec<u8>,
+            // signer of the App.
+            signer: BoundedVec<u8, ConstU32<64>>,
+            // signature of the App.
+            signature: BoundedVec<u8, ConstU32<64>>,
             meta: Vec<u8>,
             port: Vec<Service>,
             command: Command,
@@ -300,6 +316,8 @@ pub mod pallet {
             <TEETasks<T>>::insert(who.clone(), id, app);
             <TaskIdAccounts<T>>::insert(id, who.clone());
             <TaskVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
+            <CodeSignature<T>>::insert(id, signature);
+            <CodeSigner<T>>::insert(id, signer);
             if secret_env.is_some() {
                 <SecretEnvs<T>>::insert(id, secret_env.unwrap());
             }
@@ -402,6 +420,12 @@ pub mod pallet {
             // img of the App.
             // image 目标宗旨
             new_image: Option<Vec<u8>>,
+            // signer of the App.
+            // 签名人
+            new_signer: Option<BoundedVec<u8, ConstU32<64>>>,
+            // signature of the App.
+            // 签名
+            new_signature: Option<BoundedVec<u8, ConstU32<64>>>,
             // port of service
             // 服务端口号
             new_port: Option<Vec<Service>>,
@@ -444,6 +468,14 @@ pub mod pallet {
 
             if secret_env.is_some() {
                 <SecretEnvs<T>>::insert(app_id, secret_env.unwrap());
+            }
+
+            if new_signer.is_some() {
+                <CodeSigner<T>>::insert(app_id, new_signer.unwrap());
+            }
+
+            if new_signature.is_some() {
+                <CodeSignature<T>>::insert(app_id, new_signature.unwrap());
             }
 
             let mut iter = Envs::<T>::iter_prefix(app_id);

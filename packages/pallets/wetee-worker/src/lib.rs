@@ -82,13 +82,13 @@ pub mod pallet {
 
     /// 代码版本
     #[pallet::storage]
-    #[pallet::getter(fn code_mrenclave)]
-    pub type CodeMrenclave<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    #[pallet::getter(fn code_signature)]
+    pub type CodeSignature<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
     
     /// 代码打包签名人
     #[pallet::storage]
-    #[pallet::getter(fn code_mrsigner)]
-    pub type CodeMrsigner<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    #[pallet::getter(fn code_signer)]
+    pub type CodeSigner<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
 
     /// 侧链boot peers
     #[pallet::storage]
@@ -244,6 +244,11 @@ pub mod pallet {
         WorkContractWithdrawaled { work_id: WorkId },
         /// Work stoped
         WorkStoped { user: T::AccountId, work_id: WorkId, cluster_id: ClusterId },
+        /// worker code update
+        WorkerCodeUpdated {
+            signature: Vec<u8>,
+            signer: Vec<u8>,
+        },
     }
 
     // Errors inform users that something went wrong.
@@ -598,108 +603,6 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// 启动或重启服务
-        /// 启动或重启服务
-        #[pallet::call_index(013)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        pub fn work_start(
-            origin: OriginFor<T>,
-            work_id: WorkId,
-            report: Option<Vec<u8>>,
-            deploy_key: T::AccountId,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-
-            let cluster_id =
-                K8sClusterAccounts::<T>::get(who).ok_or(Error::<T>::ClusterNotExists)?;
-            let contract_cluster_id =
-                WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
-
-            // check cluster is match for work
-            // 检查集群是否匹配任务
-            ensure!(contract_cluster_id == cluster_id, Error::<T>::NotAllowed403);
-
-
-            // get block number
-            // 获取当前区块号
-            let number = <frame_system::Pallet<T>>::block_number();
-            
-            // 获取证明的有效时间
-            // let report_time = ProofOfClusterTimes::<T>::get(contract_cluster_id).ok_or(Error::<T>::NotAllowed403)?;
-            // let n30: BlockNumberFor<T> = 30u32.into();
-            // if  number - n30  > report_time {
-            //     // return Err(Error::<T>::NotAllowed403.into());
-            // }
-
-            // 查询 work info
-            let (owner_account,_,_,work_status,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
-            
-            // check status
-            // 检查work的状态,如果未开始状态，则报错
-            // App状态 0: created, 1: deploying, 2: stop, 3: deoloyed
-            if work_status != 1 && work_status != 3 {
-                return Err(Error::<T>::WorkNotStarted.into());
-            }
-
-            // check and set TEE report 
-            // 设置 TEE 报告
-            let new_report = report.unwrap();
-            let creport = ReportOfWork::<T>::get(work_id.clone());
-            if creport.is_none() || creport.unwrap() != new_report {
-                ReportOfWork::<T>::insert(work_id.clone(),new_report);
-            }
-
-            // 检查程序的DEPLOY_KEY是否有变化
-            let old_deploy_key = DeployKeys::<T>::get(work_id.clone());
-            match old_deploy_key {
-                // 如果有，则检查是否一致，不一致就更新，然后转移帐户基本 token
-                Some(old_deploy_key) => {
-                    if old_deploy_key != deploy_key {
-                        // 更新部署密钥
-                        DeployKeys::<T>::insert(work_id.clone(), deploy_key.clone());
-                        let amount = wetee_assets::Pallet::<T>::get_balance(0, old_deploy_key.clone())?;
-                        wetee_assets::Pallet::<T>::try_transfer(0, old_deploy_key, deploy_key.clone(), amount)?;
-                    }
-                },
-                None => {
-                    // 如果没有，则更新部署密钥，并初始化基本 token
-                    DeployKeys::<T>::insert(work_id.clone(), deploy_key.clone());
-                    let amount_i = 10_000_000_000u64;
-                    let amount: BalanceOf<T> = amount_i.saturated_into::<BalanceOf<T>>();
-                    wetee_assets::Pallet::<T>::try_transfer(0, owner_account.clone(), deploy_key.clone(),amount)?;
-                }
-            }
-
-            // 查询工作合约状态
-            let state = WorkContractState::<T>::get(work_id.clone(), cluster_id).ok_or(Error::<T>::WorkNotExists)?;
-
-            // 更新合约工作状态
-            WorkContractState::<T>::insert(
-                work_id.clone(),
-                cluster_id,
-                ContractState {
-                    block_number: number,
-                    minted: state.minted,
-                    withdrawal: state.withdrawal,
-                },
-            );
-
-            if work_status == 1 {
-                // 设置工作的状态
-                <T as pallet::Config>::WorkExt::set_work_status(work_id.clone(), 3)?;
-            }
-
-            // Runing event
-            // 运行事件
-            Self::deposit_event(Event::WorkRuning {
-                user: owner_account,
-                work_id,
-                cluster_id:cluster_id,
-            });
-  
-            Ok(().into())
-        }
-
         /// Work proof of work data upload
         /// 提交工作证明
         #[pallet::call_index(005)]
@@ -800,24 +703,23 @@ pub mod pallet {
                     owner_account.clone(),
                     tee_version
                 )?;
-            }else {
-                WorkContractState::<T>::insert(
-                    work_id.clone(),
-                    contract_cluster_id,
-                    ContractState {
-                        block_number: number,
-                        minted: state.minted + fee,
-                        withdrawal: state.withdrawal,
-                    },
-                );  
-
-                Self::deposit_event(Event::WorkContractUpdated {
-                    user: owner_account,
-                    work_id,
-                    cluster_id: contract_cluster_id,
-                });
+                return Ok(().into());
             }
+            WorkContractState::<T>::insert(
+                work_id.clone(),
+                contract_cluster_id,
+                ContractState {
+                    block_number: number,
+                    minted: state.minted + fee,
+                    withdrawal: state.withdrawal,
+                },
+            );  
 
+            Self::deposit_event(Event::WorkContractUpdated {
+                user: owner_account,
+                work_id,
+                cluster_id: contract_cluster_id,
+            });
             Ok(().into())
         }
 
@@ -1063,16 +965,21 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn upload_code(
             origin: OriginFor<T>,
-            mrenclave: BoundedVec<u8, ConstU32<64>>,
-            mrsigner: BoundedVec<u8, ConstU32<64>>,
+            signature: BoundedVec<u8, ConstU32<64>>,
+            signer: BoundedVec<u8, ConstU32<64>>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_signed_or_root(origin)?;
 
             // 更新代码hash
-            <CodeMrenclave<T>>::set(mrenclave);
+            <CodeSignature<T>>::set(signature.clone());
             // 更新代码签名人
-            <CodeMrsigner<T>>::set(mrsigner);
+            <CodeSigner<T>>::set(signer.clone());
+
+            Self::deposit_event(Event::WorkerCodeUpdated {
+                signature: signature.to_vec(),
+                signer: signer.to_vec(),
+            });
 
             Ok(().into())
         }
@@ -1181,6 +1088,97 @@ pub mod pallet {
             }
 
             Ok(true)
+        }
+
+        /// 启动或重启服务
+        /// start or restart work
+        pub fn work_launch(
+            work_id: WorkId,
+            report: Option<Vec<u8>>,
+            deploy_key: T::AccountId,
+        ) -> result::Result<bool, DispatchError> {
+            let cluster_id =
+                WorkContracts::<T>::get(work_id.clone()).ok_or(Error::<T>::WorkNotExists)?;
+
+            // get block number
+            // 获取当前区块号
+            let number = <frame_system::Pallet<T>>::block_number();
+            
+            // 获取证明的有效时间
+            // let report_time = ProofOfClusterTimes::<T>::get(contract_cluster_id).ok_or(Error::<T>::NotAllowed403)?;
+            // let n30: BlockNumberFor<T> = 30u32.into();
+            // if  number - n30  > report_time {
+            //     // return Err(Error::<T>::NotAllowed403.into());
+            // }
+
+            // 查询 work info
+            let (owner_account,_,_,work_status,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            
+            // check status
+            // 检查work的状态,如果未开始状态，则报错
+            // App状态 0: created, 1: deploying, 2: stop, 3: deoloyed
+            if work_status != 1 && work_status != 3 {
+                return Err(Error::<T>::WorkNotStarted.into());
+            }
+
+            // check and set TEE report 
+            // 设置 TEE 报告
+            let new_report = report.unwrap();
+            let creport = ReportOfWork::<T>::get(work_id.clone());
+            if creport.is_none() || creport.unwrap() != new_report {
+                ReportOfWork::<T>::insert(work_id.clone(),new_report);
+            }
+
+            // 检查程序的DEPLOY_KEY是否有变化
+            let old_deploy_key = DeployKeys::<T>::get(work_id.clone());
+            match old_deploy_key {
+                // 如果有，则检查是否一致，不一致就更新，然后转移帐户基本 token
+                Some(old_deploy_key) => {
+                    if old_deploy_key != deploy_key {
+                        // 更新部署密钥
+                        DeployKeys::<T>::insert(work_id.clone(), deploy_key.clone());
+                        let amount = wetee_assets::Pallet::<T>::get_balance(0, old_deploy_key.clone())?;
+                        wetee_assets::Pallet::<T>::try_transfer(0, old_deploy_key, deploy_key.clone(), amount)?;
+                    }
+                },
+                None => {
+                    // 如果没有，则更新部署密钥，并初始化基本 token
+                    DeployKeys::<T>::insert(work_id.clone(), deploy_key.clone());
+                    let amount_i = 10_000_000_000u64;
+                    let amount: BalanceOf<T> = amount_i.saturated_into::<BalanceOf<T>>();
+                    wetee_assets::Pallet::<T>::try_transfer(0, owner_account.clone(), deploy_key.clone(),amount)?;
+                }
+            }
+
+
+            if work_status == 1 {
+                // 设置工作的状态
+                <T as pallet::Config>::WorkExt::set_work_status(work_id.clone(), 3)?;
+                
+                // 查询工作合约状态
+                let state = WorkContractState::<T>::get(work_id.clone(), cluster_id).ok_or(Error::<T>::WorkNotExists)?;
+
+                // 更新合约工作状态
+                WorkContractState::<T>::insert(
+                    work_id.clone(),
+                    cluster_id,
+                    ContractState {
+                        block_number: number,
+                        minted: state.minted,
+                        withdrawal: state.withdrawal,
+                    },
+                );
+            }
+
+            // Runing event
+            // 运行事件
+            Self::deposit_event(Event::WorkRuning {
+                user: owner_account,
+                work_id,
+                cluster_id:cluster_id,
+            });
+  
+            Ok(false)
         }
 
         /// Get random cluster

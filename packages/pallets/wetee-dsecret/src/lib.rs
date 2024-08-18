@@ -7,8 +7,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::Vec;
 
-use wetee_org::{self};
-use wetee_primitives::types::ClusterId;
+use wetee_primitives::types::{ClusterId, WorkId};
 
 #[cfg(test)]
 mod mock;
@@ -60,13 +59,13 @@ pub mod pallet {
 
     /// 代码版本
     #[pallet::storage]
-    #[pallet::getter(fn code_mrenclave)]
-    pub type CodeMrenclave<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    #[pallet::getter(fn code_signature)]
+    pub type CodeSignature<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
 
     /// 代码打包签名人
     #[pallet::storage]
-    #[pallet::getter(fn code_mrsigner)]
-    pub type CodeMrsigner<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    #[pallet::getter(fn code_signer)]
+    pub type CodeSigner<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
 
     /// The id of the next node to be created.
     /// 获取下一个 node id
@@ -85,9 +84,9 @@ pub mod pallet {
         NodeRegister {
             node: T::AccountId,
         },
-        CodeUpload {
-            mrenclave: Vec<u8>,
-            mrsigner: Vec<u8>,
+        CodeUpdated {
+            signature: Vec<u8>,
+            signer: Vec<u8>,
         },
         ClusterProofUpload {
             cid: ClusterId,
@@ -139,20 +138,20 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
         pub fn upload_code(
             origin: OriginFor<T>,
-            mrenclave: BoundedVec<u8, ConstU32<64>>,
-            mrsigner: BoundedVec<u8, ConstU32<64>>,
+            signature: BoundedVec<u8, ConstU32<64>>,
+            signer: BoundedVec<u8, ConstU32<64>>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_signed_or_root(origin)?;
 
             // 更新代码hash
-            <CodeMrenclave<T>>::set(mrenclave.clone());
+            <CodeSignature<T>>::set(signature.clone());
             // 更新代码签名人
-            <CodeMrsigner<T>>::set(mrsigner.clone());
+            <CodeSigner<T>>::set(signer.clone());
 
-            Self::deposit_event(Event::CodeUpload {
-                mrenclave: mrenclave.to_vec(),
-                mrsigner: mrsigner.to_vec(),
+            Self::deposit_event(Event::CodeUpdated {
+                signature: signature.to_vec(),
+                signer: signer.to_vec(),
             });
 
             Ok(().into())
@@ -195,17 +194,20 @@ pub mod pallet {
                 return Err(Error::<T>::Call403.into());
             }
 
+            // 签名数量必须大于节点列表的 2/3
             ensure!(
                 csigs.len() >= pubs.len() * 2 / 3,
                 Error::<T>::OffchainSigNotEnough
             );
 
+            // 验证签名
             for (i, sig) in sigs.iter().enumerate() {
                 if !sig.verify(&*report, &pubkeys[i]) {
                     return Err(Error::<T>::OffchainSigError.into());
                 }
             }
 
+            // 保存证明
             wetee_worker::ProofOfClusters::<T>::insert(cid.clone(), report.clone());
             wetee_worker::ProofOfClusterTimes::<T>::insert(
                 cid.clone(),
@@ -218,6 +220,38 @@ pub mod pallet {
                 pubs,
                 sigs,
             });
+
+            Ok(().into())
+        }
+
+        /// 上传 devloper，report hash 启动应用
+        #[pallet::call_index(004)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
+        pub fn work_launch(
+            origin: OriginFor<T>,
+            work: WorkId,
+            report: Option<Vec<u8>>,
+            deploy_key: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            // dsecret 节点列表
+            // dsecret node list
+            let mut sender_in_pubs = false;
+            let dpubs = Nodes::<T>::iter_values().collect::<Vec<_>>();
+            for j in 0..dpubs.len() {
+                if dpubs[j] == who {
+                    sender_in_pubs = true;
+                }
+            }
+
+            // 必须是节点列表中的节点提交申请
+            if !sender_in_pubs {
+                return Err(Error::<T>::Call403.into());
+            }
+
+            // 启动应用
+            wetee_worker::Pallet::<T>::work_launch(work, report, deploy_key)?;
 
             Ok(().into())
         }

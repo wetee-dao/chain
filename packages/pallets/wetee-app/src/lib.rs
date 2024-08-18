@@ -171,6 +171,18 @@ pub mod pallet {
     pub type AppIdAccounts<T: Config> =
         StorageMap<_, Identity, TeeAppId, T::AccountId, OptionQuery>;
 
+    /// 代码版本
+    #[pallet::storage]
+    #[pallet::getter(fn code_signature)]
+    pub type CodeSignature<T: Config> =
+        StorageMap<_, Identity, TeeAppId, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+
+    /// 代码打包签名人
+    #[pallet::storage]
+    #[pallet::getter(fn code_signer)]
+    pub type CodeSigner<T: Config> =
+        StorageMap<_, Identity, TeeAppId, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+
     /// App setting
     /// App设置
     #[pallet::storage]
@@ -196,7 +208,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// App created.
         /// App创建
-        CreatedApp { creator: T::AccountId, id: u64 },
+        AppCreated { creator: T::AccountId, id: u64 },
         /// App runing.
         /// App运行
         AppRuning { creator: T::AccountId, id: u64 },
@@ -261,6 +273,10 @@ pub mod pallet {
             name: Vec<u8>,
             // img of the App.
             image: Vec<u8>,
+            // signer of the App.
+            signer: BoundedVec<u8, ConstU32<64>>,
+            // signature of the App.
+            signature: BoundedVec<u8, ConstU32<64>>,
             // meta of the App.
             meta: Vec<u8>,
             // port of service
@@ -317,6 +333,8 @@ pub mod pallet {
             <TEEApps<T>>::insert(who.clone(), id, app);
             <AppIdAccounts<T>>::insert(id, who.clone());
             <AppVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());
+            <CodeSignature<T>>::insert(id, signature);
+            <CodeSigner<T>>::insert(id, signer);
             if secret_env.is_some() {
                 <SecretEnvs<T>>::insert(id, secret_env.unwrap());
             }
@@ -343,7 +361,7 @@ pub mod pallet {
             let deposit = wetee_assets::Pallet::<T>::free_balance(0, &who.clone());
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
-            Self::deposit_event(Event::<T>::CreatedApp {
+            Self::deposit_event(Event::<T>::AppCreated {
                 id,
                 creator: who.clone(),
             });
@@ -376,6 +394,12 @@ pub mod pallet {
             // img of the App.
             // image 目标宗旨
             new_image: Option<Vec<u8>>,
+            // signer of the App.
+            // 签名人
+            new_signer: Option<BoundedVec<u8, ConstU32<64>>>,
+            // signature of the App.
+            // 签名
+            new_signature: Option<BoundedVec<u8, ConstU32<64>>>,
             // port of service
             // 服务端口号
             new_port: Option<Vec<Service>>,
@@ -417,6 +441,14 @@ pub mod pallet {
             )?;
             if secret_env.is_some() {
                 <SecretEnvs<T>>::insert(app_id, secret_env.unwrap());
+            }
+
+            if new_signer.is_some() {
+                <CodeSigner<T>>::insert(app_id, new_signer.unwrap());
+            }
+
+            if new_signature.is_some() {
+                <CodeSignature<T>>::insert(app_id, new_signature.unwrap());
             }
 
             let mut iter = Envs::<T>::iter_prefix(app_id);
