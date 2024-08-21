@@ -2,12 +2,16 @@ use super::*;
 
 pub trait PledgeTrait<VoteWeight, AccountId, DaoId, BlockNumber, DispatchError> {
     fn try_vote(
-        &self,
         who: &AccountId,
         dao_id: &DaoId,
         vote_model: u8,
+        amount: VoteWeight,
     ) -> result::Result<(VoteWeight, BlockNumber), DispatchError>;
-    fn vote_end_do(&self, who: &AccountId, dao_id: &DaoId) -> result::Result<(), DispatchError>;
+    fn vote_end_do(
+        who: &AccountId,
+        dao_id: &DaoId,
+        amount: VoteWeight,
+    ) -> result::Result<(), DispatchError>;
 }
 
 pub trait ConvertInto<A> {

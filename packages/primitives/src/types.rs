@@ -1,4 +1,5 @@
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::prelude::vec;
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
 
@@ -134,6 +135,15 @@ pub struct Disk {
     pub size: u32,
 }
 
+impl Default for Disk {
+    fn default() -> Self {
+        Disk {
+            path: DiskClass::SSD("".as_bytes().to_vec()),
+            size: 1,
+        }
+    }
+}
+
 /// 计算资源
 /// computing resource
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -196,6 +206,17 @@ pub struct EnvInput {
     pub v: Vec<u8>,
 }
 
+impl Default for EnvInput {
+    fn default() -> Self {
+        EnvInput {
+            etype: EditType::INSERT,
+            index: 1,
+            k: EnvKey::Env(vec![0; 16]),
+            v: vec![0; 16],
+        }
+    }
+}
+
 /// 加密配置 hash
 /// secret setting hash
 pub type EnvHash = Vec<u8>;
@@ -244,6 +265,17 @@ pub struct Container {
     /// cpu memory disk
     /// cpu memory disk
     pub cr: Cr,
+}
+
+impl Default for Container {
+    fn default() -> Self {
+        Container {
+            image: "".as_bytes().to_vec(),
+            command: Command::NONE,
+            port: vec![Service::default()],
+            cr: Cr::default(),
+        }
+    }
 }
 
 /// Ip 信息

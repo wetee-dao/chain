@@ -9,7 +9,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::{traits::WorkExt,types::{ClusterId, ComCr, MintId,Cr, TeeAppId, WorkId, WorkType,ClusterLevel,TEEVersion,P2PAddr}};
+use wetee_primitives::{traits::WorkExt,types::{ClusterId, Ip, ComCr, MintId,Cr, TeeAppId, WorkId, WorkType,ClusterLevel,TEEVersion,P2PAddr}};
 
 #[cfg(test)]
 mod mock;
@@ -83,12 +83,12 @@ pub mod pallet {
     /// 代码版本
     #[pallet::storage]
     #[pallet::getter(fn code_signature)]
-    pub type CodeSignature<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    pub type CodeSignature<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
     
     /// 代码打包签名人
     #[pallet::storage]
     #[pallet::getter(fn code_signer)]
-    pub type CodeSigner<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    pub type CodeSigner<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
 
     /// 侧链boot peers
     #[pallet::storage]
@@ -359,7 +359,7 @@ pub mod pallet {
         /// Worker cluster register
         /// 集群注册
         #[pallet::call_index(001)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cluster_register())]
         pub fn cluster_register(
             origin: OriginFor<T>,
             name: Vec<u8>,
@@ -440,42 +440,10 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Worker cluster upload proof of work data
-        /// 提交集群的工作证明
-        // #[pallet::call_index(004)]
-        // #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
-        // pub fn cluster_proof_upload(
-        //     origin: OriginFor<T>,
-        //     id: ClusterId,
-        //     proof: ProofOfCluster,
-        // ) -> DispatchResultWithPostInfo {
-        //     let creator = ensure_signed(origin)?;
-        //     let cid = K8sClusterAccounts::<T>::get(creator.clone()).ok_or(Error::<T>::ClusterNotExists)?;
-
-        //     // check user
-        //     // 检查是否是集群的主人
-        //     ensure!(
-        //         id == cid,
-        //         Error::<T>::ClusterIsExists
-        //     );
-
-        //     let cluster = K8sClusters::<T>::get(id).ok_or(Error::<T>::ClusterNotExists)?;
-
-        //     // check status
-        //     // 检查集群是否已经开始
-        //     ensure!(cluster.status == 1, Error::<T>::ClusterNotStarted);
-
-        //     // save proof
-        //     // 保存工作证明
-        //     ProofOfClusters::<T>::insert(cluster.id.clone(), proof);
-
-        //     Ok(().into())
-        // }
-
         /// Worker cluster mortgage
         /// 质押硬件
         #[pallet::call_index(002)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cluster_mortgage())]
         pub fn cluster_mortgage(
             origin: OriginFor<T>,
             id: ClusterId,
@@ -556,7 +524,7 @@ pub mod pallet {
         /// Worker cluster unmortgage
         /// 解抵押
         #[pallet::call_index(003)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cluster_unmortgage())]
         pub fn cluster_unmortgage(
             origin: OriginFor<T>,
             id: ClusterId,
@@ -606,7 +574,7 @@ pub mod pallet {
         /// Work proof of work data upload
         /// 提交工作证明
         #[pallet::call_index(005)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::work_proof_upload())]
         pub fn work_proof_upload(
             origin: OriginFor<T>,
             work_id: WorkId,
@@ -726,7 +694,7 @@ pub mod pallet {
         /// Worker cluster withdrawal
         /// 提现余额
         #[pallet::call_index(006)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(10, 20)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cluster_withdrawal())]
         pub fn cluster_withdrawal(
             origin: OriginFor<T>,
             work_id: WorkId,
@@ -780,7 +748,7 @@ pub mod pallet {
         /// Worker cluster stop
         /// 停止集群
         #[pallet::call_index(007)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cluster_stop())]
         pub fn cluster_stop(origin: OriginFor<T>, id: ClusterId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -837,7 +805,7 @@ pub mod pallet {
         /// Worker cluster report
         /// 投诉集群
         #[pallet::call_index(008)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cluster_report())]
         pub fn cluster_report(
             origin: OriginFor<T>,
             cluster_id: ClusterId,
@@ -866,7 +834,7 @@ pub mod pallet {
         /// Worker report stop
         /// 停止投诉
         #[pallet::call_index(009)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::report_close())]
         pub fn report_close(
             origin: OriginFor<T>,
             cluster_id: ClusterId,
@@ -890,7 +858,7 @@ pub mod pallet {
         /// Work stop
         /// 停止应用
         #[pallet::call_index(010)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::work_stop())]
         pub fn work_stop(
             origin: OriginFor<T>,
             work_id: WorkId,
@@ -930,7 +898,7 @@ pub mod pallet {
         /// Set boot peers
         /// 设置引导节点
         #[pallet::call_index(011)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_boot_peers())]
         pub fn set_boot_peers(
             origin: OriginFor<T>,
             boots: Vec<P2PAddr<T::AccountId>>,
@@ -947,7 +915,7 @@ pub mod pallet {
         }
     
         #[pallet::call_index(012)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_stage())]
         pub fn set_stage(
             origin: OriginFor<T>,
             stage: u32,
@@ -962,11 +930,11 @@ pub mod pallet {
         /// 上传共识节点代码
         /// update consensus node code
         #[pallet::call_index(014)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::upload_code())]
         pub fn upload_code(
             origin: OriginFor<T>,
-            signature: BoundedVec<u8, ConstU32<64>>,
-            signer: BoundedVec<u8, ConstU32<64>>,
+            signature: Vec<u8>,
+            signer: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_signed_or_root(origin)?;

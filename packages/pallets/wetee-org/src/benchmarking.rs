@@ -38,73 +38,73 @@ fn creat_dao<T: Config>() -> (DaoAssetId, DaoAssetId) {
 }
 
 benchmarks! {
-    create_dao {
-    }:{
-        let (dao_id, second_id) = creat_dao::<T>();
-    }
+  create_dao {
+  }:{
+    let (dao_id, second_id) = creat_dao::<T>();
+  }
 
-    update_dao {
-        let (dao_id, second_id) = creat_dao::<T>();
-    }:{
-        assert!(Org::<T>::daos(5000).is_some());
-        let alice = get_alice::<T>();
-        Org::<T>::update_dao(
-            SystemOrigin::Signed(alice).into(),
-            5000,
-            Some(vec![1; 4]),
-            Some(vec![1; 4]),
-            Some(vec![1; 4]),
-            Some(vec![1; 4]),
-            Some(vec![1; 4]),
-            Some(vec![1; 4]),
-            Some(vec![1; 4]),
-            Some(vec![1; 4]),
-            Some(vec![1; 4]),
-            Some(crate::Status::Active)
-        );
-    }
+  update_dao {
+    let (dao_id, second_id) = creat_dao::<T>();
+  }:{
+    assert!(Org::<T>::daos(5000).is_some());
+    let alice = get_alice::<T>();
+    Org::<T>::update_dao(
+      SystemOrigin::Signed(alice).into(),
+      5000,
+      Some(vec![1; 4]),
+      Some(vec![1; 4]),
+      Some(vec![1; 4]),
+      Some(vec![1; 4]),
+      Some(vec![1; 4]),
+      Some(vec![1; 4]),
+      Some(vec![1; 4]),
+      Some(vec![1; 4]),
+      Some(vec![1; 4]),
+      Some(crate::Status::Active)
+    );
+  }
 
-    create_roadmap_task {
-        let (dao_id, second_id) = creat_dao::<T>();
-    }:{
-        assert!(Org::<T>::daos(5000).is_some());
-        let alice = get_alice::<T>();
-        Org::<T>::create_roadmap_task(
-            SystemOrigin::Signed(alice).into(),
-            5000,
-            202301,
-            vec![1; 4],
-            1,
-            vec![1].into(),
-        );
-    }
+  create_roadmap_task {
+    let (dao_id, second_id) = creat_dao::<T>();
+  }:{
+    assert!(Org::<T>::daos(5000).is_some());
+    let alice = get_alice::<T>();
+    Org::<T>::create_roadmap_task(
+      SystemOrigin::Signed(alice).into(),
+      5000,
+      202301,
+      vec![1; 4],
+      1,
+      vec![1].into(),
+    );
+  }
 
-    update_roadmap_task{
-        let alice = get_alice::<T>();
-        let (dao_id, second_id) = creat_dao::<T>();
-        Org::<T>::create_roadmap_task(
-            SystemOrigin::Signed(alice).into(),
-            5000,
-            202301,
-            vec![1; 4], // name
-            1, // priority
-            vec![1].into(), // tags
-        );
+  update_roadmap_task{
+    let alice = get_alice::<T>();
+    let (dao_id, second_id) = creat_dao::<T>();
+    Org::<T>::create_roadmap_task(
+      SystemOrigin::Signed(alice).into(),
+      5000,
+      202301,
+      vec![1; 4], // name
+      1, // priority
+      vec![1].into(), // tags
+    );
     Org::<T>::get_task(5000, 202301, 0).unwrap();
-    }:{
-        assert!(Org::<T>::daos(5000).is_some());
-        let alice = get_alice::<T>();
+  }:{
+    assert!(Org::<T>::daos(5000).is_some());
+    let alice = get_alice::<T>();
 
-        Org::<T>::update_roadmap_task(
-            SystemOrigin::Signed(alice).into(),
-            5000,
-            202301,
-            0, // task_id
-            0, // priority
-            1, // status
-            Some(vec![1].into()), // tags
-        );
-    }
+    Org::<T>::update_roadmap_task(
+      SystemOrigin::Signed(alice).into(),
+      5000,
+      202301,
+      0, // task_id
+      0, // priority
+      1, // status
+      Some(vec![1].into()), // tags
+    );
+  }
 
   create_app{
     let (dao_id, second_id) = creat_dao::<T>();

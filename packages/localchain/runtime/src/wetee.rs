@@ -50,7 +50,7 @@ impl GovIsJoin<RuntimeCall> for GovFunc {
 
 impl wetee_gov::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type Pledge = Pledge<Balance>;
+    type Pledge = Pledge;
     type GovFunc = GovFunc;
     type WeightInfo = ();
 }
@@ -149,6 +149,9 @@ impl wetee_dsecret::Config for Runtime {
 
     type OffchainSignature = Signature;
     type OffchainPublic = <Signature as Verify>::Signer;
+
+    #[cfg(feature = "runtime-benchmarks")]
+    type Helper = ();
 }
 
 impl wetee_tee_bridge::Config for Runtime {

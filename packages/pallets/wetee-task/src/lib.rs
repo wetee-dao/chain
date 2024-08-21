@@ -265,7 +265,7 @@ pub mod pallet {
         /// Task create
         /// 注册任务
         #[pallet::call_index(001)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::create())]
         pub fn create(
             origin: OriginFor<T>,
             name: Vec<u8>,
@@ -365,7 +365,7 @@ pub mod pallet {
         /// Rerun task
         /// 重启任务
         #[pallet::call_index(002)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::rerun())]
         pub fn rerun(origin: OriginFor<T>, id: TeeAppId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let account = <TaskIdAccounts<T>>::get(id).ok_or(Error::<T>::TaskNotExists)?;
@@ -408,7 +408,7 @@ pub mod pallet {
         /// Task update
         /// 更新任务
         #[pallet::call_index(003)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::update())]
         pub fn update(
             origin: OriginFor<T>,
             // App id
@@ -547,7 +547,7 @@ pub mod pallet {
         /// update price
         /// 更新价格
         #[pallet::call_index(004)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::update_price())]
         pub fn update_price(
             origin: OriginFor<T>,
             // level

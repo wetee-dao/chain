@@ -68,6 +68,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 mod weights;
 pub use weights::WeightInfo;
 
@@ -249,7 +252,7 @@ pub mod pallet {
 
         /// 设置加入WETEE所需要的最小抵押                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
         #[pallet::call_index(003)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(4, 1) + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_existenial_deposit())]
         pub fn set_existenial_deposit(
             origin: OriginFor<T>,
             dao_id: DaoAssetId,
@@ -382,58 +385,6 @@ pub mod pallet {
             <Self as MultiCurrency<T::AccountId>>::transfer(dao_id, &from, &to, amount)?;
             Ok(().into())
         }
-
-        /// 成为会员
-        #[pallet::call_index(007)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(4, 4) + Weight::from_all(40_000))]
-        pub fn join(
-            origin: OriginFor<T>,
-            dao_id: DaoAssetId,
-            share_expect: u32,
-            #[pallet::compact] existenial_deposit: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            // let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(who.clone())?;
-            // ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
-
-            // 最低押金必须大于0
-            ensure!(
-                existenial_deposit >= 0u32.into(),
-                Error::<T>::DepositNotZero
-            );
-
-            // 获取链上资金池
-            let daoroot = wetee_org::Pallet::<T>::dao_account(dao_id);
-            let daoroot_total =
-                <Self as MultiCurrency<T::AccountId>>::total_balance(NATIVE_ASSET_ID, &daoroot);
-            ensure!(daoroot_total > 0u32.into(), Error::<T>::DepositTooLow);
-
-            // 判断用户期望share是否符合当前汇率
-            let share_expect_b: BalanceOf<T> = share_expect.into();
-            ensure!(
-                <Self as MultiCurrency<T::AccountId>>::total_issuance(dao_id) / daoroot_total
-                    >= share_expect_b / existenial_deposit,
-                Error::<T>::DepositRateError
-            );
-
-            // 将资金转入资金池B池
-            <Self as MultiCurrency<T::AccountId>>::transfer(
-                NATIVE_ASSET_ID,
-                &who,
-                &daoroot,
-                existenial_deposit,
-            )?;
-
-            // 设置为会员，并且为用户添加 share
-            wetee_org::Pallet::<T>::try_add_member(dao_id, who.clone())?;
-            <Self as MultiCurrency<T::AccountId>>::deposit(dao_id, &who, share_expect.into())?;
-
-            let treasury = wetee_org::Pallet::<T>::dao_treasury(dao_id);
-            // 往国库产生 mint
-            <Self as MultiCurrency<T::AccountId>>::deposit(dao_id, &treasury, share_expect.into())?;
-
-            Ok(().into())
-        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -444,6 +395,16 @@ pub mod pallet {
         ) -> result::Result<BalanceOf<T>, DispatchError> {
             let balance = <Self as MultiCurrency<T::AccountId>>::total_balance(dao_id, &who);
             Ok(balance)
+        }
+
+        // 设置账户金额
+        pub fn set_balance(
+            dao_id: DaoAssetId,
+            who: T::AccountId,
+            value: BalanceOf<T>,
+        ) -> result::Result<(), DispatchError> {
+            <Self as MultiCurrency<T::AccountId>>::deposit(dao_id, &who, value)?;
+            Ok(())
         }
 
         /// 为...锁定保证金

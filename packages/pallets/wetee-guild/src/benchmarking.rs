@@ -2,6 +2,7 @@ use super::*;
 use crate::{Call, Pallet};
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
+use scale_info::prelude::vec;
 use wetee_primitives::types::DaoAssetId;
 
 fn get_alice<T: Config>() -> T::AccountId {
@@ -43,7 +44,7 @@ mod benchmarks {
 
         #[extrinsic_call]
         _(
-            RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(5000)),
+            RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(5000, 0)),
             5000,
             0,
             bob.clone(),
@@ -57,7 +58,7 @@ mod benchmarks {
 
         #[extrinsic_call]
         _(
-            RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(5000)),
+            RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(5000, 0)),
             5000,
             vec![1; 4],
             vec![1; 4],

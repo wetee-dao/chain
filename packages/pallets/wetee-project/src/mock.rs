@@ -60,15 +60,15 @@ pub struct Vote(pub Balance);
 
 impl PledgeTrait<u128, u64, u64, u64, DispatchError> for Vote {
     fn try_vote(
-        &self,
         _who: &u64,
         _dao_id: &u64,
         _vote_model: u8,
+        amount: u64,
     ) -> Result<(u128, u64), DispatchError> {
         Ok((100u128, 100u64))
     }
 
-    fn vote_end_do(&self, _who: &u64, _dao_id: &u64) -> Result<(), DispatchError> {
+    fn vote_end_do(_who: &u64, _dao_id: &u64, amount: u64) -> Result<(), DispatchError> {
         Ok(())
     }
 }

@@ -2,7 +2,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
 
-use wetee_primitives::types::{ClusterId, ComCr, WorkId};
+use wetee_primitives::types::{ClusterId, ComCr, Ip, WorkId};
 
 /// K8sCluster specific information
 /// 集群信息
@@ -121,13 +121,4 @@ pub struct DepositPrice {
     pub disk_per: u32,
     /// gpu
     pub gpu_per: u32,
-}
-
-/// Ip 信息
-/// Ip
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct Ip {
-    pub ipv4: Option<u32>,
-    pub ipv6: Option<u128>,
-    pub domain: Option<Vec<u8>>,
 }

@@ -161,7 +161,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         // ink call tee callback function
         #[pallet::call_index(001)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::ink_callback())]
         pub fn ink_callback(
             origin: OriginFor<T>,
             cluster_id: ClusterId,
@@ -202,7 +202,7 @@ pub mod pallet {
                 args.encode()
             };
 
-            let gas_limit = Weight::from_all(40000000000000000);
+            let gas_limit = Weight::MAX;
 
             // call contract
             let call_result = pallet_contracts::Pallet::<T>::bare_call(
@@ -224,11 +224,12 @@ pub mod pallet {
             // get fee
             let gas = Self::weight_to_fee(call_result.gas_consumed);
 
-            // transfer fee to target account
-            // 将抵押转移到目标账户
+            // fee to burn
+            // 销毁手续费
             // TODO 帐户余额检测
             wetee_assets::Pallet::<T>::burn_with_number(0, owner_account, gas.into())?;
 
+            // remove call
             TEECalls::<T>::remove(cluster_id, call_id);
 
             match call_result.result {
@@ -250,7 +251,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(008)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_tee_api())]
         pub fn set_tee_api(
             origin: OriginFor<T>,
             // App id
@@ -262,6 +263,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
+            // check work owner
             let (owner_account, _, _, _, _) =
                 <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
@@ -291,9 +293,13 @@ pub mod pallet {
         ) -> result::Result<u128, DispatchError> {
             let id = <NextId<T>>::get();
 
+            // 获取集群id
+            // get cluster id
             let cid = wetee_worker::Pallet::<T>::work_contracts(work_id.clone())
                 .ok_or(Error::<T>::Call404)?;
 
+            // 插入tee call
+            // insert tee call
             let tee_call = TEECall {
                 id,
                 chain_id: None,
@@ -316,8 +322,9 @@ pub mod pallet {
             Ok(id)
         }
 
+        // call gas fee
         fn weight_to_fee(weight: Weight) -> u64 {
-            weight.ref_time() * 1000 + weight.proof_size() * 10
+            weight.ref_time() * 20 + weight.proof_size() * 20
         }
     }
 }

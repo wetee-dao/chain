@@ -23,10 +23,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
-use parity_scale_codec::{Decode, Encode};
 use frame_support::traits::UnfilteredDispatchable;
 use frame_support::{dispatch::DispatchResult as DResult, traits::OriginTrait};
 use frame_system::pallet_prelude::*;
+use parity_scale_codec::{Decode, Encode};
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
@@ -102,19 +102,19 @@ pub enum Opinion {
 /// Information about votes.
 /// 投票信息
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct VoteInfo<DaoId, Pledge, BlockNumber, VoteWeight, Opinion, PropIndex> {
+pub struct VoteInfo<DaoId, BlockNumber, Balance, Opinion, PropIndex> {
     /// The id of the Dao where the vote is located.
     /// 投票所在组织
     pub dao_id: DaoId,
     /// The specific thing that the vote pledged.
     /// 抵押
-    pub pledge: Pledge,
+    pub pledge: Balance,
     /// Object or agree.
     /// 是否同意
     pub opinion: Opinion,
     /// voting weight.
     /// 投票权重
-    pub vote_weight: VoteWeight,
+    pub vote_weight: Balance,
     /// Block height that can be unlocked.
     /// 投票解锁阶段
     pub unlock_block: BlockNumber,
@@ -216,18 +216,13 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// What to stake when voting in a prop.
-        type Pledge: Clone
-            + Default
-            + Copy
-            + Parameter
-            + Member
-            + PledgeTrait<
-                BalanceOf<Self>,
-                Self::AccountId,
-                DaoAssetId,
-                BlockNumberFor<Self>,
-                DispatchError,
-            >;
+        type Pledge: PledgeTrait<
+            BalanceOf<Self>,
+            Self::AccountId,
+            DaoAssetId,
+            BlockNumberFor<Self>,
+            DispatchError,
+        >;
 
         /// 判断是否是加入工会和项目的投票
         /// Determine whether it is a vote to join the guild and project.
@@ -351,7 +346,7 @@ pub mod pallet {
         _,
         Identity,
         T::AccountId,
-        Vec<VoteInfo<DaoAssetId, T::Pledge, BlockNumberFor<T>, BalanceOf<T>, Opinion, PropIndex>>,
+        Vec<VoteInfo<DaoAssetId, BlockNumberFor<T>, BalanceOf<T>, Opinion, PropIndex>>,
         ValueQuery,
     >;
 
@@ -365,7 +360,7 @@ pub mod pallet {
         /// Open a prop.
         StartTable(DaoAssetId, PropIndex),
         /// Vote for the prop.
-        Vote(DaoAssetId, PropIndex, T::Pledge),
+        Vote(DaoAssetId, PropIndex, BalanceOf<T>),
         /// Cancel a vote on a prop.
         CancelVote(DaoAssetId, PropIndex),
         /// Vote and execute the transaction corresponding to the proposa.
@@ -375,7 +370,7 @@ pub mod pallet {
             result: DResult,
         },
         /// Unlock
-        Unlock(T::AccountId, DaoAssetId, T::Pledge),
+        Unlock(T::AccountId, DaoAssetId, BalanceOf<T>),
         /// Unlock
         Unreserved(T::AccountId, BalanceOf<T>),
         /// Set Origin for each Call.
@@ -475,7 +470,7 @@ pub mod pallet {
             });
             ps.push(Period {
                 name: "treasury".into(),
-                pallet_index: 4,
+                pallet_index: 1,
                 decision_deposit: 1u32.into(),
                 prepare_period: 10u32.into(),
                 max_deciding: 100u32.into(),
@@ -508,10 +503,9 @@ pub mod pallet {
 
             // 判断提案通道是否和提案匹配
             let pallet_id = T::GovFunc::get_pallet_id(*proposal.clone());
-            log::info!("pallet_id: {}", pallet_id);
             ensure!(
                 pallet_id == period.pallet_index,
-                wetee_org::Error::<T>::InVailCall
+                wetee_org::Error::<T>::InVailPallet
             );
 
             // 获取提案通道
@@ -536,7 +530,6 @@ pub mod pallet {
             // let ucall_id: u32 = <<T as wetee_org::Config>::CallId as frame_support::traits::Get>::get(call_id);
 
             // 确认提案为当前资产支持的 调用
-            #[cfg(not(feature = "runtime-benchmarks"))]
             ensure!(
                 call_id != T::CallId::default(),
                 wetee_org::Error::<T>::InVailCall
@@ -578,7 +571,7 @@ pub mod pallet {
         /// Open a prop.
         /// 开始全民公投
         #[pallet::call_index(003)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::deposit_proposal())]
         pub fn deposit_proposal(
             origin: OriginFor<T>,
             dao_id: DaoAssetId,
@@ -613,12 +606,12 @@ pub mod pallet {
         /// Vote for the prop
         /// 为全民公投投票
         #[pallet::call_index(004)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::vote_for_prop())]
         pub fn vote_for_prop(
             origin: OriginFor<T>,
             dao_id: DaoAssetId,
             prop_index: PropIndex,
-            pledge: T::Pledge,
+            #[pallet::compact] pledge: BalanceOf<T>,
             opinion: Opinion,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -640,10 +633,13 @@ pub mod pallet {
                     if info.status == PropStatus::Ongoing {
                         // 确认用户属于可投票的用户范围
                         Self::check_auth_for_vote(dao_id, info.member_data.clone(), who.clone())?;
+
                         let period = Self::get_period(dao_id, info.period_index)?;
                         if info.start + period.max_deciding > now {
                             let vote_model = <VoteModel<T>>::try_get(dao_id).unwrap_or_default();
-                            let vote_result = pledge.try_vote(&who, &dao_id, vote_model)?;
+                            let vote_result = <T as pallet::Config>::Pledge::try_vote(
+                                &who, &dao_id, vote_model, pledge,
+                            )?;
                             vote_weight = vote_result.0;
 
                             let duration = vote_result.1;
@@ -685,7 +681,7 @@ pub mod pallet {
         /// Cancel a vote on a prop
         /// 取消一个投票
         #[pallet::call_index(005)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_vote())]
         pub fn cancel_vote(
             origin: OriginFor<T>,
             dao_id: DaoAssetId,
@@ -705,7 +701,10 @@ pub mod pallet {
                             let mut votes = VotesOf::<T>::get(&who);
                             votes.retain(|h| {
                                 if h.prop_index == index
-                                    && h.pledge.vote_end_do(&who, &dao_id).is_ok()
+                                    && <T as pallet::Config>::Pledge::vote_end_do(
+                                        &who, &dao_id, h.pledge,
+                                    )
+                                    .is_ok()
                                 {
                                     match h.opinion {
                                         Opinion::NO => {
@@ -741,7 +740,7 @@ pub mod pallet {
         /// Vote and execute the transaction corresponding to the proposa
         /// 执行一个投票通过提案
         #[pallet::call_index(006)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::run_proposal())]
         pub fn run_proposal(
             origin: OriginFor<T>,
             dao_id: DaoAssetId,
@@ -832,7 +831,7 @@ pub mod pallet {
 
         /// Unlock
         #[pallet::call_index(007)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::unlock())]
         pub fn unlock(origin: OriginFor<T>, dao_id: DaoAssetId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let now = Self::now();
@@ -864,7 +863,8 @@ pub mod pallet {
                     let prop = Props::<T>::get(h.dao_id, h.prop_index).unwrap();
                     if prop.status == PropStatus::Ongoing
                         || h.unlock_block > now
-                        || h.pledge.vote_end_do(&who, &h.dao_id).is_err()
+                        || <T as pallet::Config>::Pledge::vote_end_do(&who, &h.dao_id, h.pledge)
+                            .is_err()
                     {
                         true
                     } else {
@@ -880,7 +880,7 @@ pub mod pallet {
 
         /// Set the maximum number of proposals at the same time
         #[pallet::call_index(009)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_max_pre_props())]
         pub fn set_max_pre_props(
             origin: OriginFor<T>,
             dao_id: DaoAssetId,
@@ -897,7 +897,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(015)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::update_vote_model())]
         pub fn update_vote_model(
             origin: OriginFor<T>,
             dao_id: DaoAssetId,
@@ -914,7 +914,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(016)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_periods())]
         pub fn set_periods(
             origin: OriginFor<T>,
             dao_id: DaoAssetId,
@@ -1001,18 +1001,13 @@ pub mod pallet {
             );
 
             // 添加提案抵押
+            #[cfg(not(feature = "runtime-benchmarks"))]
             wetee_assets::Pallet::<T>::reserve(dao_id, who.clone(), deposit)?;
-
-            // <DepositOf<T>>::insert(dao_id, propose_id, (&[&who][..], deposit));
-            // <PreProps<T>>::insert(dao_id, pre_props);
 
             // 确认用户属于可提案的用户范围
             Self::check_auth_for_vote(dao_id, member_data.clone(), who.clone())?;
 
-            // 获取抵押
-            // let mut prop_index: Option<PropIndex> = None;
-
-            // if <DepositOf<T>>::take(dao_id, prop_index).is_some() {
+            // 提案
             let prop_index = Some(Self::inject_prop(
                 dao_id,
                 proposal,
@@ -1020,13 +1015,8 @@ pub mod pallet {
                 period_index,
                 member_data,
             ));
-            // }
 
-            // if prop_index.is_none() {
-            //     Err(Error::<T>::NoneWaiting)?
-            // }
-
-            // 抵押
+            // 更新抵押
             <DepositOf<T>>::insert(dao_id, prop_index.unwrap(), (&[&who][..], deposit));
 
             Ok(prop_index.unwrap())

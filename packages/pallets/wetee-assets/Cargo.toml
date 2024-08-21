@@ -27,8 +27,6 @@ sp-std = {workspace = true}
 
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
-# orml-traits = { default-features = false, path = "../../../../open-runtime-module-library/traits" }
-# orml-tokens = { default-features = false, path = "../../../../open-runtime-module-library/tokens" }
 
 wetee-org = {path = "../wetee-org", package = "wetee-org", default-features = false}
 wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
@@ -39,7 +37,14 @@ sp-runtime = {workspace = true}
 
 [features]
 default = ["std"]
-runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+  "pallet-balances/runtime-benchmarks",
+  "orml-tokens/runtime-benchmarks",
+]
 std = [
   "parity-scale-codec/std",
   "frame-benchmarking/std",

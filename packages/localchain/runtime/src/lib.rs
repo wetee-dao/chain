@@ -409,7 +409,18 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_sudo, Sudo]
-        [pallet_template, TemplateModule]
+        [wetee_org, WeTEEOrg]
+        [wetee_sudo, WeTEESudo]
+        [wetee_guild, WeTEEGuild]
+        [wetee_treasury, WeTEETreasury]
+        [wetee_assets, WeTEEAsset]
+        [wetee_gov, WeTEEGov]
+        [wetee_app, WeTEEApp]
+        [wetee_gpu, WeTEEGpu]
+        [wetee_task, WeTEETask]
+        [wetee_dsecret, WeTEEDsecret]
+        [wetee_tee_bridge, WeTEEBridge]
+        [wetee_worker, WeTEEWorker]
     );
 }
 

@@ -44,7 +44,7 @@ mod benchmarks {
 
         #[extrinsic_call]
         _(
-            RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(5000)),
+            RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(5000, 0)),
             5000,
             bob.clone(),
             value,

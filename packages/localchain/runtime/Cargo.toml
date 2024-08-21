@@ -167,6 +167,19 @@ runtime-benchmarks = [
   "pallet-sudo/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
+  "pallet-contracts/runtime-benchmarks",
+  "wetee-org/runtime-benchmarks",
+  "wetee-sudo/runtime-benchmarks",
+  "wetee-guild/runtime-benchmarks",
+  "wetee-treasury/runtime-benchmarks",
+  "wetee-assets/runtime-benchmarks",
+  "wetee-gov/runtime-benchmarks",
+  "wetee-app/runtime-benchmarks",
+  "wetee-gpu/runtime-benchmarks",
+  "wetee-task/runtime-benchmarks",
+  "wetee-dsecret/runtime-benchmarks",
+  "wetee-tee-bridge/runtime-benchmarks",
+  "wetee-worker/runtime-benchmarks",
 ]
 
 try-runtime = [

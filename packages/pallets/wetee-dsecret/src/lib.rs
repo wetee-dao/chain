@@ -30,6 +30,33 @@ pub mod pallet {
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     use frame_system::pallet_prelude::*;
 
+    #[cfg(feature = "runtime-benchmarks")]
+    pub trait BenchmarkHelper<Public, AccountId, Signature> {
+        fn signer() -> (Public, AccountId);
+        fn sign(signer: &Public, message: &[u8]) -> Signature;
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    impl
+        BenchmarkHelper<
+            sp_runtime::MultiSigner,
+            sp_runtime::AccountId32,
+            sp_runtime::MultiSignature,
+        > for ()
+    {
+        fn signer() -> (sp_runtime::MultiSigner, sp_runtime::AccountId32) {
+            let public = sp_io::crypto::sr25519_generate(0.into(), None);
+            let account = sp_runtime::MultiSigner::Sr25519(public).into_account();
+            (public.into(), account)
+        }
+        fn sign(signer: &sp_runtime::MultiSigner, message: &[u8]) -> sp_runtime::MultiSignature {
+            sp_runtime::MultiSignature::Sr25519(
+                sp_io::crypto::sr25519_sign(0.into(), &signer.clone().try_into().unwrap(), message)
+                    .unwrap(),
+            )
+        }
+    }
+
     #[pallet::config]
     pub trait Config: frame_system::Config + wetee_org::Config + wetee_worker::Config {
         /// pallet event
@@ -48,6 +75,10 @@ pub mod pallet {
         ///
         /// Must identify as an on-chain `Self::AccountId`.
         type OffchainPublic: IdentifyAccount<AccountId = Self::AccountId>;
+
+        #[cfg(feature = "runtime-benchmarks")]
+        /// A set of helper functions for benchmarking.
+        type Helper: BenchmarkHelper<Self::OffchainPublic, Self::AccountId, Self::OffchainSignature>;
     }
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -60,12 +91,12 @@ pub mod pallet {
     /// 代码版本
     #[pallet::storage]
     #[pallet::getter(fn code_signature)]
-    pub type CodeSignature<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    pub type CodeSignature<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
 
     /// 代码打包签名人
     #[pallet::storage]
     #[pallet::getter(fn code_signer)]
-    pub type CodeSigner<T: Config> = StorageValue<_, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    pub type CodeSigner<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
 
     /// The id of the next node to be created.
     /// 获取下一个 node id
@@ -112,7 +143,7 @@ pub mod pallet {
         /// 注册 dkg 节点
         /// register dkg node
         #[pallet::call_index(001)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::register_node())]
         pub fn register_node(
             origin: OriginFor<T>,
             sender: T::AccountId,
@@ -135,11 +166,11 @@ pub mod pallet {
         /// 上传共识节点代码
         /// update consensus node code
         #[pallet::call_index(002)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::upload_code())]
         pub fn upload_code(
             origin: OriginFor<T>,
-            signature: BoundedVec<u8, ConstU32<64>>,
-            signer: BoundedVec<u8, ConstU32<64>>,
+            signature: Vec<u8>,
+            signer: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_signed_or_root(origin)?;
@@ -160,7 +191,7 @@ pub mod pallet {
         /// 上传共识节点代码
         /// update consensus node code
         #[pallet::call_index(003)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::upload_cluster_proof())]
         pub fn upload_cluster_proof(
             origin: OriginFor<T>,
             cid: ClusterId,
@@ -226,7 +257,7 @@ pub mod pallet {
 
         /// 上传 devloper，report hash 启动应用
         #[pallet::call_index(004)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::work_launch())]
         pub fn work_launch(
             origin: OriginFor<T>,
             work: WorkId,

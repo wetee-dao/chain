@@ -10,7 +10,7 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
 cd "$DIR/../"
 
-cargo build --release --features runtime-benchmarks
+cargo build --features runtime-benchmarks --release -p wetee-node 
 
 # # org
 # ./target/release/wetee-node benchmark pallet --chain dev \
@@ -36,8 +36,50 @@ cargo build --release --features runtime-benchmarks
 #     --output packages/pallets/wetee-treasury/src/weights.rs \
 #     --template ./hacks/frame-weight-template.hbs
 
-# gov
+# # assets
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-assets --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-assets/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
+
+# # gov
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-gov --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-gov/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
+
+# # app
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-app --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-app/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
+
+# # gpu
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-gpu --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-gpu/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
+
+# # task
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-task --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-task/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
+
+# # dsecret
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-dsecret --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-dsecret/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
+
+# # tee-bridge
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-tee-bridge --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-tee-bridge/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
+
+# tee-worker
 ./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-gov --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-gov/src/weights.rs \
+    --pallet wetee-worker --extrinsic '*' --steps 20 --repeat 10 \
+    --output packages/pallets/wetee-worker/src/weights.rs \
     --template ./hacks/frame-weight-template.hbs

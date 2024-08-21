@@ -1,9 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
-use parity_scale_codec::MaxEncodedLen;
-use parity_scale_codec::{Decode, Encode};
 use frame_support::traits::IsSubType;
 pub use pallet::*;
+use parity_scale_codec::MaxEncodedLen;
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{traits::BlockNumberProvider, RuntimeDebug};
 use sp_std::{prelude::*, result};
@@ -436,6 +436,9 @@ pub mod pallet {
         /// DAO unsupported call
         /// 无效的调用
         InVailCall,
+        /// DAO unsupported pallet
+        /// 无效的Pallet
+        InVailPallet,
         /// Wrong origin.
         /// 错误的组织
         BadOrigin,

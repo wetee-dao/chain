@@ -22,6 +22,7 @@ parity-scale-codec = {workspace = true, default-features = false, features = [
 scale-info = {workspace = true, default-features = false, features = [
   "derive",
 ]}
+sp-io = {workspace = true}
 sp-runtime = {workspace = true}
 sp-std = {workspace = true}
 

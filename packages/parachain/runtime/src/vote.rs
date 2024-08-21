@@ -20,10 +20,10 @@ impl Default for Pledge<Balance> {
 
 impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for Pledge<Balance> {
     fn try_vote(
-        &self,
         who: &AccountId,
         dao_id: &DaoAssetId,
         vote_model: u8,
+        amount: u64,
     ) -> Result<(Balance, BlockNumber), DispatchError> {
         let amount = match self {
             Pledge::FungToken(x) => {
@@ -41,7 +41,7 @@ impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for
         Ok((amount, 100))
     }
 
-    fn vote_end_do(&self, who: &AccountId, dao_id: &DaoAssetId) -> Result<(), DispatchError> {
+    fn vote_end_do(who: &AccountId, dao_id: &DaoAssetId, amount: u64) -> Result<(), DispatchError> {
         match self {
             Pledge::FungToken(x) => {
                 WeTEEAsset::unreserve(*dao_id, who.clone(), *x)?;
