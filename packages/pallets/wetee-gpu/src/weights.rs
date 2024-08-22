@@ -49,29 +49,29 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 8_359_000 picoseconds.
-		Weight::from_parts(8_537_000, 0)
+		// Minimum execution time: 8_370_000 picoseconds.
+		Weight::from_parts(8_656_000, 0)
 	}
 	fn update() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_892_000 picoseconds.
-		Weight::from_parts(7_204_000, 0)
+		// Minimum execution time: 7_023_000 picoseconds.
+		Weight::from_parts(7_262_000, 0)
 	}
 	fn restart() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_940_000 picoseconds.
-		Weight::from_parts(5_267_000, 0)
+		// Minimum execution time: 4_913_000 picoseconds.
+		Weight::from_parts(5_168_000, 0)
 	}
 	fn update_price() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_856_000 picoseconds.
-		Weight::from_parts(5_212_000, 0)
+		// Minimum execution time: 4_813_000 picoseconds.
+		Weight::from_parts(4_986_000, 0)
 	}
 }
 
@@ -81,28 +81,28 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 8_359_000 picoseconds.
-		Weight::from_parts(8_537_000, 0)
+		// Minimum execution time: 8_370_000 picoseconds.
+		Weight::from_parts(8_656_000, 0)
 	}
 	fn update() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_892_000 picoseconds.
-		Weight::from_parts(7_204_000, 0)
+		// Minimum execution time: 7_023_000 picoseconds.
+		Weight::from_parts(7_262_000, 0)
 	}
 	fn restart() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_940_000 picoseconds.
-		Weight::from_parts(5_267_000, 0)
+		// Minimum execution time: 4_913_000 picoseconds.
+		Weight::from_parts(5_168_000, 0)
 	}
 	fn update_price() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_856_000 picoseconds.
-		Weight::from_parts(5_212_000, 0)
+		// Minimum execution time: 4_813_000 picoseconds.
+		Weight::from_parts(4_986_000, 0)
 	}
 }

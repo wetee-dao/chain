@@ -139,7 +139,7 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
         let mut app = wetee_app::TEEApps::<Test>::get(account.clone(), w.id.clone())
             .ok_or(wetee_worker::Error::<Test>::AppNotExists)?;
 
-        app.status = 1;
+        app.status = status;
         wetee_app::TEEApps::<Test>::insert(account.clone(), w.id.clone(), app);
 
         Ok(true)
@@ -232,7 +232,7 @@ pub fn new_test_run() -> sp_io::TestExternalities {
         .unwrap();
 
     pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE, 10000000), (BOB, 10000), (103, 10)],
+        balances: vec![(ALICE, 10000000000000000000), (BOB, 10000), (103, 10)],
     }
     .assimilate_storage(&mut t)
     .unwrap();

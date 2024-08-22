@@ -328,7 +328,13 @@ pub mod pallet {
         BootPeersTooLong,
         /// Tee report 404
         /// tee 报告缺失
-        TeeReport404
+        TeeReport404,
+        /// Tee proof 404
+        /// tee 证明缺失
+        TeeProof404,
+        /// Work report 404
+        /// 工作报告缺失
+        ReportNotExists
     }
 
     #[derive(frame_support::DefaultNoBound)]
@@ -615,6 +621,10 @@ pub mod pallet {
             if creport.is_none() || creport.unwrap() != new_report {
                 ReportOfWork::<T>::insert(work_id.clone(),new_report);
             }
+
+            if proof.is_none() {
+                return Err(Error::<T>::TeeProof404.into());
+            }
     
             // check status
             // 保存工作证明
@@ -715,11 +725,13 @@ pub mod pallet {
 
             let state = WorkContractState::<T>::get(work_id.clone(), cluster_id)
                 .ok_or(Error::<T>::WorkNotExists)?;
+            
             #[cfg(test)]
             println!(
                 "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ state.minted: {:?}",
                 state.minted 
             );
+            
             ensure!(
                 state.minted >= amount,
                 Error::<T>::InsufficientMintedBalance
@@ -1089,6 +1101,10 @@ pub mod pallet {
                 return Err(Error::<T>::WorkNotStarted.into());
             }
 
+            if report.is_none() {
+                return Err(Error::<T>::ReportNotExists.into());
+            }
+
             // check and set TEE report 
             // 设置 TEE 报告
             let new_report = report.unwrap();
@@ -1118,7 +1134,6 @@ pub mod pallet {
                 }
             }
 
-
             if work_status == 1 {
                 // 设置工作的状态
                 <T as pallet::Config>::WorkExt::set_work_status(work_id.clone(), 3)?;
@@ -1143,7 +1158,7 @@ pub mod pallet {
             Self::deposit_event(Event::WorkRuning {
                 user: owner_account,
                 work_id,
-                cluster_id:cluster_id,
+                cluster_id,
             });
   
             Ok(false)

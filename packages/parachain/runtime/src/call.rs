@@ -27,7 +27,7 @@ fn call2id(call: RuntimeCall) -> Result<u32, ()> {
             wetee_assets::Call::set_metadata { .. } => Ok(203 as CallId),
             wetee_assets::Call::burn { .. } => Ok(204 as CallId),
             wetee_assets::Call::transfer { .. } => Ok(205 as CallId),
-            wetee_assets::Call::join { .. } => Ok(206 as CallId),
+            // wetee_assets::Call::join { .. } => Ok(206 as CallId),
             _ => Err(()),
         },
         RuntimeCall::WeTEEGuild(func) => match func {

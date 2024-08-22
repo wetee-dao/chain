@@ -17,19 +17,21 @@ pub fn do_create() {
     );
     Pallet::<Test>::create(
         OriginFor::<Test>::signed(ALICE),
-        "test".as_bytes().to_vec(),
-        "test".as_bytes().to_vec(),
-        "{}".as_bytes().to_vec(),
+        vec![0, 0, 0, 0, 0, 0, 0, 0],
+        vec![0, 0, 0, 0, 0, 0, 0, 0],
+        BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+        BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+        vec![
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ],
         vec![Service::Tcp(80)],
-        Command::SH(vec![1]),
-        vec![],
-        10,
-        10,
-        vec![Disk {
-            path: DiskClass::SSD("test".as_bytes().to_vec()),
-            size: 10,
-        }],
-        vec![],
+        Command::SH("".as_bytes().to_vec()),
+        vec![EnvInput::default()],
+        Some(EnvHash::default()),
+        500,
+        100,
+        vec![Disk::default()],
+        vec![Container::default(), Container::default()],
         1,
         TEEVersion::SGX,
     )
@@ -49,19 +51,19 @@ pub fn create() {
         );
         assert!(Pallet::<Test>::create(
             OriginFor::<Test>::signed(ALICE),
-            "test".as_bytes().to_vec(),
-            "test".as_bytes().to_vec(),
-            "{}".as_bytes().to_vec(),
+            vec![0, 0, 0, 0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0, 0, 0, 0],
+            BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+            BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+            vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
             vec![Service::Tcp(80)],
-            Command::SH(vec![1]),
-            vec![],
-            10,
-            10,
-            vec![Disk {
-                path: DiskClass::SSD("test".as_bytes().to_vec()),
-                size: 10,
-            }],
-            vec![],
+            Command::SH("".as_bytes().to_vec()),
+            vec![EnvInput::default()],
+            Some(EnvHash::default()),
+            500,
+            100,
+            vec![Disk::default()],
+            vec![Container::default(), Container::default()],
             1,
             TEEVersion::SGX,
         )
@@ -76,17 +78,19 @@ pub fn update() {
         assert!(Pallet::<Test>::update(
             OriginFor::<Test>::signed(ALICE),
             0,
-            Some("test".as_bytes().to_vec()),
-            Some(vec![1, 2, 3]),
+            Some(vec![0, 0, 0, 0, 0, 0, 0, 0]),
+            Some(vec![0, 0, 0, 0, 0, 0, 0, 0]),
+            Some(
+                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+            ),
+            Some(
+                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+            ),
             Some(vec![Service::Tcp(80)]),
-            None,
-            vec![EnvInput {
-                etype: EditType::INSERT,
-                index: 0,
-                k: EnvKey::Env("test".as_bytes().to_vec()),
-                v: "test".as_bytes().to_vec(),
-            }],
-            false,
+            Some(Command::SH("".as_bytes().to_vec())),
+            vec![EnvInput::default()],
+            Some(EnvHash::default()),
+            true,
         )
         .is_ok());
     });
@@ -99,20 +103,22 @@ pub fn update_should_fail() {
         do_create();
         assert!(Pallet::<Test>::update(
             OriginFor::<Test>::signed(ALICE),
-            0,
-            Some("test".as_bytes().to_vec()),
-            Some(vec![1, 2, 3]),
+            1,
+            Some(vec![0, 0, 0, 0, 0, 0, 0, 0]),
+            Some(vec![0, 0, 0, 0, 0, 0, 0, 0]),
+            Some(
+                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+            ),
+            Some(
+                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+            ),
             Some(vec![Service::Tcp(80)]),
-            None,
-            vec![EnvInput {
-                etype: EditType::INSERT,
-                index: 0,
-                k: EnvKey::Env("test".as_bytes().to_vec()),
-                v: "test".as_bytes().to_vec(),
-            }],
-            false,
+            Some(Command::SH("".as_bytes().to_vec())),
+            vec![EnvInput::default()],
+            Some(EnvHash::default()),
+            true,
         )
-        .is_ok(),);
+        .is_err());
     });
 }
 

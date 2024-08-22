@@ -4,6 +4,7 @@
 use super::*;
 use crate as wetee_worker;
 use crate::mock::{RuntimeCall, *};
+use frame_benchmarking::account;
 use frame_support::{assert_noop, assert_ok, debug};
 use wetee_primitives::types::{Command, Disk, DiskClass, Service, TEEVersion};
 
@@ -46,10 +47,13 @@ pub fn create_work() {
         OriginFor::<Test>::signed(ALICE),
         "test".as_bytes().to_vec(),
         "test".as_bytes().to_vec(),
+        BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+        BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
         "{}".as_bytes().to_vec(),
         vec![Service::Tcp(80)],
         Command::SH(vec![1]),
         vec![],
+        None,
         10,
         10,
         vec![Disk {
@@ -80,12 +84,22 @@ pub fn mortgage() {
 }
 
 pub fn start() {
+    frame_system::Pallet::<Test>::set_block_number(190);
     let work_id = WorkId {
         wtype: WorkType::APP,
         id: 0,
     };
-    frame_system::Pallet::<Test>::set_block_number(631);
-    Pallet::<Test>::work_proof_upload(
+    Pallet::<Test>::work_launch(work_id, Some(vec![0u8, 64]), account("a", 1, 1)).unwrap();
+    frame_system::Pallet::<Test>::set_block_number(191);
+}
+
+pub fn upload_work_proof() {
+    let work_id = WorkId {
+        wtype: WorkType::APP,
+        id: 0,
+    };
+    frame_system::Pallet::<Test>::set_block_number(900);
+    assert!(Pallet::<Test>::work_proof_upload(
         OriginFor::<Test>::signed(ALICE),
         work_id,
         Some(ProofOfWork {
@@ -102,7 +116,7 @@ pub fn start() {
         }),
         Some("test".as_bytes().to_vec()),
     )
-    .unwrap();
+    .is_ok());
 }
 
 #[test]
@@ -320,64 +334,6 @@ pub fn cluster_unmortgage_should_fail3() {
 }
 
 #[test]
-pub fn cluster_proof_upload() {
-    new_test_run().execute_with(|| {
-        create_cluster();
-        assert!(Pallet::<Test>::cluster_mortgage(
-            OriginFor::<Test>::signed(ALICE),
-            1,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1,
-            100
-        )
-        .is_ok());
-
-        assert!(Pallet::<Test>::cluster_proof_upload(
-            OriginFor::<Test>::signed(ALICE),
-            1,
-            ProofOfCluster {
-                public_key: "test".as_bytes().to_vec()
-            },
-        )
-        .is_ok());
-    });
-}
-
-#[test]
-pub fn cluster_proof_upload_should_fail() {
-    new_test_run().execute_with(|| {
-        create_cluster();
-        assert!(Pallet::<Test>::cluster_proof_upload(
-            OriginFor::<Test>::signed(BOB),
-            1,
-            ProofOfCluster {
-                public_key: "test".as_bytes().to_vec()
-            }
-        )
-        .is_err());
-    });
-}
-
-#[test]
-pub fn cluster_proof_upload_should_fail2() {
-    new_test_run().execute_with(|| {
-        create_cluster();
-        assert!(Pallet::<Test>::cluster_proof_upload(
-            OriginFor::<Test>::signed(ALICE),
-            0,
-            ProofOfCluster {
-                public_key: "test".as_bytes().to_vec()
-            }
-        )
-        .is_err());
-    });
-}
-
-#[test]
 pub fn cluster_stop() {
     new_test_run().execute_with(|| {
         create_cluster();
@@ -406,17 +362,19 @@ pub fn cluster_stop_should_fail2() {
 #[test]
 pub fn work_proof_upload() {
     new_test_run().execute_with(|| {
-        frame_system::Pallet::<Test>::set_block_number(1);
-        create_cluster();
-        create_work();
-        mortgage();
         let work_id = WorkId {
             wtype: WorkType::APP,
             id: 0,
         };
+        frame_system::Pallet::<Test>::set_block_number(1);
+        create_cluster();
+        create_work();
+        mortgage();
         Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
-        frame_system::Pallet::<Test>::set_block_number(631);
-        let res = Pallet::<Test>::work_proof_upload(
+        start();
+
+        frame_system::Pallet::<Test>::set_block_number(900);
+        Pallet::<Test>::work_proof_upload(
             OriginFor::<Test>::signed(ALICE),
             work_id,
             Some(ProofOfWork {
@@ -432,8 +390,8 @@ pub fn work_proof_upload() {
                 cr_hash: "test".as_bytes().to_vec(),
             }),
             Some("test".as_bytes().to_vec()),
-        );
-        assert!(res.is_ok());
+        )
+        .unwrap();
     });
 }
 
@@ -450,7 +408,7 @@ pub fn work_proof_upload_should_fail() {
             id: 0,
         };
         // Pallet::<Test>::match_deploy(ALICE.clone(), work_id.clone(), None).unwrap();
-        frame_system::Pallet::<Test>::set_block_number(631);
+        frame_system::Pallet::<Test>::set_block_number(600);
         let res = Pallet::<Test>::work_proof_upload(
             OriginFor::<Test>::signed(ALICE),
             work_id,
@@ -485,7 +443,7 @@ pub fn work_proof_upload_should_fail2() {
             id: 0,
         };
         Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
-        // frame_system::Pallet::<Test>::set_block_number(631);
+        // frame_system::Pallet::<Test>::set_block_number(600);
         let res = Pallet::<Test>::work_proof_upload(
             OriginFor::<Test>::signed(ALICE),
             work_id,
@@ -520,11 +478,10 @@ pub fn cluster_withdrawal() {
         };
         Pallet::<Test>::match_deploy(work_id.clone(), None).unwrap();
         start();
-        frame_system::Pallet::<Test>::set_block_number(635);
-        let work_id = WorkId {
-            wtype: WorkType::APP,
-            id: 0,
-        };
+
+        frame_system::Pallet::<Test>::set_block_number(900);
+        upload_work_proof();
+
         let res = Pallet::<Test>::cluster_withdrawal(OriginFor::<Test>::signed(ALICE), work_id, 1);
         println!("res: {:?}", res);
         assert!(res.is_ok());

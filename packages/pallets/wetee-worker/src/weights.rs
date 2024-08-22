@@ -57,57 +57,57 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_962_000 picoseconds.
-		Weight::from_parts(6_126_000, 0)
+		// Minimum execution time: 6_021_000 picoseconds.
+		Weight::from_parts(6_161_000, 0)
 	}
 	fn cluster_mortgage() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_776_000 picoseconds.
-		Weight::from_parts(5_025_000, 0)
+		// Minimum execution time: 5_059_000 picoseconds.
+		Weight::from_parts(5_558_000, 0)
 	}
 	fn cluster_unmortgage() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_788_000 picoseconds.
-		Weight::from_parts(5_059_000, 0)
+		// Minimum execution time: 4_917_000 picoseconds.
+		Weight::from_parts(5_220_000, 0)
 	}
 	fn work_proof_upload() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_155_000 picoseconds.
-		Weight::from_parts(5_333_000, 0)
+		// Minimum execution time: 5_494_000 picoseconds.
+		Weight::from_parts(5_801_000, 0)
 	}
 	fn cluster_withdrawal() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_980_000 picoseconds.
-		Weight::from_parts(5_428_000, 0)
+		// Minimum execution time: 5_047_000 picoseconds.
+		Weight::from_parts(5_410_000, 0)
 	}
 	fn cluster_stop() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_941_000 picoseconds.
-		Weight::from_parts(5_266_000, 0)
+		// Minimum execution time: 5_222_000 picoseconds.
+		Weight::from_parts(5_469_000, 0)
 	}
 	fn cluster_report() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_211_000 picoseconds.
-		Weight::from_parts(5_446_000, 0)
+		// Minimum execution time: 5_357_000 picoseconds.
+		Weight::from_parts(5_595_000, 0)
 	}
 	fn report_close() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_868_000 picoseconds.
-		Weight::from_parts(5_161_000, 0)
+		// Minimum execution time: 5_080_000 picoseconds.
+		Weight::from_parts(5_432_000, 0)
 	}
 	/// Storage: `WeTEEWorker::BootPeers` (r:0 w:1)
 	/// Proof: `WeTEEWorker::BootPeers` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
@@ -115,8 +115,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 8_888_000 picoseconds.
-		Weight::from_parts(9_609_000, 0)
+		// Minimum execution time: 9_383_000 picoseconds.
+		Weight::from_parts(9_795_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEWorker::Stage` (r:0 w:1)
@@ -125,8 +125,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_071_000 picoseconds.
-		Weight::from_parts(6_627_000, 0)
+		// Minimum execution time: 6_192_000 picoseconds.
+		Weight::from_parts(6_394_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEWorker::CodeSigner` (r:0 w:1)
@@ -137,16 +137,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 16_679_000 picoseconds.
-		Weight::from_parts(17_199_000, 0)
+		// Minimum execution time: 17_098_000 picoseconds.
+		Weight::from_parts(17_360_000, 0)
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	fn work_stop() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_723_000 picoseconds.
-		Weight::from_parts(5_233_000, 0)
+		// Minimum execution time: 5_004_000 picoseconds.
+		Weight::from_parts(5_461_000, 0)
 	}
 }
 
@@ -156,57 +156,57 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_962_000 picoseconds.
-		Weight::from_parts(6_126_000, 0)
+		// Minimum execution time: 6_021_000 picoseconds.
+		Weight::from_parts(6_161_000, 0)
 	}
 	fn cluster_mortgage() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_776_000 picoseconds.
-		Weight::from_parts(5_025_000, 0)
+		// Minimum execution time: 5_059_000 picoseconds.
+		Weight::from_parts(5_558_000, 0)
 	}
 	fn cluster_unmortgage() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_788_000 picoseconds.
-		Weight::from_parts(5_059_000, 0)
+		// Minimum execution time: 4_917_000 picoseconds.
+		Weight::from_parts(5_220_000, 0)
 	}
 	fn work_proof_upload() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_155_000 picoseconds.
-		Weight::from_parts(5_333_000, 0)
+		// Minimum execution time: 5_494_000 picoseconds.
+		Weight::from_parts(5_801_000, 0)
 	}
 	fn cluster_withdrawal() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_980_000 picoseconds.
-		Weight::from_parts(5_428_000, 0)
+		// Minimum execution time: 5_047_000 picoseconds.
+		Weight::from_parts(5_410_000, 0)
 	}
 	fn cluster_stop() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_941_000 picoseconds.
-		Weight::from_parts(5_266_000, 0)
+		// Minimum execution time: 5_222_000 picoseconds.
+		Weight::from_parts(5_469_000, 0)
 	}
 	fn cluster_report() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_211_000 picoseconds.
-		Weight::from_parts(5_446_000, 0)
+		// Minimum execution time: 5_357_000 picoseconds.
+		Weight::from_parts(5_595_000, 0)
 	}
 	fn report_close() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_868_000 picoseconds.
-		Weight::from_parts(5_161_000, 0)
+		// Minimum execution time: 5_080_000 picoseconds.
+		Weight::from_parts(5_432_000, 0)
 	}
 	/// Storage: `WeTEEWorker::BootPeers` (r:0 w:1)
 	/// Proof: `WeTEEWorker::BootPeers` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
@@ -214,8 +214,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 8_888_000 picoseconds.
-		Weight::from_parts(9_609_000, 0)
+		// Minimum execution time: 9_383_000 picoseconds.
+		Weight::from_parts(9_795_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEWorker::Stage` (r:0 w:1)
@@ -224,8 +224,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_071_000 picoseconds.
-		Weight::from_parts(6_627_000, 0)
+		// Minimum execution time: 6_192_000 picoseconds.
+		Weight::from_parts(6_394_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEWorker::CodeSigner` (r:0 w:1)
@@ -236,15 +236,15 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 16_679_000 picoseconds.
-		Weight::from_parts(17_199_000, 0)
+		// Minimum execution time: 17_098_000 picoseconds.
+		Weight::from_parts(17_360_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	fn work_stop() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_723_000 picoseconds.
-		Weight::from_parts(5_233_000, 0)
+		// Minimum execution time: 5_004_000 picoseconds.
+		Weight::from_parts(5_461_000, 0)
 	}
 }

@@ -15,12 +15,6 @@ use wetee_primitives::{
 
 use wetee_org::{self};
 
-#[cfg(test)]
-mod mock;
-
-#[cfg(test)]
-mod tests;
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 

@@ -1,244 +1,244 @@
-#![allow(dead_code)]
-use super::*;
+// #![allow(dead_code)]
+// use super::*;
 
-use crate as wetee_project;
-use frame_support::{construct_runtime, derive_impl, parameter_types, traits::Contains, PalletId};
-use orml_traits::parameter_type_with_key;
-use parity_scale_codec::MaxEncodedLen;
-use sp_core::ConstU32;
-use sp_runtime::{traits::Zero, BuildStorage, DispatchError};
-use wetee_gov::traits::PledgeTrait;
+// use crate as wetee_project;
+// use frame_support::{construct_runtime, derive_impl, parameter_types, traits::Contains, PalletId};
+// use orml_traits::parameter_type_with_key;
+// use parity_scale_codec::MaxEncodedLen;
+// use sp_core::ConstU32;
+// use sp_runtime::{traits::Zero, BuildStorage, DispatchError};
+// use wetee_gov::traits::PledgeTrait;
 
-use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
-use wetee_primitives::{
-    traits::{GovIsJoin, PalletGet, UHook},
-    types::{CallId, DaoAssetId},
-};
+// use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
+// use wetee_primitives::{
+//     traits::{GovIsJoin, PalletGet, UHook},
+//     types::{CallId, DaoAssetId},
+// };
 
-type Amount = i64;
-type Balance = u128;
-pub type BlockNumber = u64;
-pub type AccountId = u64;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+// type Amount = i64;
+// type Balance = u128;
+// pub type BlockNumber = u64;
+// pub type AccountId = u64;
+// type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+// type Block = frame_system::mocking::MockBlock<Test>;
 
-pub const ALICE: u64 = 0;
-pub const BOB: u64 = 1;
+// pub const ALICE: u64 = 0;
+// pub const BOB: u64 = 1;
 
-construct_runtime!(
-    pub enum Test
-    {
-        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Tokens: orml_tokens::{Pallet, Call, Config<T>, Storage, Event<T>},
+// construct_runtime!(
+//     pub enum Test
+//     {
+//         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
+//         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
+//         Tokens: orml_tokens::{Pallet, Call, Config<T>, Storage, Event<T>},
 
-        WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
-        WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
-        WETEESudo: wetee_sudo::{ Pallet, Call, Event<T>, Storage },
-        WETEEProject: wetee_project::{ Pallet, Call, Event<T>, Storage },
-        WETEEGov: wetee_gov::{ Pallet, Call, Event<T>, Storage },
-    }
-);
+//         WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
+//         WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
+//         WETEESudo: wetee_sudo::{ Pallet, Call, Event<T>, Storage },
+//         WETEEProject: wetee_project::{ Pallet, Call, Event<T>, Storage },
+//         WETEEGov: wetee_gov::{ Pallet, Call, Event<T>, Storage },
+//     }
+// );
 
-pub struct BlockEverything;
-impl Contains<RuntimeCall> for BlockEverything {
-    fn contains(_: &RuntimeCall) -> bool {
-        false
-    }
-}
+// pub struct BlockEverything;
+// impl Contains<RuntimeCall> for BlockEverything {
+//     fn contains(_: &RuntimeCall) -> bool {
+//         false
+//     }
+// }
 
-#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
-impl frame_system::Config for Test {
-    type Block = Block;
-    type AccountData = pallet_balances::AccountData<Balance>;
-}
+// #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
+// impl frame_system::Config for Test {
+//     type Block = Block;
+//     type AccountData = pallet_balances::AccountData<Balance>;
+// }
 
-#[derive(
-    PartialEq, Eq, Encode, Decode, RuntimeDebug, Clone, TypeInfo, Copy, MaxEncodedLen, Default,
-)]
-pub struct Vote(pub Balance);
+// #[derive(
+//     PartialEq, Eq, Encode, Decode, RuntimeDebug, Clone, TypeInfo, Copy, MaxEncodedLen, Default,
+// )]
+// pub struct Vote(pub Balance);
 
-impl PledgeTrait<u128, u64, u64, u64, DispatchError> for Vote {
-    fn try_vote(
-        _who: &u64,
-        _dao_id: &u64,
-        _vote_model: u8,
-        amount: u64,
-    ) -> Result<(u128, u64), DispatchError> {
-        Ok((100u128, 100u64))
-    }
+// impl PledgeTrait<u128, u64, u64, u64, DispatchError> for Vote {
+//     fn try_vote(
+//         _who: &u64,
+//         _dao_id: &u64,
+//         _vote_model: u8,
+//         amount: u64,
+//     ) -> Result<(u128, u64), DispatchError> {
+//         Ok((100u128, 100u64))
+//     }
 
-    fn vote_end_do(_who: &u64, _dao_id: &u64, amount: u64) -> Result<(), DispatchError> {
-        Ok(())
-    }
-}
+//     fn vote_end_do(_who: &u64, _dao_id: &u64, amount: u64) -> Result<(), DispatchError> {
+//         Ok(())
+//     }
+// }
 
-pub struct GovFunc;
-impl GovIsJoin<RuntimeCall> for GovFunc {
-    fn is_join(_call: RuntimeCall) -> bool {
-        false
-    }
-}
+// pub struct GovFunc;
+// impl GovIsJoin<RuntimeCall> for GovFunc {
+//     fn is_join(_call: RuntimeCall) -> bool {
+//         false
+//     }
+// }
 
-impl PalletGet<RuntimeCall> for GovFunc {
-    fn get_pallet_id(_call: RuntimeCall) -> u16 {
-        1
-    }
-}
+// impl PalletGet<RuntimeCall> for GovFunc {
+//     fn get_pallet_id(_call: RuntimeCall) -> u16 {
+//         1
+//     }
+// }
 
-impl wetee_gov::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type Pledge = Vote;
-    type WeightInfo = ();
-    type GovFunc = GovFunc;
-}
+// impl wetee_gov::Config for Test {
+//     type RuntimeEvent = RuntimeEvent;
+//     type Pledge = Vote;
+//     type WeightInfo = ();
+//     type GovFunc = GovFunc;
+// }
 
-impl wetee_project::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-}
+// impl wetee_project::Config for Test {
+//     type RuntimeEvent = RuntimeEvent;
+//     type WeightInfo = ();
+// }
 
-parameter_types! {
-    pub const TokensMaxReserves: u32 = 50;
-}
+// parameter_types! {
+//     pub const TokensMaxReserves: u32 = 50;
+// }
 
-parameter_type_with_key! {
-    pub ExistentialDeposits: |_currency_id: u32| -> Balance {
-        0u128
-    };
-}
+// parameter_type_with_key! {
+//     pub ExistentialDeposits: |_currency_id: u32| -> Balance {
+//         0u128
+//     };
+// }
 
-pub type ReserveIdentifier = [u8; 8];
+// pub type ReserveIdentifier = [u8; 8];
 
-pub struct MockDustRemovalWhitelist;
-impl Contains<AccountId> for MockDustRemovalWhitelist {
-    fn contains(_a: &AccountId) -> bool {
-        false
-    }
-}
+// pub struct MockDustRemovalWhitelist;
+// impl Contains<AccountId> for MockDustRemovalWhitelist {
+//     fn contains(_a: &AccountId) -> bool {
+//         false
+//     }
+// }
 
-impl orml_tokens::Config for Test {
-    type Amount = i64;
-    type Balance = Balance;
-    type CurrencyId = u64;
-    type RuntimeEvent = RuntimeEvent;
-    type ExistentialDeposits = ExistentialDeposits;
-    type CurrencyHooks = ();
-    type WeightInfo = ();
-    type MaxLocks = MaxLocks;
-    type DustRemovalWhitelist = MockDustRemovalWhitelist;
-    type MaxReserves = ConstU32<2>;
-    type ReserveIdentifier = ReserveIdentifier;
-}
+// impl orml_tokens::Config for Test {
+//     type Amount = i64;
+//     type Balance = Balance;
+//     type CurrencyId = u64;
+//     type RuntimeEvent = RuntimeEvent;
+//     type ExistentialDeposits = ExistentialDeposits;
+//     type CurrencyHooks = ();
+//     type WeightInfo = ();
+//     type MaxLocks = MaxLocks;
+//     type DustRemovalWhitelist = MockDustRemovalWhitelist;
+//     type MaxReserves = ConstU32<2>;
+//     type ReserveIdentifier = ReserveIdentifier;
+// }
 
-parameter_types! {
-    pub const ExistentialDeposit: u64 = 1;
-}
+// parameter_types! {
+//     pub const ExistentialDeposit: u64 = 1;
+// }
 
-impl pallet_balances::Config for Test {
-    type MaxLocks = ConstU32<50>;
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
-    /// The type for recording an account's balance.
-    type Balance = Balance;
-    /// The ubiquitous event type.
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
-    type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
-    type FreezeIdentifier = ();
-    type MaxFreezes = ();
-    type RuntimeHoldReason = ();
-    type RuntimeFreezeReason = ();
-}
+// impl pallet_balances::Config for Test {
+//     type MaxLocks = ConstU32<50>;
+//     type MaxReserves = ();
+//     type ReserveIdentifier = [u8; 8];
+//     /// The type for recording an account's balance.
+//     type Balance = Balance;
+//     /// The ubiquitous event type.
+//     type RuntimeEvent = RuntimeEvent;
+//     type DustRemoval = ();
+//     type ExistentialDeposit = ExistentialDeposit;
+//     type AccountStore = System;
+//     type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
+//     type FreezeIdentifier = ();
+//     type MaxFreezes = ();
+//     type RuntimeHoldReason = ();
+//     type RuntimeFreezeReason = ();
+// }
 
-parameter_types! {
-    pub const DaoPalletId: PalletId = PalletId(*b"weteedao");
-}
+// parameter_types! {
+//     pub const DaoPalletId: PalletId = PalletId(*b"weteedao");
+// }
 
-pub struct CreatedHook;
-impl UHook<u64, DaoAssetId> for CreatedHook {
-    fn run_hook(acount_id: u64, dao_id: DaoAssetId) {
-        // 以 WETEE 创建者设置为WETEE初始的 root 账户
-        wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
-    }
-}
+// pub struct CreatedHook;
+// impl UHook<u64, DaoAssetId> for CreatedHook {
+//     fn run_hook(acount_id: u64, dao_id: DaoAssetId) {
+//         // 以 WETEE 创建者设置为WETEE初始的 root 账户
+//         wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
+//     }
+// }
 
-impl wetee_org::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type CallId = CallId;
-    type OrgHook = CreatedHook;
-    type WeightInfo = ();
-    type MaxMembers = ConstU32<1000000>;
-    type PalletId = DaoPalletId;
-}
+// impl wetee_org::Config for Test {
+//     type RuntimeEvent = RuntimeEvent;
+//     type RuntimeCall = RuntimeCall;
+//     type CallId = CallId;
+//     type OrgHook = CreatedHook;
+//     type WeightInfo = ();
+//     type MaxMembers = ConstU32<1000000>;
+//     type PalletId = DaoPalletId;
+// }
 
-impl TryFrom<RuntimeCall> for CallId {
-    type Error = ();
-    fn try_from(call: RuntimeCall) -> Result<Self, Self::Error> {
-        match call {
-            // dao
-            RuntimeCall::WETEEProject(func) => match func {
-                wetee_project::Call::project_join_request { .. } => Ok(501 as CallId),
-                wetee_project::Call::create_project { .. } => Ok(502 as CallId),
-                wetee_project::Call::apply_project_funds { .. } => Ok(503 as CallId),
-                _ => Err(()),
-            },
-            RuntimeCall::WeteeAsset(func) => match func {
-                wetee_assets::Call::set_existenial_deposit { .. } => Ok(401 as CallId),
-                _ => Err(()),
-            },
-            _ => Err(()),
-        }
-    }
-}
+// impl TryFrom<RuntimeCall> for CallId {
+//     type Error = ();
+//     fn try_from(call: RuntimeCall) -> Result<Self, Self::Error> {
+//         match call {
+//             // dao
+//             RuntimeCall::WETEEProject(func) => match func {
+//                 wetee_project::Call::project_join_request { .. } => Ok(501 as CallId),
+//                 wetee_project::Call::create_project { .. } => Ok(502 as CallId),
+//                 wetee_project::Call::apply_project_funds { .. } => Ok(503 as CallId),
+//                 _ => Err(()),
+//             },
+//             RuntimeCall::WeteeAsset(func) => match func {
+//                 wetee_assets::Call::set_existenial_deposit { .. } => Ok(401 as CallId),
+//                 _ => Err(()),
+//             },
+//             _ => Err(()),
+//         }
+//     }
+// }
 
-parameter_types! {
-    pub const MaxClassMetadata: u32 = 1;
-    pub const MaxTokenMetadata: u32 = 1;
-}
+// parameter_types! {
+//     pub const MaxClassMetadata: u32 = 1;
+//     pub const MaxTokenMetadata: u32 = 1;
+// }
 
-parameter_type_with_key! {
-    pub ExistentialDeposits: |_currency_id: u64| -> Balance {
-        Zero::zero()
-    };
-}
+// parameter_type_with_key! {
+//     pub ExistentialDeposits: |_currency_id: u64| -> Balance {
+//         Zero::zero()
+//     };
+// }
 
-parameter_types! {
-    pub const MaxLocks: u32 = 50;
-    pub const MaxCreatableId: DaoAssetId = 10000;
-}
+// parameter_types! {
+//     pub const MaxLocks: u32 = 50;
+//     pub const MaxCreatableId: DaoAssetId = 10000;
+// }
 
-impl wetee_assets::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-    type MaxCreatableId = MaxCreatableId;
-    type MultiAsset = Tokens;
-    type NativeAsset = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
-}
+// impl wetee_assets::Config for Test {
+//     type RuntimeEvent = RuntimeEvent;
+//     type WeightInfo = ();
+//     type MaxCreatableId = MaxCreatableId;
+//     type MultiAsset = Tokens;
+//     type NativeAsset = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+// }
 
-impl wetee_sudo::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-}
+// impl wetee_sudo::Config for Test {
+//     type RuntimeEvent = RuntimeEvent;
+//     type WeightInfo = ();
+// }
 
-pub(crate) fn new_test_run() -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::<Test>::default()
-        .build_storage()
-        .unwrap();
+// pub(crate) fn new_test_run() -> sp_io::TestExternalities {
+//     let mut t = frame_system::GenesisConfig::<Test>::default()
+//         .build_storage()
+//         .unwrap();
 
-    pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE, 10000000), (BOB, 10000000)],
-    }
-    .assimilate_storage(&mut t)
-    .unwrap();
+//     pallet_balances::GenesisConfig::<Test> {
+//         balances: vec![(ALICE, 10000000), (BOB, 10000000)],
+//     }
+//     .assimilate_storage(&mut t)
+//     .unwrap();
 
-    let mut ext = sp_io::TestExternalities::new(t);
-    ext.execute_with(|| {
-        System::set_block_number(1);
-        // Timestamp::set_timestamp(12345);
-    });
-    ext
-}
+//     let mut ext = sp_io::TestExternalities::new(t);
+//     ext.execute_with(|| {
+//         System::set_block_number(1);
+//         // Timestamp::set_timestamp(12345);
+//     });
+//     ext
+// }

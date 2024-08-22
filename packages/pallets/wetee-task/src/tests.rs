@@ -18,10 +18,13 @@ pub fn do_create() {
         OriginFor::<Test>::signed(ALICE),
         "test".as_bytes().to_vec(),
         "test".as_bytes().to_vec(),
+        BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+        BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
         "{}".as_bytes().to_vec(),
         vec![Service::Tcp(80)],
         Command::SH(vec![1]),
         vec![],
+        None,
         1,
         1,
         vec![Disk {
@@ -49,10 +52,13 @@ pub fn create() {
             OriginFor::<Test>::signed(ALICE),
             "test".as_bytes().to_vec(),
             "test".as_bytes().to_vec(),
+            BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+            BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
             "{}".as_bytes().to_vec(),
             vec![Service::Tcp(80)],
             Command::SH(vec![1]),
             vec![],
+            None,
             1,
             1,
             vec![Disk {
@@ -75,6 +81,12 @@ pub fn update() {
             0,
             Some("test".as_bytes().to_vec()),
             Some(vec![1, 2, 3]),
+            Some(
+                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap()
+            ),
+            Some(
+                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap()
+            ),
             Some(vec![Service::Tcp(80)]),
             None,
             vec![EnvInput {
@@ -83,6 +95,7 @@ pub fn update() {
                 k: EnvKey::Env("test".as_bytes().to_vec()),
                 v: "test".as_bytes().to_vec(),
             }],
+            None,
             false,
         )
         .is_ok());
@@ -96,9 +109,15 @@ pub fn update_should_fail() {
         do_create();
         assert!(Pallet::<Test>::update(
             OriginFor::<Test>::signed(ALICE),
-            0,
+            1,
             Some("test".as_bytes().to_vec()),
             Some(vec![1, 2, 3]),
+            Some(
+                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap()
+            ),
+            Some(
+                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap()
+            ),
             Some(vec![Service::Tcp(80)]),
             None,
             vec![EnvInput {
@@ -107,9 +126,10 @@ pub fn update_should_fail() {
                 k: EnvKey::Env("test".as_bytes().to_vec()),
                 v: "test".as_bytes().to_vec(),
             }],
+            None,
             false,
         )
-        .is_ok(),);
+        .is_err());
     });
 }
 

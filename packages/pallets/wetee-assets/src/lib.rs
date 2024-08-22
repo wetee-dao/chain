@@ -222,14 +222,17 @@ pub mod pallet {
             amount: BalanceOf<T>,
             init_dao_asset: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
+            // 确认组织是否存在
             ensure!(
                 wetee_org::Daos::<T>::contains_key(dao_id),
                 Error::<T>::AssetNotExists
             );
 
+            // 确认用户是否是组织创建者
             let user = ensure_signed(origin)?;
             wetee_org::Pallet::<T>::ensrue_dao_creator(user.clone(), dao_id)?;
 
+            // 创建资产
             Self::do_create(user.clone(), dao_id, metadata, init_dao_asset, false)?;
 
             // 将资金转入资金池B池
@@ -260,6 +263,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(who)?;
+
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             ExistentDeposits::<T>::insert(dao_id, existenial_deposit);

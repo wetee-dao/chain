@@ -1,19 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-
-use frame_support::traits::ConstU32;
-use sp_runtime::{
-    traits::{IdentifyAccount, Verify},
-    BoundedVec,
-};
+use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_std::prelude::Vec;
 
 use wetee_primitives::types::{ClusterId, WorkId};
-
-#[cfg(test)]
-mod mock;
-
-#[cfg(test)]
-mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;

@@ -873,6 +873,13 @@ pub mod pallet {
 
         /// 获取账户中携带的信息
         pub fn get_gov_account(id: T::AccountId) -> result::Result<DaoGovAccount, DispatchError> {
+            #[cfg(feature = "runtime-benchmarks")]
+            return Ok(DaoGovAccount {
+                id: 5000,
+                p: 0,
+                s: 1,
+            });
+
             let result = PalletId::try_from_sub_account::<DaoGovAccount>(&id);
             ensure!(result.is_some(), Error::<T>::BadGovOrigin);
             Ok(result.unwrap().1)
@@ -882,16 +889,6 @@ pub mod pallet {
         pub fn ensrue_gov_approve_account(
             who: T::AccountId,
         ) -> result::Result<(T::AccountId, DaoGovAccount), DispatchError> {
-            #[cfg(feature = "runtime-benchmarks")]
-            return Ok((
-                who,
-                DaoGovAccount {
-                    id: 5000,
-                    p: 0,
-                    s: 1,
-                },
-            ));
-
             // 获取账户中的信息
             let gov = Self::get_gov_account(who.clone())?;
 

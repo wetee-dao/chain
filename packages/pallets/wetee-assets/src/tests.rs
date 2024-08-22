@@ -36,17 +36,6 @@ pub fn create_asset() -> DaoAssetId {
     )
     .unwrap();
 
-    let proposal = RuntimeCall::WeteeAsset(wetee_assets::Call::set_existenial_deposit {
-        dao_id,
-        existenial_deposit: 1,
-    });
-
-    assert_ok!(wetee_sudo::Pallet::<Test>::sudo(
-        RuntimeOrigin::signed(wetee_org::Daos::<Test>::get(dao_id).unwrap().creator),
-        dao_id,
-        Box::new(proposal)
-    ));
-
     dao_id
 }
 

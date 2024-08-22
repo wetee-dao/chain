@@ -64,8 +64,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `527`
 		//  Estimated: `3992`
-		// Minimum execution time: 61_093_000 picoseconds.
-		Weight::from_parts(61_728_000, 3992)
+		// Minimum execution time: 60_523_000 picoseconds.
+		Weight::from_parts(61_222_000, 3992)
 			.saturating_add(T::DbWeight::get().reads(5_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -75,8 +75,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 16_493_000 picoseconds.
-		Weight::from_parts(16_776_000, 0)
+		// Minimum execution time: 16_264_000 picoseconds.
+		Weight::from_parts(16_978_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEGov::VoteModel` (r:0 w:1)
@@ -85,8 +85,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 15_582_000 picoseconds.
-		Weight::from_parts(15_835_000, 0)
+		// Minimum execution time: 15_327_000 picoseconds.
+		Weight::from_parts(15_596_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEGov::MaxPreProps` (r:0 w:1)
@@ -95,8 +95,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 15_474_000 picoseconds.
-		Weight::from_parts(15_826_000, 0)
+		// Minimum execution time: 15_367_000 picoseconds.
+		Weight::from_parts(15_815_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEGov::PreProps` (r:1 w:0)
@@ -115,8 +115,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `508`
 		//  Estimated: `3973`
-		// Minimum execution time: 54_313_000 picoseconds.
-		Weight::from_parts(54_905_000, 3973)
+		// Minimum execution time: 53_093_000 picoseconds.
+		Weight::from_parts(53_620_000, 3973)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -128,8 +128,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `167`
 		//  Estimated: `3632`
-		// Minimum execution time: 18_184_000 picoseconds.
-		Weight::from_parts(18_665_000, 3632)
+		// Minimum execution time: 18_206_000 picoseconds.
+		Weight::from_parts(18_448_000, 3632)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 	}
 	/// Storage: `WeTEEGov::Props` (r:1 w:0)
@@ -138,8 +138,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `167`
 		//  Estimated: `3632`
-		// Minimum execution time: 14_094_000 picoseconds.
-		Weight::from_parts(14_471_000, 3632)
+		// Minimum execution time: 14_141_000 picoseconds.
+		Weight::from_parts(14_482_000, 3632)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	/// Storage: `WeTEEGov::Props` (r:1 w:0)
@@ -148,8 +148,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `167`
 		//  Estimated: `3632`
-		// Minimum execution time: 15_307_000 picoseconds.
-		Weight::from_parts(15_604_000, 3632)
+		// Minimum execution time: 15_122_000 picoseconds.
+		Weight::from_parts(15_457_000, 3632)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	/// Storage: `WeTEEGov::ReserveOf` (r:1 w:1)
@@ -160,8 +160,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `140`
 		//  Estimated: `3605`
-		// Minimum execution time: 28_655_000 picoseconds.
-		Weight::from_parts(29_139_000, 3605)
+		// Minimum execution time: 28_642_000 picoseconds.
+		Weight::from_parts(28_857_000, 3605)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -183,8 +183,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `527`
 		//  Estimated: `3992`
-		// Minimum execution time: 61_093_000 picoseconds.
-		Weight::from_parts(61_728_000, 3992)
+		// Minimum execution time: 60_523_000 picoseconds.
+		Weight::from_parts(61_222_000, 3992)
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
@@ -194,8 +194,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 16_493_000 picoseconds.
-		Weight::from_parts(16_776_000, 0)
+		// Minimum execution time: 16_264_000 picoseconds.
+		Weight::from_parts(16_978_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEGov::VoteModel` (r:0 w:1)
@@ -204,8 +204,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 15_582_000 picoseconds.
-		Weight::from_parts(15_835_000, 0)
+		// Minimum execution time: 15_327_000 picoseconds.
+		Weight::from_parts(15_596_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEGov::MaxPreProps` (r:0 w:1)
@@ -214,8 +214,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 15_474_000 picoseconds.
-		Weight::from_parts(15_826_000, 0)
+		// Minimum execution time: 15_367_000 picoseconds.
+		Weight::from_parts(15_815_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `WeTEEGov::PreProps` (r:1 w:0)
@@ -234,8 +234,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `508`
 		//  Estimated: `3973`
-		// Minimum execution time: 54_313_000 picoseconds.
-		Weight::from_parts(54_905_000, 3973)
+		// Minimum execution time: 53_093_000 picoseconds.
+		Weight::from_parts(53_620_000, 3973)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
@@ -247,8 +247,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `167`
 		//  Estimated: `3632`
-		// Minimum execution time: 18_184_000 picoseconds.
-		Weight::from_parts(18_665_000, 3632)
+		// Minimum execution time: 18_206_000 picoseconds.
+		Weight::from_parts(18_448_000, 3632)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 	}
 	/// Storage: `WeTEEGov::Props` (r:1 w:0)
@@ -257,8 +257,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `167`
 		//  Estimated: `3632`
-		// Minimum execution time: 14_094_000 picoseconds.
-		Weight::from_parts(14_471_000, 3632)
+		// Minimum execution time: 14_141_000 picoseconds.
+		Weight::from_parts(14_482_000, 3632)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 	}
 	/// Storage: `WeTEEGov::Props` (r:1 w:0)
@@ -267,8 +267,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `167`
 		//  Estimated: `3632`
-		// Minimum execution time: 15_307_000 picoseconds.
-		Weight::from_parts(15_604_000, 3632)
+		// Minimum execution time: 15_122_000 picoseconds.
+		Weight::from_parts(15_457_000, 3632)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 	}
 	/// Storage: `WeTEEGov::ReserveOf` (r:1 w:1)
@@ -279,8 +279,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `140`
 		//  Estimated: `3605`
-		// Minimum execution time: 28_655_000 picoseconds.
-		Weight::from_parts(29_139_000, 3605)
+		// Minimum execution time: 28_642_000 picoseconds.
+		Weight::from_parts(28_857_000, 3605)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}

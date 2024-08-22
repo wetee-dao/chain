@@ -47,15 +47,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_606_000 picoseconds.
-		Weight::from_parts(5_884_000, 0)
+		// Minimum execution time: 5_992_000 picoseconds.
+		Weight::from_parts(6_263_000, 0)
 	}
 	fn ink_callback() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_049_000 picoseconds.
-		Weight::from_parts(5_305_000, 0)
+		// Minimum execution time: 5_307_000 picoseconds.
+		Weight::from_parts(5_654_000, 0)
 	}
 }
 
@@ -65,14 +65,14 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_606_000 picoseconds.
-		Weight::from_parts(5_884_000, 0)
+		// Minimum execution time: 5_992_000 picoseconds.
+		Weight::from_parts(6_263_000, 0)
 	}
 	fn ink_callback() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_049_000 picoseconds.
-		Weight::from_parts(5_305_000, 0)
+		// Minimum execution time: 5_307_000 picoseconds.
+		Weight::from_parts(5_654_000, 0)
 	}
 }

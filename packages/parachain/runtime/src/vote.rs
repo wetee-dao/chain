@@ -8,45 +8,41 @@ use wetee_gov::traits::PledgeTrait;
 use wetee_primitives::types::DaoAssetId;
 
 #[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, Clone, TypeInfo, Copy, MaxEncodedLen)]
-pub enum Pledge<Balance> {
-    FungToken(Balance),
-}
+pub struct Pledge;
 
-impl Default for Pledge<Balance> {
+impl Default for Pledge {
     fn default() -> Self {
-        Pledge::FungToken(0)
+        Pledge {}
     }
 }
 
-impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for Pledge<Balance> {
+impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for Pledge {
     fn try_vote(
         who: &AccountId,
         dao_id: &DaoAssetId,
         vote_model: u8,
-        amount: u64,
+        amount: Balance,
     ) -> Result<(Balance, BlockNumber), DispatchError> {
-        let amount = match self {
-            Pledge::FungToken(x) => {
-                WeTEEAsset::reserve(*dao_id, who.clone(), *x)?;
-                if vote_model == 1 {
-                    // 1 account = 1 vote
-                    1
-                } else {
-                    // 1 token = 1 vote
-                    *x
-                }
+        let amount = {
+            WeTEEAsset::reserve(*dao_id, who.clone(), amount)?;
+            if vote_model == 1 {
+                // 1 account = 1 vote
+                1
+            } else {
+                // 1 token = 1 vote
+                amount
             }
         };
         log::info!("try_vote amount {:?}", amount);
         Ok((amount, 100))
     }
 
-    fn vote_end_do(who: &AccountId, dao_id: &DaoAssetId, amount: u64) -> Result<(), DispatchError> {
-        match self {
-            Pledge::FungToken(x) => {
-                WeTEEAsset::unreserve(*dao_id, who.clone(), *x)?;
-                Ok(())
-            }
-        }
+    fn vote_end_do(
+        who: &AccountId,
+        dao_id: &DaoAssetId,
+        amount: Balance,
+    ) -> Result<(), DispatchError> {
+        WeTEEAsset::unreserve(*dao_id, who.clone(), amount)?;
+        Ok(())
     }
 }

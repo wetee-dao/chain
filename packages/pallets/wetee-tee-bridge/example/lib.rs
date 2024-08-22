@@ -3,9 +3,15 @@
 mod ext;
 use crate::ext::*;
 
+#[ink::scale_derive(Encode, Decode, TypeInfo)]
+struct CallBackData {
+    pub v: u128,
+    pub func_id: u8,
+}
+
 #[ink::contract(env = crate::ext::TbExtEnvironment)]
 mod test_contract {
-    use super::TbExtErr;
+    use super::{CallBackData, TbExtErr};
 
     #[ink(storage)]
     pub struct TStore {
@@ -31,8 +37,7 @@ mod test_contract {
 
         #[ink(message)]
         pub fn update(&mut self) -> Result<(), TbExtErr> {
-            let res = self
-                .env()
+            self.env()
                 .extension()
                 .call_tee(
                     crate::ext::WorkId {
@@ -44,15 +49,20 @@ mod test_contract {
                     [0; 500],
                 )
                 .unwrap();
-            self.value = res;
-            self.env().emit_event(InkUpdated { new: res });
+
             Ok(())
         }
 
         #[ink(message, selector = 42)]
-        pub fn callback(&mut self) -> Result<(), TbExtErr> {
-            self.value = 10000;
-            self.env().emit_event(InkUpdated { new: 10000 });
+        pub fn callback(&mut self, v: Vec<u8>) -> Result<(), TbExtErr> {
+            let mut data = v.as_slice();
+            // let mut call_args = CallBackData { func_id: 0, v: 0 };
+
+            // 使用 decode_into 方法将字节数据解码到结构体中
+            let call_args: CallBackData = ink::scale::Decode::decode(&mut data)?;
+
+            self.value = call_args.v;
+            self.env().emit_event(InkUpdated { new: call_args.v });
             Ok(())
         }
 
@@ -72,40 +82,25 @@ mod test_contract {
         #[ink::test]
         fn default_works() {
             let ink_extension = TStore::new_default();
-            assert_eq!(ink_extension.get(), [0; 32]);
+            assert_eq!(ink_extension.get(), 0);
         }
 
         #[ink::test]
-        fn chain_extension_works() {
-            // given
-            struct MockedTbExtension;
-            impl ink::env::test::ChainExtension for MockedTbExtension {
-                /// The static function id of the chain extension.
-                fn ext_id(&self) -> u16 {
-                    666
-                }
+        fn callback_work() {
+            let mut ink_extension = TStore::new_default();
+            assert_eq!(ink_extension.get(), 0);
 
-                /// The chain extension is called with the given input.
-                ///
-                /// Returns an error code and may fill the `output` buffer with a
-                /// SCALE encoded result. The error code is taken from the
-                /// `ink::env::chain_extension::FromStatusCode` implementation for
-                /// `TbExtErr`.
-                fn call(&mut self, _func_id: u16, _input: &[u8], output: &mut Vec<u8>) -> u32 {
-                    let ret: [u8; 32] = [1; 32];
-                    ink::scale::Encode::encode_to(&ret, output);
-                    0
-                }
-            }
-            ink::env::test::register_chain_extension(MockedTbExtension);
-            let mut ink_extension = TbExtension::new_default();
-            assert_eq!(ink_extension.get(), [0; 32]);
+            let ret = CallBackData { func_id: 0, v: 1 };
+            let output = &mut Vec::new();
+            ink::scale::Encode::encode_to(&ret, output);
 
             // when
-            ink_extension.update([0_u8; 32]).expect("update must work");
+            ink_extension
+                .callback(output.to_vec())
+                .expect("update must work");
 
             // then
-            assert_eq!(ink_extension.get(), [1; 32]);
+            assert_eq!(ink_extension.get(), 1);
         }
     }
 }

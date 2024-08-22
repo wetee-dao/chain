@@ -53,8 +53,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `109`
 		//  Estimated: `1594`
-		// Minimum execution time: 21_198_000 picoseconds.
-		Weight::from_parts(21_992_000, 1594)
+		// Minimum execution time: 21_754_000 picoseconds.
+		Weight::from_parts(22_325_000, 1594)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -66,23 +66,23 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 16_459_000 picoseconds.
-		Weight::from_parts(16_983_000, 0)
+		// Minimum execution time: 16_905_000 picoseconds.
+		Weight::from_parts(17_487_000, 0)
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	fn upload_cluster_proof() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 12_023_000 picoseconds.
-		Weight::from_parts(12_423_000, 0)
+		// Minimum execution time: 11_836_000 picoseconds.
+		Weight::from_parts(12_281_000, 0)
 	}
 	fn work_launch() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_472_000 picoseconds.
-		Weight::from_parts(6_708_000, 0)
+		// Minimum execution time: 6_238_000 picoseconds.
+		Weight::from_parts(6_398_000, 0)
 	}
 }
 
@@ -96,8 +96,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `109`
 		//  Estimated: `1594`
-		// Minimum execution time: 21_198_000 picoseconds.
-		Weight::from_parts(21_992_000, 1594)
+		// Minimum execution time: 21_754_000 picoseconds.
+		Weight::from_parts(22_325_000, 1594)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
@@ -109,22 +109,22 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 16_459_000 picoseconds.
-		Weight::from_parts(16_983_000, 0)
+		// Minimum execution time: 16_905_000 picoseconds.
+		Weight::from_parts(17_487_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	fn upload_cluster_proof() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 12_023_000 picoseconds.
-		Weight::from_parts(12_423_000, 0)
+		// Minimum execution time: 11_836_000 picoseconds.
+		Weight::from_parts(12_281_000, 0)
 	}
 	fn work_launch() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_472_000 picoseconds.
-		Weight::from_parts(6_708_000, 0)
+		// Minimum execution time: 6_238_000 picoseconds.
+		Weight::from_parts(6_398_000, 0)
 	}
 }
