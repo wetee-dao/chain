@@ -10,7 +10,7 @@ use sp_std::result;
 
 use wetee_primitives::{
     traits::WorkExt,
-    types::{ApiMeta, WorkId},
+    types::{ApiMeta, InkArg, WorkId},
 };
 
 use wetee_org::{self};
@@ -90,9 +90,14 @@ pub mod pallet {
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
+    #[pallet::type_value]
+    pub fn DefaultForm1() -> u128 {
+        1
+    }
+
     #[pallet::storage]
     #[pallet::getter(fn next_id)]
-    pub type NextId<T: Config> = StorageValue<_, u128, ValueQuery>;
+    pub type NextId<T: Config> = StorageValue<_, u128, ValueQuery, DefaultForm1>;
 
     #[pallet::storage]
     #[pallet::getter(fn tee_calls)]
@@ -160,7 +165,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             cluster_id: ClusterId,
             call_id: u128,
-            args: Vec<u8>,
+            args: Vec<InkArg>,
             value: BalanceOf<T>,
             error: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
@@ -180,6 +185,7 @@ pub mod pallet {
                 return Err(Error::<T>::Call404.into());
             }
 
+            // call tee error
             if error.is_some() {
                 Self::deposit_event(Event::TEECallFailed {
                     cluster_id,
@@ -190,11 +196,11 @@ pub mod pallet {
                 return Ok(().into());
             }
 
-            // encode args
-            let call_data = {
-                let args: ([u8; 4], Vec<u8>) = (call.callback_method, args.to_vec());
-                args.encode()
-            };
+            let mut call_data = Vec::new();
+            call_data.append(&mut call.callback_method.encode());
+            args.into_iter().for_each(|arg| {
+                call_data.append(&mut arg.encode2vec());
+            });
 
             let gas_limit = Weight::MAX;
 
@@ -226,6 +232,7 @@ pub mod pallet {
             // remove call
             TEECalls::<T>::remove(cluster_id, call_id);
 
+            // dispatch event
             match call_result.result {
                 Ok(_success) => {
                     Self::deposit_event(Event::TEECallSuccessed {
@@ -260,6 +267,7 @@ pub mod pallet {
             // check work owner
             let (owner_account, _, _, _, _) =
                 <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
 
             // set api meta
@@ -289,8 +297,13 @@ pub mod pallet {
 
             // 获取集群id
             // get cluster id
-            let cid = wetee_worker::Pallet::<T>::work_contracts(work_id.clone())
-                .ok_or(Error::<T>::Call404)?;
+            let cid_result = wetee_worker::Pallet::<T>::work_contracts(work_id.clone());
+            // TODO 集群不存在
+            if cid_result.is_none() {
+                return Ok(0);
+            }
+
+            let cid = cid_result.unwrap();
 
             // 插入tee call
             // insert tee call

@@ -187,14 +187,12 @@ pub mod pallet {
     /// 代码版本
     #[pallet::storage]
     #[pallet::getter(fn code_signature)]
-    pub type CodeSignature<T: Config> =
-        StorageMap<_, Identity, TeeAppId, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    pub type CodeSignature<T: Config> = StorageMap<_, Identity, TeeAppId, Vec<u8>, ValueQuery>;
 
     /// 代码打包签名人
     #[pallet::storage]
     #[pallet::getter(fn code_signer)]
-    pub type CodeSigner<T: Config> =
-        StorageMap<_, Identity, TeeAppId, BoundedVec<u8, ConstU32<64>>, ValueQuery>;
+    pub type CodeSigner<T: Config> = StorageMap<_, Identity, TeeAppId, Vec<u8>, ValueQuery>;
 
     /// Task version
     /// Task 版本
@@ -271,9 +269,9 @@ pub mod pallet {
             name: Vec<u8>,
             image: Vec<u8>,
             // signer of the App.
-            signer: BoundedVec<u8, ConstU32<64>>,
+            signer: Vec<u8>,
             // signature of the App.
-            signature: BoundedVec<u8, ConstU32<64>>,
+            signature: Vec<u8>,
             meta: Vec<u8>,
             port: Vec<Service>,
             command: Command,
@@ -422,10 +420,10 @@ pub mod pallet {
             new_image: Option<Vec<u8>>,
             // signer of the App.
             // 签名人
-            new_signer: Option<BoundedVec<u8, ConstU32<64>>>,
+            new_signer: Option<Vec<u8>>,
             // signature of the App.
             // 签名
-            new_signature: Option<BoundedVec<u8, ConstU32<64>>>,
+            new_signature: Option<Vec<u8>>,
             // port of service
             // 服务端口号
             new_port: Option<Vec<Service>>,

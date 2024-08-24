@@ -263,7 +263,6 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(who)?;
-
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             ExistentDeposits::<T>::insert(dao_id, existenial_deposit);
@@ -335,7 +334,6 @@ pub mod pallet {
                 Error::<T>::AssetNotExists
             );
             let user = ensure_signed(origin)?;
-            // wetee_org::Pallet::<T>::ensrue_gov_approve_account(user.clone(), dao_id)?;
 
             ensure!(
                 Self::is_exists_metadata(dao_id),

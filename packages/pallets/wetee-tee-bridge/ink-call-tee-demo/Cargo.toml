@@ -1,7 +1,7 @@
 [package]
-authors = ["[your_name] <[your_email]>"]
+authors = ["WeTEE"]
 edition = "2021"
-name = "example"
+name = "ink-call-tee-demo"
 version = "0.1.0"
 
 [dependencies]

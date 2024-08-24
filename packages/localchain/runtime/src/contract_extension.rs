@@ -35,17 +35,22 @@ impl ChainExtension<Runtime> for TeeExtension {
                 let input: TEECallInput = env.read_as()?;
 
                 // call tee bridge
-                let id = WeTEEBridge::call_from_ink(
+                let call_result = WeTEEBridge::call_from_ink(
                     origin,
                     sender.clone(),
                     input.tee,
                     input.method,
                     input.callback_method,
                     input.args.into(),
-                )
-                .unwrap();
+                );
+                if call_result.is_err() {
+                    let err = call_result.unwrap_err();
+                    error!("ChainExtension failed to call +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",err);
+                    return Err(DispatchError::Other("Invalid tee call"));
+                }
 
                 // return call id
+                let id = call_result.unwrap();
                 env.write(&id.encode(), false, None)
                     .map_err(|_| DispatchError::Other("ChainExtension failed to call random"))?;
             }
@@ -68,5 +73,5 @@ struct TEECallInput {
     pub tee: WorkId,
     pub method: u16,
     pub callback_method: [u8; 4],
-    pub args: [u8; 256],
+    pub args: [u8; 500],
 }

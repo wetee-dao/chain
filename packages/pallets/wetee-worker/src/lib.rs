@@ -80,11 +80,13 @@ pub mod pallet {
     #[pallet::getter(fn next_cluster_id)]
     pub type NextClusterId<T: Config> = StorageValue<_, ClusterId, ValueQuery, DefaultForm1>;
 
+    /// code sig
     /// 代码版本
     #[pallet::storage]
     #[pallet::getter(fn code_signature)]
     pub type CodeSignature<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
     
+    /// code signer
     /// 代码打包签名人
     #[pallet::storage]
     #[pallet::getter(fn code_signer)]

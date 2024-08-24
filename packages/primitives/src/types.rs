@@ -51,6 +51,10 @@ pub type ClusterLevel = u8;
 /// App状态 0: created, 1: deploying, 2: stop, 3: deoloyed
 pub type WorkStatus = u8;
 
+/// 字符串
+/// String
+pub type TeeString = Vec<u8>;
+
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum WorkType {
     #[default]
@@ -309,4 +313,39 @@ pub struct Api {
     pub url: Vec<u8>,
     // 0: get, 1: post, 2: put, 3: delete
     pub method: u8,
+}
+
+#[derive(Encode, Decode, Clone, Debug, TypeInfo, PartialEq)]
+pub enum InkArg {
+    Bool(bool),
+    U8(u8),
+    I8(i8),
+    U16(u16),
+    I16(i16),
+    U32(u32),
+    I32(i32),
+    U64(u64),
+    I64(i64),
+    U128(u128),
+    I128(i128),
+    TString(Vec<u8>),
+}
+
+impl InkArg {
+    pub fn encode2vec(&self) -> Vec<u8> {
+        match self {
+            InkArg::Bool(b) => b.encode(),
+            InkArg::U8(u) => u.encode(),
+            InkArg::I8(i) => i.encode(),
+            InkArg::U16(u) => u.encode(),
+            InkArg::I16(i) => i.encode(),
+            InkArg::U32(u) => u.encode(),
+            InkArg::I32(i) => i.encode(),
+            InkArg::U64(u) => u.encode(),
+            InkArg::I64(i) => i.encode(),
+            InkArg::U128(u) => u.encode(),
+            InkArg::I128(i) => i.encode(),
+            InkArg::TString(s) => s.encode(),
+        }
+    }
 }

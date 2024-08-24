@@ -35,7 +35,7 @@ members = [
   "packages/pallets/wetee-gpu",
   "packages/pallets/wetee-dsecret",
   "packages/pallets/wetee-tee-bridge",
-  "packages/pallets/wetee-tee-bridge/example", #
+  "packages/pallets/wetee-tee-bridge/ink-call-tee-demo", #
   # 工具
   # "tools/hash",
   # "tools/subkey",
