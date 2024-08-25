@@ -275,6 +275,30 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        #[pallet::call_index(009)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_tee_api())]
+        pub fn delete_call(
+            origin: OriginFor<T>,
+            cluster_id: ClusterId,
+            call_id: u128,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            // get call
+            let call = TEECalls::<T>::get(cluster_id, call_id).unwrap();
+
+            // check work owner
+            let (owner_account, _, _, _, _) =
+                <T as pallet::Config>::WorkExt::work_info(call.work_id.clone())?;
+
+            ensure!(owner_account == who, Error::<T>::NotAllowed403);
+
+            // remove call
+            TEECalls::<T>::remove(cluster_id, call_id);
+
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
