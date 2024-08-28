@@ -1002,8 +1002,10 @@ pub mod pallet {
             // If the id is 0, it means there is no matching node and it will be put into the next block calculation
             // id 为 0 表示没有匹配的节点，放入下一个区块计算
             if id == 0 {
+                log::info!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++表示没有匹配的节点: {:?}", work_id);
                 return Ok(false);
             }
+            log::info!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++匹配的节点: {:?} {:?}", work_id,id);
 
             if status == 0 || status == 4 {
                 // update app cr

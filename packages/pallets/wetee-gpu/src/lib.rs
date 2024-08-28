@@ -547,18 +547,6 @@ pub mod pallet {
             let account = <AppIdAccounts<T>>::get(app_id).ok_or(Error::<T>::AppNotExist)?;
             ensure!(who == account, Error::<T>::App403);
 
-            // 停止任务后,将任务状态设置为 2
-            <GPUApps<T>>::try_mutate_exists(
-                account.clone(),
-                app_id,
-                |app_wrap| -> result::Result<(), DispatchError> {
-                    let mut app = app_wrap.take().ok_or(Error::<T>::AppNotExist)?;
-                    app.status = 0;
-                    *app_wrap = Some(app);
-                    Ok(())
-                },
-            )?;
-
             let mut app =
                 <GPUApps<T>>::get(account.clone(), app_id).ok_or(Error::<T>::AppNotExist)?;
             if app.status == 2 {
