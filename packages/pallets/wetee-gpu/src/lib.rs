@@ -514,7 +514,7 @@ pub mod pallet {
                     // 执行 App 创建后回调,部署任务添加到消息中间件
                     <T as pallet::Config>::UHook::run_hook(
                         WorkId {
-                            wtype: WorkType::APP,
+                            wtype: WorkType::GPU,
                             id: app_id,
                         },
                         who,
@@ -569,7 +569,7 @@ pub mod pallet {
                 // 执行 App 创建后回调,部署任务添加到消息中间件
                 <T as pallet::Config>::UHook::run_hook(
                     WorkId {
-                        wtype: WorkType::APP,
+                        wtype: WorkType::GPU,
                         id: app_id,
                     },
                     who,
@@ -580,7 +580,7 @@ pub mod pallet {
             Self::deposit_event(Event::WorkUpdated {
                 user: account,
                 work_id: WorkId {
-                    wtype: WorkType::APP,
+                    wtype: WorkType::GPU,
                     id: app_id,
                 },
             });
