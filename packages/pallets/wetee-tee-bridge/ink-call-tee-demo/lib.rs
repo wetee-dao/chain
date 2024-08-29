@@ -94,12 +94,15 @@ mod test_contract {
             let mut ink_extension = TStore::new_default();
             assert_eq!(ink_extension.get(), 0);
 
-            let v = u128::vec_encode(&1);
             // when
-            ink_extension.callback(v).expect("update must work");
+            ink_extension
+                .callback(100, true, "test".as_bytes().to_vec())
+                .expect("update must work");
 
             // then
-            assert_eq!(ink_extension.get(), 1);
+            assert_eq!(ink_extension.get(), 100);
+            assert_eq!(ink_extension.getb(), true);
+            assert_eq!(ink_extension.gets(), "test".as_bytes().to_vec());
         }
     }
 }

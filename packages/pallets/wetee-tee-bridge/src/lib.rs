@@ -2,9 +2,10 @@
 
 use frame_support::traits::fungible::Inspect;
 use parity_scale_codec::{Decode, Encode};
+use scale_info::prelude::format;
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{DispatchError, RuntimeDebug};
 
 use sp_std::result;
 
@@ -140,6 +141,14 @@ pub mod pallet {
         TEECallBackFailed {
             cluster_id: ClusterId,
             call_id: u128,
+            error: Vec<u8>,
+        },
+        /// Ink call successed
+        InkCallSuccessed {
+            worker_id: WorkId,
+            contract: T::AccountId,
+            method: [u8; 4],
+            args: Vec<InkArg>,
         },
     }
 
@@ -150,6 +159,8 @@ pub mod pallet {
         Call404,
         /// Call error.
         CallBackError,
+        /// Call ink contract error.
+        CallInkError,
         // Not allowed.
         NotAllowed403,
         // Worker status error.
@@ -240,13 +251,81 @@ pub mod pallet {
                         call_id,
                     });
                 }
-                Err(_error) => {
+                Err(error) => {
+                    let msg = handle_dispatch_error(error);
                     Self::deposit_event(Event::TEECallBackFailed {
                         cluster_id,
                         call_id,
+                        error: msg,
                     });
                 }
             }
+
+            Ok(Pays::No.into())
+        }
+
+        // ink call tee callback function
+        #[pallet::call_index(002)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::ink_callback())]
+        pub fn call_ink(
+            origin: OriginFor<T>,
+            work_id: WorkId,
+            contract: T::AccountId,
+            method: [u8; 4],
+            args: Vec<InkArg>,
+            value: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            // get deploy key of worker
+            let deploy = wetee_worker::DeployKeys::<T>::get(work_id.clone());
+            if deploy.is_none() || deploy.unwrap() != who {
+                return Err(Error::<T>::NotAllowed403.into());
+            }
+
+            let mut call_data = Vec::new();
+            call_data.append(&mut method.encode());
+            args.clone().into_iter().for_each(|arg| {
+                call_data.append(&mut arg.encode2vec());
+            });
+
+            let gas_limit = Weight::MAX;
+
+            // call contract
+            let call_result = pallet_contracts::Pallet::<T>::bare_call(
+                who,
+                contract.clone(),
+                value,
+                gas_limit,
+                None,
+                call_data,
+                pallet_contracts::DebugInfo::UnsafeDebug,
+                pallet_contracts::CollectEvents::UnsafeCollect,
+                pallet_contracts::Determinism::Enforced,
+            );
+
+            // get work account
+            let (owner_account, _, _, _, _) =
+                <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+
+            // get fee
+            let gas = Self::weight_to_fee(call_result.gas_consumed);
+
+            // fee to burn
+            // 销毁手续费
+            // TODO 帐户余额检测
+            wetee_assets::Pallet::<T>::burn_with_number(0, owner_account, gas.into())?;
+
+            if call_result.result.is_err() {
+                return Err(Error::<T>::CallInkError.into());
+            }
+
+            Self::deposit_event(Event::InkCallSuccessed {
+                worker_id: work_id,
+                contract: contract,
+                method,
+                args,
+            });
 
             Ok(Pays::No.into())
         }
@@ -356,6 +435,54 @@ pub mod pallet {
         // call gas fee
         fn weight_to_fee(weight: Weight) -> u64 {
             weight.ref_time() * 20 + weight.proof_size() * 20
+        }
+    }
+}
+
+fn handle_dispatch_error(error: DispatchError) -> Vec<u8> {
+    match error {
+        DispatchError::Other(str) => {
+            return str.bytes().collect();
+        }
+        DispatchError::CannotLookup => {
+            return "CannotLookup".bytes().collect();
+        }
+        DispatchError::BadOrigin => {
+            return "BadOrigin".bytes().collect();
+        }
+        DispatchError::Module(e) => {
+            let msg = format!("ModuleError index {}, error {:?}", e.index, e.error);
+            return msg.into_bytes();
+        }
+        DispatchError::ConsumerRemaining => {
+            return "ConsumerRemaining".bytes().collect();
+        }
+        DispatchError::NoProviders => {
+            return "NoProviders".bytes().collect();
+        }
+        DispatchError::TooManyConsumers => {
+            return "TooManyConsumers".bytes().collect();
+        }
+        DispatchError::Token(_) => {
+            return "TokenError".bytes().collect();
+        }
+        DispatchError::Arithmetic(_) => {
+            return "ArithmeticError".bytes().collect();
+        }
+        DispatchError::Transactional(_) => {
+            return "TransactionalError".bytes().collect();
+        }
+        DispatchError::Exhausted => {
+            return "Exhausted".bytes().collect();
+        }
+        DispatchError::Corruption => {
+            return "Corruption".bytes().collect();
+        }
+        DispatchError::Unavailable => {
+            return "Unavailable".bytes().collect();
+        }
+        DispatchError::RootNotAllowed => {
+            return "RootNotAllowed".bytes().collect();
         }
     }
 }
