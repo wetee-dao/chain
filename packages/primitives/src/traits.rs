@@ -7,7 +7,7 @@ pub struct BadOrigin;
 
 impl From<BadOrigin> for &'static str {
     fn from(_: BadOrigin) -> &'static str {
-        "无效的用户"
+        "invalid origin"
     }
 }
 
