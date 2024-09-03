@@ -38,20 +38,20 @@ mod test_contract {
 
         #[ink(message)]
         pub fn update(&mut self, id: u64) -> Result<(), TbExtErr> {
-            self.env()
-                .extension()
-                .call_tee(
-                    WorkId {
-                        wtype: WorkType::App,
-                        id,
-                    },
-                    0,
-                    [0, 0, 0, 42],
-                    [0; 500],
-                )
-                .unwrap();
+            let result = self.env().extension().call_tee(
+                WorkId {
+                    wtype: WorkType::App,
+                    id,
+                },
+                0,
+                [0, 0, 0, 42],
+                [0; 500],
+            );
 
-            Ok(())
+            match result {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e),
+            }
         }
 
         #[ink(message, selector = 42)]

@@ -3,7 +3,7 @@ use crate::{Call, Pallet};
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
 use scale_info::prelude::vec;
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::{DaoAssetId, Ip};
 
 #[benchmarks( where <T as wetee_org::Config>::RuntimeCall: From<frame_system::Call<T>>)]
 mod benchmarks {
@@ -62,6 +62,22 @@ mod benchmarks {
                 WorkId::default(),
                 Some(vec![0; 32]),
                 account("a", 1, 1),
+            );
+        }
+    }
+
+    #[benchmark]
+    fn set_node_pub_server() {
+        #[block]
+        {
+            let _ = Pallet::<T>::set_node_pub_server(
+                RawOrigin::Root.into(),
+                1,
+                P2PAddr {
+                    ip: Ip::default(),
+                    port: 1,
+                    id: account("a", 1, 1),
+                },
             );
         }
     }

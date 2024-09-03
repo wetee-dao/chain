@@ -2,7 +2,7 @@
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_std::prelude::Vec;
 
-use wetee_primitives::types::{ClusterId, WorkId};
+use wetee_primitives::types::{ClusterId, P2PAddr, WorkId};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -14,9 +14,8 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-
     use super::*;
-    use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+    use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, pallet_prelude::*};
     use frame_system::pallet_prelude::*;
 
     #[cfg(feature = "runtime-benchmarks")]
@@ -77,12 +76,12 @@ pub mod pallet {
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
-    /// 代码版本
+    /// DKG 代码版本
     #[pallet::storage]
     #[pallet::getter(fn code_signature)]
     pub type CodeSignature<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
 
-    /// 代码打包签名人
+    /// DKG 代码打包签名人
     #[pallet::storage]
     #[pallet::getter(fn code_signer)]
     pub type CodeSigner<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
@@ -97,6 +96,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn nodes)]
     pub type Nodes<T: Config> = StorageMap<_, Identity, u64, T::AccountId, OptionQuery>;
+
+    /// dkg pub server
+    /// dkg pub 服务
+    #[pallet::storage]
+    #[pallet::getter(fn node_pub_servers)]
+    pub type NodePubServers<T: Config> =
+        StorageMap<_, Identity, u64, P2PAddr<T::AccountId>, OptionQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -273,6 +279,24 @@ pub mod pallet {
             // 启动应用
             wetee_worker::Pallet::<T>::work_launch(work, report, deploy_key)?;
 
+            Ok(().into())
+        }
+
+        /// 设置节点公网服务
+        /// set node pub server
+        #[pallet::call_index(005)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_node_pub_server())]
+        pub fn set_node_pub_server(
+            origin: OriginFor<T>,
+            id: u64,
+            server: P2PAddr<T::AccountId>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let node = Nodes::<T>::get(id).ok_or(Error::<T>::Call403)?;
+
+            ensure!(who == node, Error::<T>::Call403);
+
+            <NodePubServers<T>>::insert(id, server);
             Ok(().into())
         }
     }

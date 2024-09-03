@@ -291,6 +291,8 @@ pub struct Ip {
     pub domain: Option<Vec<u8>>,
 }
 
+/// P2P 信息
+/// P2P address
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct P2PAddr<AccountId> {
     /// ip of the p2p
@@ -301,12 +303,16 @@ pub struct P2PAddr<AccountId> {
     pub id: AccountId,
 }
 
+/// App specific information
+/// 程序 meta data
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct ApiMeta {
     pub port: u16,
     pub apis: Vec<Api>,
 }
 
+/// App Api
+/// 应用接口信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct Api {
     // url
@@ -315,6 +321,8 @@ pub struct Api {
     pub method: u8,
 }
 
+/// Ink contract call argument
+/// Ink 合约调用参数
 #[derive(Encode, Decode, Clone, Debug, TypeInfo, PartialEq)]
 pub enum InkArg {
     Bool(bool),

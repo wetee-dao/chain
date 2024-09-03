@@ -12,59 +12,59 @@ cd "$DIR/../"
 
 cargo build --features runtime-benchmarks --release -p wetee-node 
 
-# org
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-org --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-org/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # org
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-org --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-org/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
 
-# sudo
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-sudo --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-sudo/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # sudo
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-sudo --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-sudo/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
 
-# guild
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-guild --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-guild/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # guild
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-guild --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-guild/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
 
-# treasury
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-treasury --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-treasury/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # treasury
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-treasury --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-treasury/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
 
-# assets
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-assets --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-assets/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # assets
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-assets --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-assets/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
 
-# gov
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-gov --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-gov/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # gov
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-gov --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-gov/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
 
-# app
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-app --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-app/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # app
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-app --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-app/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
 
-# gpu
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-gpu --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-gpu/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # gpu
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-gpu --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-gpu/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
 
-# task
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-task --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-task/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # task
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-task --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-task/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
 
 # dsecret
 ./target/release/wetee-node benchmark pallet --chain dev \
@@ -78,8 +78,8 @@ cargo build --features runtime-benchmarks --release -p wetee-node
     --output packages/pallets/wetee-tee-bridge/src/weights.rs \
     --template ./hacks/frame-weight-template.hbs
 
-# tee-worker
-./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-worker --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-worker/src/weights.rs \
-    --template ./hacks/frame-weight-template.hbs
+# # tee-worker
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-worker --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-worker/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs

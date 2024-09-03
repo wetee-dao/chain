@@ -16,8 +16,8 @@ mod benchmarks {
                 RawOrigin::Root.into(),
                 vec![0, 0, 0, 0, 0, 0, 0, 0],
                 vec![0, 0, 0, 0, 0, 0, 0, 0],
-                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
-                BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(),
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 vec![
                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 ],
@@ -43,14 +43,8 @@ mod benchmarks {
                 1,
                 Some(vec![0, 0, 0, 0, 0, 0, 0, 0]),
                 Some(vec![0, 0, 0, 0, 0, 0, 0, 0]),
-                Some(
-                    BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-                        .unwrap(),
-                ),
-                Some(
-                    BoundedVec::try_from(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-                        .unwrap(),
-                ),
+                Some(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                Some(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                 Some(vec![Service::Tcp(80)]),
                 Some(Command::SH("".as_bytes().to_vec())),
                 vec![EnvInput::default()],

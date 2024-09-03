@@ -145,7 +145,7 @@ pub mod pallet {
         },
         /// Ink call successed
         InkCallSuccessed {
-            worker_id: WorkId,
+            work_id: WorkId,
             contract: T::AccountId,
             method: [u8; 4],
             args: Vec<InkArg>,
@@ -266,7 +266,7 @@ pub mod pallet {
 
         // ink call tee callback function
         #[pallet::call_index(002)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::ink_callback())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::call_ink())]
         pub fn call_ink(
             origin: OriginFor<T>,
             work_id: WorkId,
@@ -321,8 +321,8 @@ pub mod pallet {
             }
 
             Self::deposit_event(Event::InkCallSuccessed {
-                worker_id: work_id,
-                contract: contract,
+                work_id,
+                contract,
                 method,
                 args,
             });
@@ -356,7 +356,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(009)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_tee_api())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::delete_call())]
         pub fn delete_call(
             origin: OriginFor<T>,
             cluster_id: ClusterId,
