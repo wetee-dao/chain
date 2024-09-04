@@ -589,7 +589,9 @@ pub mod pallet {
             // 价格
             price: Price,
         ) -> DispatchResultWithPostInfo {
-            let _who = ensure_signed(origin)?;
+            // TODO 更新治理模块后更新
+            ensure_signed_or_root(origin)?;
+
             Prices::<T>::insert(level, price);
 
             Ok(().into())
