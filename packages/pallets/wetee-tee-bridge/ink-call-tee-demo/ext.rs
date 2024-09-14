@@ -16,7 +16,6 @@ pub trait TbExt {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[ink::scale_derive(Encode, Decode, TypeInfo)]
 pub enum TbExtErr {
-    FailGetInkomSource,
     ArgErr,
 }
 
@@ -30,7 +29,7 @@ impl ink::env::chain_extension::FromStatusCode for TbExtErr {
     fn from_status_code(status_code: u32) -> Result<(), Self> {
         match status_code {
             0 => Ok(()),
-            1 => Err(Self::FailGetInkomSource),
+            1 => Err(Self::ArgErr),
             _ => panic!("encountered unknown status code"),
         }
     }

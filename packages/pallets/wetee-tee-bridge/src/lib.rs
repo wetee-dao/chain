@@ -165,6 +165,10 @@ pub mod pallet {
         NotAllowed403,
         // Worker status error.
         WorkStatusError,
+        /// Worker not found.
+        WorkNotFound404,
+        /// Worker not found.
+        WorkNotStarted,
     }
 
     #[pallet::call]
@@ -256,7 +260,7 @@ pub mod pallet {
                     Self::deposit_event(Event::TEECallBackFailed {
                         cluster_id,
                         call_id,
-                        error: msg,
+                        error: msg.as_bytes().to_vec(),
                     });
                 }
             }
@@ -403,7 +407,7 @@ pub mod pallet {
             let cid_result = wetee_worker::Pallet::<T>::work_contracts(work_id.clone());
             // TODO 集群不存在
             if cid_result.is_none() {
-                return Ok(0);
+                return Err(Error::<T>::WorkNotFound404.into());
             }
 
             let cid = cid_result.unwrap();

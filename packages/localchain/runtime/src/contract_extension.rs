@@ -4,10 +4,11 @@ use log::error;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, SysConfig,
 };
+use scale_info::prelude::boxed::Box;
 use sp_core::crypto::UncheckedFrom;
 use sp_runtime::DispatchError;
 
-use wetee_primitives::types::WorkId;
+use wetee_primitives::{handle_dispatch_error, types::WorkId};
 
 /// Contract extension for `Ink`
 #[derive(Default)]
@@ -44,9 +45,10 @@ impl ChainExtension<Runtime> for TeeExtension {
                     input.args.into(),
                 );
                 if call_result.is_err() {
-                    let err = call_result.unwrap_err();
+                    let err: DispatchError = call_result.unwrap_err();
                     error!("ChainExtension failed to call +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ {:?}",err);
-                    return Err(DispatchError::Other("Invalid tee call"));
+                    let err_str = handle_dispatch_error(err);
+                    return Err(DispatchError::Other(Box::leak(err_str.into_boxed_str())));
                 }
 
                 // return call id

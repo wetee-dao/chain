@@ -2,6 +2,7 @@
 
 use frame_support::traits::{DefensiveTruncateFrom, Get};
 use scale_info::prelude::format;
+use scale_info::prelude::string::String;
 use scale_info::prelude::vec::Vec;
 use sp_runtime::BoundedSlice;
 use sp_runtime::DispatchError;
@@ -25,50 +26,50 @@ pub fn vec2bytes<N: Get<u32>>(x: &Vec<u8>) -> BoundedSlice<u8, N> {
     BoundedSlice::defensive_truncate_from(&x)
 }
 
-pub fn handle_dispatch_error(error: DispatchError) -> Vec<u8> {
+pub fn handle_dispatch_error(error: DispatchError) -> String {
     match error {
         DispatchError::Other(str) => {
-            return str.bytes().collect();
+            return String::from(str);
         }
         DispatchError::CannotLookup => {
-            return "CannotLookup".bytes().collect();
+            return String::from("CannotLookup");
         }
         DispatchError::BadOrigin => {
-            return "BadOrigin".bytes().collect();
+            return String::from("BadOrigin");
         }
         DispatchError::Module(e) => {
             let msg = format!("ModuleError index {}, error {:?}", e.index, e.error);
-            return msg.into_bytes();
+            return msg;
         }
         DispatchError::ConsumerRemaining => {
-            return "ConsumerRemaining".bytes().collect();
+            return String::from("ConsumerRemaining");
         }
         DispatchError::NoProviders => {
-            return "NoProviders".bytes().collect();
+            return String::from("NoProviders");
         }
         DispatchError::TooManyConsumers => {
-            return "TooManyConsumers".bytes().collect();
+            return String::from("TooManyConsumers");
         }
         DispatchError::Token(_) => {
-            return "TokenError".bytes().collect();
+            return String::from("TokenError");
         }
         DispatchError::Arithmetic(_) => {
-            return "ArithmeticError".bytes().collect();
+            return String::from("ArithmeticError");
         }
         DispatchError::Transactional(_) => {
-            return "TransactionalError".bytes().collect();
+            return String::from("TransactionalError");
         }
         DispatchError::Exhausted => {
-            return "Exhausted".bytes().collect();
+            return String::from("Exhausted");
         }
         DispatchError::Corruption => {
-            return "Corruption".bytes().collect();
+            return String::from("Corruption");
         }
         DispatchError::Unavailable => {
-            return "Unavailable".bytes().collect();
+            return String::from("Unavailable");
         }
         DispatchError::RootNotAllowed => {
-            return "RootNotAllowed".bytes().collect();
+            return String::from("RootNotAllowed");
         }
     }
 }
