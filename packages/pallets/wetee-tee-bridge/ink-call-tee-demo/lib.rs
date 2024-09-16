@@ -37,11 +37,11 @@ mod test_contract {
         }
 
         #[ink(message)]
-        pub fn update(&mut self, id: u64) -> Result<(), TbExtErr> {
+        pub fn call_tee(&mut self, tee_id: u64) -> Result<(), TbExtErr> {
             let result = self.env().extension().call_tee(
                 WorkId {
                     wtype: WorkType::App,
-                    id,
+                    id: tee_id,
                 },
                 0,
                 [0, 0, 0, 42],
