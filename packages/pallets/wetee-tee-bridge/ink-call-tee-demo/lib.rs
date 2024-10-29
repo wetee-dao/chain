@@ -8,6 +8,15 @@ use ink::prelude::vec::Vec;
 mod test_contract {
     use super::*;
 
+    #[derive(Debug, PartialEq, Eq)]
+    #[ink::scale_derive(Encode, Decode, TypeInfo)]
+    pub enum Status {
+        /// been started yet
+        NotStarted,
+        /// end with status code
+        End(u8)
+    }
+
     #[ink(storage)]
     pub struct TStore {
         value: u128,
@@ -60,6 +69,17 @@ mod test_contract {
             self.booolv = b;
             self.stringv = s;
             self.env().emit_event(InkUpdated { new: v });
+            Ok(())
+        }
+
+        #[ink(message)]
+        pub fn test_input(
+            &mut self, 
+            account: AccountId, 
+            balance: Balance,
+            status: Status,
+            o: Option<u8> 
+        ) -> Result<(), TbExtErr> {
             Ok(())
         }
 

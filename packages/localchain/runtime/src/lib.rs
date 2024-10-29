@@ -60,6 +60,7 @@ pub use wetee_dsecret::Call as WeTEEDSecretCall;
 pub use wetee_gov::Call as WeTEEGovCall;
 pub use wetee_gpu::Call as WeTEEGpuCall;
 pub use wetee_guild::Call as WeTEEGuildCall;
+pub use wetee_matrix::Call as WeTEEMatrixCall;
 pub use wetee_org::Call as WeTEEOrgCall;
 pub use wetee_project::Call as WeTEEProjectCall;
 pub use wetee_sudo::Call as WeTEESudoCall;
@@ -124,7 +125,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 152,
+    spec_version: 156,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -347,6 +348,8 @@ mod runtime {
     pub type WeTEEDsecret = wetee_dsecret;
     #[runtime::pallet_index(24)]
     pub type WeTEEBridge = wetee_tee_bridge;
+    #[runtime::pallet_index(25)]
+    pub type WeTEEMatrix = wetee_matrix;
     // WETEE end
 }
 
@@ -410,6 +413,7 @@ mod benches {
         [pallet_timestamp, Timestamp]
         [pallet_sudo, Sudo]
         [wetee_org, WeTEEOrg]
+        [wetee_matrix, WeTEEMatrix]
         [wetee_sudo, WeTEESudo]
         [wetee_guild, WeTEEGuild]
         [wetee_treasury, WeTEETreasury]

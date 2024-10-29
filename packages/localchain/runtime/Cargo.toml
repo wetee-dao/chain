@@ -86,6 +86,7 @@ wetee-dsecret = {path = "../../pallets/wetee-dsecret", default-features = false}
 wetee-gov = {path = "../../pallets/wetee-gov", default-features = false}
 wetee-gpu = {path = "../../pallets/wetee-gpu", default-features = false}
 wetee-guild = {path = "../../pallets/wetee-guild", default-features = false}
+wetee-matrix = {path = "../../pallets/wetee-matrix", default-features = false}
 wetee-org = {path = "../../pallets/wetee-org", default-features = false}
 wetee-primitives = {path = "../../primitives", default-features = false}
 wetee-project = {path = "../../pallets/wetee-project", default-features = false}

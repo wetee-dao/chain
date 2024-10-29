@@ -325,7 +325,7 @@ pub struct Api {
 /// Ink 合约调用参数
 #[derive(Encode, Decode, Clone, Debug, TypeInfo, PartialEq)]
 pub enum InkArg {
-    Bool(bool),
+    TBool(bool),
     U8(u8),
     I8(i8),
     U16(u16),
@@ -342,7 +342,7 @@ pub enum InkArg {
 impl InkArg {
     pub fn encode2vec(&self) -> Vec<u8> {
         match self {
-            InkArg::Bool(b) => b.encode(),
+            InkArg::TBool(b) => b.encode(),
             InkArg::U8(u) => u.encode(),
             InkArg::I8(i) => i.encode(),
             InkArg::U16(u) => u.encode(),

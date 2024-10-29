@@ -108,6 +108,17 @@ impl wetee_org::Config for Runtime {
 }
 
 parameter_types! {
+    pub const MatrixPalletId: PalletId = PalletId(*b"wematrix");
+}
+impl wetee_matrix::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type CallId = CallId;
+    type PalletId = MatrixPalletId;
+    type WeightInfo = ();
+}
+
+parameter_types! {
     pub const MaxClassMetadata: u32 = 1;
     pub const MaxTokenMetadata: u32 = 1;
 }
