@@ -12,7 +12,6 @@ frame-benchmarking = {workspace = true}
 frame-support = {workspace = true}
 frame-system = {workspace = true}
 pallet-authorship = {workspace = true}
-pallet-balances = {workspace = true}
 parity-scale-codec = {workspace = true, default-features = false, features = [
   "derive",
 ]}
@@ -22,6 +21,8 @@ scale-info = {workspace = true, default-features = false, features = [
 sp-runtime = {workspace = true}
 sp-std = {workspace = true}
 
+orml-traits = {workspace = true}
+wetee-assets = {path = "../wetee-assets", package = "wetee-assets", default-features = false}
 wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
 
 [dev-dependencies]
@@ -36,6 +37,7 @@ runtime-benchmarks = [
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
+  "wetee-assets/runtime-benchmarks",
 ]
 std = [
   "parity-scale-codec/std",
@@ -45,7 +47,7 @@ std = [
   "scale-info/std",
   "wetee-primitives/std",
   "pallet-authorship/std",
-  "pallet-balances/std",
+  "wetee-assets/std",
 ]
 try-runtime = [
   "frame-support/try-runtime",

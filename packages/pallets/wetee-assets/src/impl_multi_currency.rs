@@ -126,11 +126,13 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
         if amount.is_zero() {
             return Ok(());
         }
+
         if asset_id == NATIVE_ASSET_ID {
             T::NativeAsset::withdraw(who, amount)?;
         } else {
             <T as pallet::Config>::MultiAsset::withdraw(asset_id, who, amount)?;
         }
+
         Self::deposit_event(Event::Withdrawn(asset_id, who.clone(), amount));
         Ok(())
     }

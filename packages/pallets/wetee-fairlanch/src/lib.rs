@@ -1,10 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
+use frame_support::sp_runtime::SaturatedConversion;
+use orml_traits::MultiCurrency;
 pub use pallet::*;
 
 mod weights;
 pub use weights::WeightInfo;
+
+const UNIT: u128 = 1_000_000_000_000;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -12,10 +16,16 @@ pub mod pallet {
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     use frame_system::pallet_prelude::*;
 
+    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
+        <T as frame_system::Config>::AccountId,
+    >>::Balance;
+
     /// pallet config
     /// 组件配置文件
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_authorship::Config {
+    pub trait Config:
+        frame_system::Config + pallet_authorship::Config + wetee_assets::Config
+    {
         /// pallet event
         /// 组件消息
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -48,12 +58,18 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-            if let Some(_block_author) = pallet_authorship::Pallet::<T>::author() {
-                let _reward_amount = 100;
+        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+            if let Some(block_author) = pallet_authorship::Pallet::<T>::author() {
+                let initial_reward: u128 = 100 * UNIT;
+                let reduction_interval: u128 = 21024000;
+
+                let reward_amount =
+                    initial_reward / (1 + (n.into() / reduction_interval).saturated_into::<u128>());
+
+                let amount: BalanceOf<T> = reward_amount.saturated_into::<BalanceOf<T>>();
 
                 // 奖励出块
-                // let _ = Balances::<T>::deposit_creating(&block_author, reward_amount.into());
+                let _ = wetee_assets::Pallet::<T>::try_deposit(0, block_author, amount);
             }
 
             Weight::zero()
@@ -63,8 +79,8 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(001)]
-        #[pallet::weight(T::WeightInfo::create_dao())]
-        pub fn create_dao(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        pub fn xxxx(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Ok(().into())
         }
     }

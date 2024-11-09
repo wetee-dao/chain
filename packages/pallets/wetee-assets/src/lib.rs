@@ -471,8 +471,27 @@ pub mod pallet {
             value: u128,
         ) -> result::Result<(), DispatchError> {
             let amount: BalanceOf<T> = value.saturated_into::<BalanceOf<T>>();
+
             <Self as MultiCurrency<T::AccountId>>::withdraw(dao_id, &from, amount)?;
             Ok(())
+        }
+
+        // 产生 TOKEN
+        pub fn try_deposit(
+            dao_id: DaoAssetId,
+            dest: T::AccountId,
+            value: BalanceOf<T>,
+        ) -> result::Result<(), DispatchError> {
+            // 确认组织是否存在
+            ensure!(
+                wetee_org::Daos::<T>::contains_key(dao_id),
+                Error::<T>::AssetNotExists
+            );
+
+            // 产生 Token
+            <Self as MultiCurrency<T::AccountId>>::deposit(dao_id, &dest, value)?;
+
+            Ok(().into())
         }
     }
 }

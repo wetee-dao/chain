@@ -36,7 +36,7 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for `wetee_org`.
 pub trait WeightInfo {
-	fn create_dao() -> Weight;
+	fn xxxx() -> Weight;
 }
 
 /// Weights for `wetee_org` using the Substrate node and recommended hardware.
@@ -54,7 +54,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `WeTEEOrg::Daos` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `WeTEESudo::Account` (r:0 w:1)
 	/// Proof: `WeTEESudo::Account` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	fn create_dao() -> Weight {
+	fn xxxx() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `4`
 		//  Estimated: `3469`
@@ -79,7 +79,7 @@ impl WeightInfo for () {
 	/// Proof: `WeTEEOrg::Daos` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `WeTEESudo::Account` (r:0 w:1)
 	/// Proof: `WeTEESudo::Account` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	fn create_dao() -> Weight {
+	fn xxxx() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `4`
 		//  Estimated: `3469`
