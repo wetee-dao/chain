@@ -35,11 +35,11 @@ pub struct GovFunc;
 impl GovIsJoin<RuntimeCall> for GovFunc {
     fn is_join(call: RuntimeCall) -> bool {
         match call {
-            RuntimeCall::WeTEEGuild(func) => match func {
+            RuntimeCall::Guild(func) => match func {
                 wetee_guild::Call::guild_join { .. } => true,
                 _ => false,
             },
-            RuntimeCall::WeTEEProject(func) => match func {
+            RuntimeCall::Project(func) => match func {
                 wetee_project::Call::project_join_request { .. } => true,
                 _ => false,
             },
@@ -56,6 +56,11 @@ impl wetee_gov::Config for Runtime {
 }
 
 impl wetee_project::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+}
+
+impl wetee_fairlanch::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

@@ -20,12 +20,12 @@ impl PalletGet<RuntimeCall> for GovFunc {
 
 fn call2id(call: RuntimeCall) -> Result<u32, ()> {
     match call {
-        RuntimeCall::WeTEEOrg(func) => match func {
+        RuntimeCall::Org(func) => match func {
             wetee_org::Call::create_dao { .. } => Ok(101 as CallId),
             wetee_org::Call::create_roadmap_task { .. } => Ok(102 as CallId),
             _ => Err(()),
         },
-        RuntimeCall::WeTEEAsset(func) => match func {
+        RuntimeCall::Asset(func) => match func {
             wetee_assets::Call::create_asset { .. } => Ok(201 as CallId),
             wetee_assets::Call::set_existenial_deposit { .. } => Ok(202 as CallId),
             wetee_assets::Call::set_metadata { .. } => Ok(203 as CallId),
@@ -34,12 +34,12 @@ fn call2id(call: RuntimeCall) -> Result<u32, ()> {
             // wetee_assets::Call::join { .. } => Ok(206 as CallId),
             _ => Err(()),
         },
-        RuntimeCall::WeTEEGuild(func) => match func {
+        RuntimeCall::Guild(func) => match func {
             wetee_guild::Call::guild_join { .. } => Ok(301 as CallId),
             wetee_guild::Call::create_guild { .. } => Ok(302 as CallId),
             _ => Err(()),
         },
-        RuntimeCall::WeTEEGov(func) => match func {
+        RuntimeCall::Gov(func) => match func {
             wetee_gov::Call::submit_proposal { .. } => Ok(401 as CallId),
             // wetee_gov::Call::recreate { .. } => Ok(402 as CallId),
             wetee_gov::Call::deposit_proposal { .. } => Ok(403 as CallId),
@@ -51,7 +51,7 @@ fn call2id(call: RuntimeCall) -> Result<u32, ()> {
             wetee_gov::Call::update_vote_model { .. } => Ok(415 as CallId),
             _ => Err(()),
         },
-        RuntimeCall::WeTEEProject(func) => match func {
+        RuntimeCall::Project(func) => match func {
             wetee_project::Call::project_join_request { .. } => Ok(501 as CallId),
             wetee_project::Call::create_project { .. } => Ok(502 as CallId),
             wetee_project::Call::apply_project_funds { .. } => Ok(503 as CallId),
@@ -66,7 +66,7 @@ fn call2id(call: RuntimeCall) -> Result<u32, ()> {
             wetee_project::Call::make_review { .. } => Ok(512 as CallId),
             _ => Err(()),
         },
-        RuntimeCall::WeTEETreasury(func) => match func {
+        RuntimeCall::Treasury(func) => match func {
             wetee_treasury::Call::spend { .. } => Ok(601 as CallId),
             _ => Err(()),
         },

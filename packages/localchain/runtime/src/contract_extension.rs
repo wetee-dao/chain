@@ -1,4 +1,4 @@
-use crate::{Runtime, WeTEEBridge};
+use crate::{Bridge, Runtime};
 use codec::{Decode, Encode, MaxEncodedLen};
 use log::error;
 use pallet_contracts::chain_extension::{
@@ -36,7 +36,7 @@ impl ChainExtension<Runtime> for TeeExtension {
                 let input: TEECallInput = env.read_as()?;
 
                 // call tee bridge
-                let call_result = WeTEEBridge::call_from_ink(
+                let call_result = Bridge::call_from_ink(
                     origin,
                     sender.clone(),
                     input.tee,

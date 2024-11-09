@@ -54,20 +54,21 @@ mod contracts;
 pub use contracts::*;
 mod contract_extension;
 
-pub use wetee_app::Call as WeTEEAppCall;
-pub use wetee_assets::Call as WeTEEAssetsCall;
-pub use wetee_dsecret::Call as WeTEEDSecretCall;
-pub use wetee_gov::Call as WeTEEGovCall;
-pub use wetee_gpu::Call as WeTEEGpuCall;
-pub use wetee_guild::Call as WeTEEGuildCall;
-pub use wetee_matrix::Call as WeTEEMatrixCall;
-pub use wetee_org::Call as WeTEEOrgCall;
-pub use wetee_project::Call as WeTEEProjectCall;
-pub use wetee_sudo::Call as WeTEESudoCall;
-pub use wetee_task::Call as WeTEETaskCall;
-pub use wetee_tee_bridge::Call as WeTEETeeBridgeCall;
-pub use wetee_treasury::Call as WeTEETreasuryCall;
-pub use wetee_worker::Call as WeTEEWorkerCall;
+pub use wetee_app::Call as AppCall;
+pub use wetee_assets::Call as AssetsCall;
+pub use wetee_dsecret::Call as SecretCall;
+pub use wetee_fairlanch::Call as FairlanchCall;
+pub use wetee_gov::Call as GovCall;
+pub use wetee_gpu::Call as GpuCall;
+pub use wetee_guild::Call as GuildCall;
+pub use wetee_matrix::Call as MatrixCall;
+pub use wetee_org::Call as OrgCall;
+pub use wetee_project::Call as ProjectCall;
+pub use wetee_sudo::Call as SudoCall;
+pub use wetee_task::Call as TaskCall;
+pub use wetee_tee_bridge::Call as TeeBridgeCall;
+pub use wetee_treasury::Call as TreasuryCall;
+pub use wetee_worker::Call as WorkerCall;
 // End WETEE pallet.
 
 /// An index to a block.
@@ -272,6 +273,22 @@ impl pallet_sudo::Config for Runtime {
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
+pub struct AuraAccountAdapter;
+impl frame_support::traits::FindAuthor<AccountId> for AuraAccountAdapter {
+    fn find_author<'a, I>(digests: I) -> Option<AccountId>
+    where
+        I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
+    {
+        pallet_aura::AuraAuthorId::<Runtime>::find_author(digests)
+            .and_then(|k| AccountId::try_from(k.as_ref()).ok())
+    }
+}
+
+impl pallet_authorship::Config for Runtime {
+    type FindAuthor = AuraAccountAdapter;
+    type EventHandler = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 #[frame_support::runtime]
 mod runtime {
@@ -310,46 +327,51 @@ mod runtime {
     #[runtime::pallet_index(6)]
     pub type Sudo = pallet_sudo;
 
-    #[runtime::pallet_index(22)]
+    #[runtime::pallet_index(7)]
+    pub type Authorship: pallet_authorship;
+
+    #[runtime::pallet_index(8)]
     pub type Contracts = pallet_contracts;
 
     // WETEE
-    #[runtime::pallet_index(7)]
+    #[runtime::pallet_index(101)]
     pub type Tokens = orml_tokens;
-    #[runtime::pallet_index(8)]
+    #[runtime::pallet_index(102)]
     pub type RandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
-    #[runtime::pallet_index(9)]
-    pub type WeTEEMessageQueue = wetee_message_queue;
-    #[runtime::pallet_index(10)]
+    #[runtime::pallet_index(103)]
+    pub type WeMessageQueue = wetee_message_queue;
+    #[runtime::pallet_index(104)]
     pub type Utility = pallet_utility;
-    #[runtime::pallet_index(11)]
-    pub type WeTEEOrg = wetee_org;
-    #[runtime::pallet_index(12)]
-    pub type WeTEEAsset = wetee_assets;
-    #[runtime::pallet_index(13)]
-    pub type WeTEESudo = wetee_sudo;
-    #[runtime::pallet_index(14)]
-    pub type WeTEEGuild = wetee_guild;
-    #[runtime::pallet_index(15)]
-    pub type WeTEEProject = wetee_project;
-    #[runtime::pallet_index(16)]
-    pub type WeTEEGov = wetee_gov;
-    #[runtime::pallet_index(17)]
-    pub type WeTEETreasury = wetee_treasury;
-    #[runtime::pallet_index(18)]
-    pub type WeTEEApp = wetee_app;
-    #[runtime::pallet_index(19)]
-    pub type WeTEETask = wetee_task;
-    #[runtime::pallet_index(20)]
-    pub type WeTEEGpu = wetee_gpu;
-    #[runtime::pallet_index(21)]
-    pub type WeTEEWorker = wetee_worker;
-    #[runtime::pallet_index(23)]
-    pub type WeTEEDsecret = wetee_dsecret;
-    #[runtime::pallet_index(24)]
-    pub type WeTEEBridge = wetee_tee_bridge;
-    #[runtime::pallet_index(25)]
-    pub type WeTEEMatrix = wetee_matrix;
+    #[runtime::pallet_index(105)]
+    pub type Org = wetee_org;
+    #[runtime::pallet_index(106)]
+    pub type Asset = wetee_assets;
+    #[runtime::pallet_index(107)]
+    pub type WeSudo = wetee_sudo;
+    #[runtime::pallet_index(108)]
+    pub type Guild = wetee_guild;
+    #[runtime::pallet_index(109)]
+    pub type Project = wetee_project;
+    #[runtime::pallet_index(110)]
+    pub type Gov = wetee_gov;
+    #[runtime::pallet_index(112)]
+    pub type Treasury = wetee_treasury;
+    #[runtime::pallet_index(113)]
+    pub type App = wetee_app;
+    #[runtime::pallet_index(114)]
+    pub type Task = wetee_task;
+    #[runtime::pallet_index(115)]
+    pub type Gpu = wetee_gpu;
+    #[runtime::pallet_index(116)]
+    pub type Worker = wetee_worker;
+    #[runtime::pallet_index(117)]
+    pub type Dsecret = wetee_dsecret;
+    #[runtime::pallet_index(118)]
+    pub type Bridge = wetee_tee_bridge;
+    #[runtime::pallet_index(119)]
+    pub type Matrix = wetee_matrix;
+    #[runtime::pallet_index(120)]
+    pub type Fairlanch = wetee_fairlanch;
     // WETEE end
 }
 
@@ -412,19 +434,19 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_sudo, Sudo]
-        [wetee_org, WeTEEOrg]
-        [wetee_matrix, WeTEEMatrix]
-        [wetee_sudo, WeTEESudo]
-        [wetee_guild, WeTEEGuild]
-        [wetee_treasury, WeTEETreasury]
-        [wetee_assets, WeTEEAsset]
-        [wetee_gov, WeTEEGov]
-        [wetee_app, WeTEEApp]
-        [wetee_gpu, WeTEEGpu]
-        [wetee_task, WeTEETask]
-        [wetee_dsecret, WeTEEDsecret]
-        [wetee_tee_bridge, WeTEEBridge]
-        [wetee_worker, WeTEEWorker]
+        [wetee_org, Org]
+        [wetee_matrix, Matrix]
+        [wetee_sudo, WeSudo]
+        [wetee_guild, Guild]
+        [wetee_treasury, Treasury]
+        [wetee_assets, Asset]
+        [wetee_gov, Gov]
+        [wetee_app, App]
+        [wetee_gpu, Gpu]
+        [wetee_task, Task]
+        [wetee_dsecret, Dsecret]
+        [wetee_tee_bridge, Bridge]
+        [wetee_worker, Worker]
     );
 }
 

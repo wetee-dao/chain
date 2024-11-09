@@ -2,7 +2,7 @@
 pub use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 
-use crate::{AccountId, Balance, BlockNumber, WeTEEAsset};
+use crate::{AccountId, Asset, Balance, BlockNumber};
 use wetee_gov::traits::PledgeTrait;
 use wetee_primitives::types::DaoAssetId;
 
@@ -23,7 +23,7 @@ impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for
     ) -> Result<(Balance, BlockNumber), DispatchError> {
         let amount = {
             #[cfg(not(feature = "runtime-benchmarks"))]
-            WeTEEAsset::reserve(*dao_id, who.clone(), amount)?;
+            Asset::reserve(*dao_id, who.clone(), amount)?;
             if vote_model == 1 {
                 // 1 account = 1 vote
                 1
@@ -42,7 +42,7 @@ impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for
         amount: Balance,
     ) -> Result<(), DispatchError> {
         #[cfg(not(feature = "runtime-benchmarks"))]
-        WeTEEAsset::unreserve(*dao_id, who.clone(), amount)?;
+        Asset::unreserve(*dao_id, who.clone(), amount)?;
         Ok(())
     }
 }
