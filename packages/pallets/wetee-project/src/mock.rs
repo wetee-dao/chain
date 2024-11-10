@@ -12,7 +12,7 @@
 // use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
 // use wetee_primitives::{
 //     traits::{GovIsJoin, PalletGet, UHook},
-//     types::{CallId, DaoAssetId},
+//     types::{CallId, WeAssetId},
 // };
 
 // type Amount = i64;
@@ -158,8 +158,8 @@
 // }
 
 // pub struct CreatedHook;
-// impl UHook<u64, DaoAssetId> for CreatedHook {
-//     fn run_hook(acount_id: u64, dao_id: DaoAssetId) {
+// impl UHook<u64, WeAssetId> for CreatedHook {
+//     fn run_hook(acount_id: u64, dao_id: WeAssetId) {
 //         // 以 WETEE 创建者设置为WETEE初始的 root 账户
 //         wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
 //     }
@@ -208,7 +208,7 @@
 
 // parameter_types! {
 //     pub const MaxLocks: u32 = 50;
-//     pub const MaxCreatableId: DaoAssetId = 10000;
+//     pub const MaxCreatableId: WeAssetId = 10000;
 // }
 
 // impl wetee_assets::Config for Test {

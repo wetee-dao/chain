@@ -8,7 +8,7 @@ use sp_runtime::BuildStorage;
 use sp_std::result::Result;
 use wetee_primitives::{
     traits::UHook,
-    types::{DaoAssetId, WorkId},
+    types::{WeAssetId, WorkId},
 };
 
 // type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -50,7 +50,7 @@ parameter_types! {
 
 pub struct WorkerQueueHook;
 impl UHook<WorkId, u64> for WorkerQueueHook {
-    fn run_hook(_id: WorkId, _dao_id: DaoAssetId) {}
+    fn run_hook(_id: WorkId, _dao_id: WeAssetId) {}
 }
 
 impl wetee_org::Config for Test {

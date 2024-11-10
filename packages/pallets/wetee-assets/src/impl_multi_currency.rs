@@ -21,7 +21,7 @@
 use super::*;
 
 impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
-    type CurrencyId = DaoAssetId;
+    type CurrencyId = WeAssetId;
     type Balance = BalanceOf<T>;
 
     fn minimum_balance(asset_id: Self::CurrencyId) -> Self::Balance {

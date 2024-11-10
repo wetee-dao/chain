@@ -6,21 +6,21 @@ use frame_benchmarking::{
 use frame_system::RawOrigin as SystemOrigin;
 use wetee_primitives::{
     traits::UHook,
-    types::{DaoAssetId, GuildId, ProjectId, TaskId},
+    types::{GuildId, ProjectId, TaskId, WeAssetId},
 };
 
 fn get_alice<T: Config>() -> T::AccountId {
     account("alice", 1, 1)
 }
 
-fn get_dao_account<T: Config>(second_id: DaoAssetId) -> T::AccountId {
+fn get_dao_account<T: Config>(second_id: WeAssetId) -> T::AccountId {
     Org::<T>::try_get_dao_account_id(second_id).unwrap()
 }
 
-fn creat_dao<T: Config>() -> (DaoAssetId, DaoAssetId) {
+fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
     let alice = get_alice::<T>();
-    let dao_id = DaoAssetId::default();
-    let second_id: DaoAssetId = Default::default();
+    let dao_id = WeAssetId::default();
+    let second_id: WeAssetId = Default::default();
     assert!(Org::<T>::create_dao(
         SystemOrigin::Signed(alice).into(),
         vec![1; 4],

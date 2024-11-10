@@ -14,7 +14,7 @@ use sp_std::result;
 use orml_traits::MultiCurrency;
 
 use wetee_org::{self};
-use wetee_primitives::types::{DaoAssetId, ProjectId, TaskId};
+use wetee_primitives::types::{ProjectId, TaskId, WeAssetId};
 
 pub use pallet::*;
 
@@ -93,7 +93,7 @@ pub struct TaskInfo<AccountId, Balance> {
     pub creator: AccountId,
     /// rewards
     /// 奖金
-    pub rewards: Vec<(DaoAssetId, Balance)>,
+    pub rewards: Vec<(WeAssetId, Balance)>,
     // 最大协作数量
     pub max_assignee: u8,
     /// assignes info
@@ -186,7 +186,7 @@ pub mod pallet {
     pub type DaoProjects<T: Config> = StorageMap<
         _,
         Identity,
-        DaoAssetId,
+        WeAssetId,
         BoundedVec<ProjectInfo<T::AccountId>, ConstU32<200>>,
         ValueQuery,
     >;
@@ -250,11 +250,11 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        ProjectJoined(DaoAssetId, ProjectId, T::AccountId),
-        ProjectCreated(DaoAssetId, ProjectId, T::AccountId),
-        TaskCreated(DaoAssetId, ProjectId, u64, T::AccountId),
-        TaskInProgress(DaoAssetId, ProjectId, u64, T::AccountId),
-        TaskInReview(DaoAssetId, ProjectId, u64, T::AccountId),
+        ProjectJoined(WeAssetId, ProjectId, T::AccountId),
+        ProjectCreated(WeAssetId, ProjectId, T::AccountId),
+        TaskCreated(WeAssetId, ProjectId, u64, T::AccountId),
+        TaskInProgress(WeAssetId, ProjectId, u64, T::AccountId),
+        TaskInReview(WeAssetId, ProjectId, u64, T::AccountId),
         ProxyCallResult {
             caller: T::AccountId,
             project_account: T::AccountId,
@@ -279,7 +279,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn project_join_request(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             who: T::AccountId,
         ) -> DispatchResultWithPostInfo {
@@ -299,7 +299,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn create_project(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             name: Vec<u8>,
             description: Vec<u8>,
             creator: T::AccountId,
@@ -330,7 +330,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn apply_project_funds(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
@@ -357,7 +357,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn create_task(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             name: Vec<u8>,
             description: Vec<u8>,
@@ -427,7 +427,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn join_task(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             task_id: ProjectId,
         ) -> DispatchResultWithPostInfo {
@@ -470,7 +470,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn leave_task(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             task_id: ProjectId,
         ) -> DispatchResultWithPostInfo {
@@ -505,7 +505,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn join_task_review(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             task_id: TaskId,
         ) -> DispatchResultWithPostInfo {
@@ -545,7 +545,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn leave_task_review(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             task_id: TaskId,
         ) -> DispatchResultWithPostInfo {
@@ -578,7 +578,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn start_task(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             task_id: ProjectId,
         ) -> DispatchResultWithPostInfo {
@@ -612,7 +612,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn request_review(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             task_id: ProjectId,
         ) -> DispatchResultWithPostInfo {
@@ -654,7 +654,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn task_done(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             task_id: ProjectId,
         ) -> DispatchResultWithPostInfo {
@@ -721,7 +721,7 @@ pub mod pallet {
         #[pallet::weight(T::DbWeight::get().reads_writes(1, 2)  + Weight::from_all(40_000))]
         pub fn make_review(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             task_id: ProjectId,
             opinion: ReviewOpinion,
@@ -844,7 +844,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         // 添加项目
         pub fn try_add_project(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             mut project: ProjectInfo<T::AccountId>,
         ) -> result::Result<ProjectId, DispatchError> {
             let project_id = NextProjectId::<T>::get();
@@ -865,7 +865,7 @@ pub mod pallet {
 
         /// 删除项目
         pub fn try_remove_project(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
         ) -> result::Result<ProjectId, DispatchError> {
             let (mut projects, _, index) = Self::get_project_and_index(dao_id, project_id).unwrap();
@@ -877,7 +877,7 @@ pub mod pallet {
 
         // 获取项目
         pub fn get_project(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
         ) -> result::Result<ProjectInfo<T::AccountId>, DispatchError> {
             let (_, project, _) = Self::get_project_and_index(dao_id, project_id).unwrap();
@@ -886,7 +886,7 @@ pub mod pallet {
 
         /// 获取用户是否有 project 的权利
         pub fn check_auth_for_project(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
@@ -924,7 +924,7 @@ pub mod pallet {
 
         /// 获取任务列表
         pub fn get_project_and_index(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
         ) -> result::Result<
             (

@@ -8,7 +8,7 @@ use sp_runtime::RuntimeDebug;
 use sp_std::result;
 
 use wetee_org::{self};
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::WeAssetId;
 
 #[cfg(test)]
 mod mock;
@@ -65,13 +65,13 @@ pub mod pallet {
     /// 组织最高权限 id
     #[pallet::storage]
     #[pallet::getter(fn sudo_account)]
-    pub type Account<T: Config> = StorageMap<_, Identity, DaoAssetId, T::AccountId>;
+    pub type Account<T: Config> = StorageMap<_, Identity, WeAssetId, T::AccountId>;
 
     /// WETEE Root account id.
     /// 组织最高权限 id
     #[pallet::storage]
     #[pallet::getter(fn close_dao)]
-    pub type CloseDao<T: Config> = StorageMap<_, Identity, DaoAssetId, bool>;
+    pub type CloseDao<T: Config> = StorageMap<_, Identity, WeAssetId, bool>;
 
     /// sudo模块调用历史
     #[pallet::storage]
@@ -79,7 +79,7 @@ pub mod pallet {
     pub type SudoTasks<T: Config> = StorageMap<
         _,
         Identity,
-        DaoAssetId,
+        WeAssetId,
         BoundedVec<
             SudoTask<BlockNumberFor<T>, <T as wetee_org::Config>::RuntimeCall>,
             ConstU32<100>,
@@ -97,11 +97,11 @@ pub mod pallet {
         },
         /// Set root account or reopen sudo.
         SetSudo {
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             sudo_account: T::AccountId,
         },
         /// close root account.
-        CloseSudo { dao_id: DaoAssetId },
+        CloseSudo { dao_id: WeAssetId },
     }
 
     // Errors inform users that something went wrong.
@@ -121,7 +121,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::sudo())]
         pub fn sudo(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             call: Box<<T as wetee_org::Config>::RuntimeCall>,
         ) -> DispatchResultWithPostInfo {
             Self::check_enable(dao_id)?;
@@ -164,7 +164,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_sudo_account())]
         pub fn set_sudo_account(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             sudo_account: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             Self::check_enable(dao_id)?;
@@ -182,7 +182,7 @@ pub mod pallet {
         /// 关闭 sudo 功能
         #[pallet::call_index(003)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::close_sudo())]
-        pub fn close_sudo(origin: OriginFor<T>, dao_id: DaoAssetId) -> DispatchResultWithPostInfo {
+        pub fn close_sudo(origin: OriginFor<T>, dao_id: WeAssetId) -> DispatchResultWithPostInfo {
             let _sudo = Self::check_sudo(dao_id, origin)?;
             CloseDao::<T>::insert(dao_id, true);
 
@@ -194,7 +194,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// 测试账户是否为 WETEE root 账户
         fn check_sudo(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             o: OriginFor<T>,
         ) -> result::Result<T::AccountId, DispatchError> {
             let who = ensure_signed(o)?;
@@ -206,7 +206,7 @@ pub mod pallet {
             Ok(who)
         }
 
-        fn check_enable(dao_id: DaoAssetId) -> result::Result<bool, DispatchError> {
+        fn check_enable(dao_id: WeAssetId) -> result::Result<bool, DispatchError> {
             let is_close = CloseDao::<T>::get(dao_id);
 
             // 确定没有关闭sudo

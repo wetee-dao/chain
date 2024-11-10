@@ -4,12 +4,12 @@ use frame_benchmarking::v2::*;
 use frame_support::traits::Currency;
 use frame_system::RawOrigin;
 use scale_info::prelude::vec;
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::WeAssetId;
 
-fn creat_dao<T: Config>() -> (DaoAssetId, DaoAssetId) {
+fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
     let caller = whitelisted_caller();
-    let dao_id = DaoAssetId::default();
-    let second_id: DaoAssetId = Default::default();
+    let dao_id = WeAssetId::default();
+    let second_id: WeAssetId = Default::default();
     assert!(wetee_org::Pallet::<T>::create_dao(
         RawOrigin::Signed(caller).into(),
         vec![1; 4],

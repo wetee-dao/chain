@@ -4,9 +4,9 @@
 use crate as wetee_assets;
 use crate::mock::*;
 use frame_support::{assert_noop, assert_ok, debug};
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::WeAssetId;
 
-pub fn create_asset() -> DaoAssetId {
+pub fn create_asset() -> WeAssetId {
     let dao_id = wetee_org::Pallet::<Test>::next_dao_id();
 
     wetee_org::Pallet::<Test>::create_dao(

@@ -3,7 +3,7 @@ use crate::{Call, Pallet};
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
 use scale_info::prelude::vec;
-use wetee_primitives::types::{DaoAssetId, Ip};
+use wetee_primitives::types::{Ip, WeAssetId};
 
 #[benchmarks( where <T as wetee_org::Config>::RuntimeCall: From<frame_system::Call<T>>)]
 mod benchmarks {

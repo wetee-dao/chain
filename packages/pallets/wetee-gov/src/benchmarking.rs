@@ -3,7 +3,7 @@ use super::*;
 use frame_benchmarking::v2::*;
 use wetee_primitives::{
     traits::UHook,
-    types::{DaoAssetId, GuildId, ProjectId, TaskId},
+    types::{WeAssetId, GuildId, ProjectId, TaskId},
 };
 use parity_scale_codec::{Decode, Encode};
 use frame_support::traits::UnfilteredDispatchable;
@@ -18,7 +18,7 @@ fn get_alice<T: Config>() -> T::AccountId {
 	account("alice", 1, 1)
 }
 
-fn creat_dao<T: Config>(init:bool) -> (DaoAssetId, DaoAssetId) {
+fn creat_dao<T: Config>(init:bool) -> (WeAssetId, WeAssetId) {
 	let alice = get_alice::<T>();
 	let dao_id = 5000;
 	wetee_org::Pallet::<T>::create_dao(

@@ -6,7 +6,7 @@ use frame_system::{ensure_signed, pallet_prelude::*};
 use scale_info::prelude::vec::Vec;
 use sp_std::convert::TryInto;
 use wetee_org::{self as dao};
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::WeAssetId;
 
 pub use pallet::*;
 
@@ -42,8 +42,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        GuildCreated(DaoAssetId, u64, T::AccountId),
-        GuildJoined(DaoAssetId, u64, T::AccountId),
+        GuildCreated(WeAssetId, u64, T::AccountId),
+        GuildJoined(WeAssetId, u64, T::AccountId),
     }
 
     #[pallet::pallet]
@@ -59,7 +59,7 @@ pub mod pallet {
         #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::guild_join())]
         pub fn guild_join(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             guild_id: u64,
             who: T::AccountId,
         ) -> DispatchResultWithPostInfo {
@@ -80,7 +80,7 @@ pub mod pallet {
         #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::create_guild())]
         pub fn create_guild(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             name: Vec<u8>,
             desc: Vec<u8>,
             meta_data: Vec<u8>,

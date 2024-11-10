@@ -16,7 +16,7 @@ use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
     traits::{GovIsJoin, PalletGet, UHook},
-    types::{CallId, DaoAssetId},
+    types::{CallId, WeAssetId},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -83,7 +83,7 @@ impl orml_tokens::Config for Test {
     type CurrencyHooks = ();
     type Balance = Balance;
     type Amount = Amount;
-    type CurrencyId = DaoAssetId;
+    type CurrencyId = WeAssetId;
     type WeightInfo = ();
     type ExistentialDeposits = ExistentialDeposits;
     type MaxLocks = MaxLocks;
@@ -136,8 +136,8 @@ impl pallet_balances::Config for Test {
 }
 
 pub struct CreatedHook;
-impl UHook<u64, DaoAssetId> for CreatedHook {
-    fn run_hook(acount_id: u64, dao_id: DaoAssetId) {
+impl UHook<u64, WeAssetId> for CreatedHook {
+    fn run_hook(acount_id: u64, dao_id: WeAssetId) {
         // 以 WETEE 创建者设置为WETEE初始的 root 账户
         wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
     }
@@ -155,7 +155,7 @@ impl wetee_org::Config for Test {
 
 parameter_types! {
     pub const MaxLocks: u32 = 50;
-    pub const MaxCreatableId: DaoAssetId = 100000;
+    pub const MaxCreatableId: WeAssetId = 100000;
 }
 
 impl wetee_assets::Config for Test {

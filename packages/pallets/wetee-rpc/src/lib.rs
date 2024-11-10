@@ -1,13 +1,13 @@
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use std::sync::Arc;
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::WeAssetId;
 
 pub use wetee_runtime_api::WeteeAssetRuntimeApi;
 
 #[rpc(client, server)]
 pub trait WeteeAssetApi<Block, AccountId, Balance> {
     #[method(name = "wetee_assetBalance")]
-    fn get_asset_balance(&self, dao_id: DaoAssetId, who: AccountId) -> RpcResult<Balance>;
+    fn get_asset_balance(&self, dao_id: WeAssetId, who: AccountId) -> RpcResult<Balance>;
 }
 
 pub struct WeteeAsset<C, Block> {
@@ -18,7 +18,7 @@ pub struct WeteeAsset<C, Block> {
 impl<C, Block> WeteeAsset<C, Block> {
     pub fn new(client: Arc<C>) -> Self {
         Self {
-            _client:client,
+            _client: client,
             _marker: Default::default(),
         }
     }
@@ -33,7 +33,7 @@ impl<C, Block> WeteeAsset<C, Block> {
 //     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 //     C::Api: WeteeAssetRuntimeApi<Block, AccountId, Balance>,
 // {
-//     fn get_asset_balance(&self, dao_id: DaoAssetId, who: AccountId) -> RpcResult<Balance> {
+//     fn get_asset_balance(&self, dao_id: WeAssetId, who: AccountId) -> RpcResult<Balance> {
 //         let api = self.client.runtime_api();
 //         let best = self.client.info().best_hash;
 

@@ -6,7 +6,7 @@ use sp_runtime::traits::Zero;
 use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
 use wetee_primitives::{
     traits::{GovIsJoin, UHook},
-    types::{CallId, DaoAssetId},
+    types::{CallId, WeAssetId},
 };
 
 use crate::configs::RuntimeBlockWeights;
@@ -78,7 +78,7 @@ impl orml_tokens::Config for Runtime {
     type CurrencyHooks = ();
     type Balance = Balance;
     type Amount = Amount;
-    type CurrencyId = DaoAssetId;
+    type CurrencyId = WeAssetId;
     type WeightInfo = ();
     type ExistentialDeposits = ExistentialDeposits;
     type MaxLocks = MaxLocks;
@@ -92,8 +92,8 @@ parameter_types! {
 }
 
 pub struct CreatedHook;
-impl UHook<AccountId, DaoAssetId> for CreatedHook {
-    fn run_hook(acount_id: AccountId, dao_id: DaoAssetId) {
+impl UHook<AccountId, WeAssetId> for CreatedHook {
+    fn run_hook(acount_id: AccountId, dao_id: WeAssetId) {
         // 以 WETEE 创建者设置为WETEE初始的 root 账户
         wetee_sudo::Account::<Runtime>::insert(dao_id, acount_id);
     }
@@ -129,7 +129,7 @@ impl Contains<AccountId> for MockDustRemovalWhitelist {
 
 parameter_types! {
     pub const MaxLocks: u32 = 50;
-    pub const MaxCreatableId: DaoAssetId = 90000;
+    pub const MaxCreatableId: WeAssetId = 90000;
 }
 
 impl wetee_assets::Config for Runtime {

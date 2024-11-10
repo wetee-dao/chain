@@ -22,7 +22,7 @@ use super::*;
 
 impl<T: Config>
     CurrenciesHandler<
-        DaoAssetId,
+        WeAssetId,
         DaoAssetMeta,
         DispatchError,
         T::AccountId,
@@ -30,7 +30,7 @@ impl<T: Config>
         DispatchResult,
     > for Pallet<T>
 {
-    fn get_metadata(asset_id: DaoAssetId) -> result::Result<DaoAssetMeta, DispatchError> {
+    fn get_metadata(asset_id: WeAssetId) -> result::Result<DaoAssetMeta, DispatchError> {
         let asset_info_opt = DaoAssetsInfo::<T>::get(asset_id);
         let asset_info = match asset_info_opt {
             Some(x) => x,
@@ -51,7 +51,7 @@ impl<T: Config>
 
     fn do_create(
         user: T::AccountId,
-        asset_id: DaoAssetId,
+        asset_id: WeAssetId,
         metadata: DaoAssetMeta,
         amount: BalanceOf<T>,
         _is_swap_deposit: bool,

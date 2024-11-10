@@ -4,17 +4,20 @@
 use frame_support::sp_runtime::SaturatedConversion;
 use orml_traits::MultiCurrency;
 pub use pallet::*;
+use wetee_primitives::types::WeAssetId;
 
 mod weights;
 pub use weights::WeightInfo;
 
 const UNIT: u128 = 1_000_000_000_000;
+const INITIAL_REWARD: u128 = 100 * UNIT;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
-    use frame_system::pallet_prelude::*;
+    use frame_system::pallet_prelude::{BlockNumberFor, *};
+    use sp_runtime::traits::Block;
 
     pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
         <T as frame_system::Config>::AccountId,
@@ -41,6 +44,19 @@ pub mod pallet {
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
+    /// Staking
+    #[pallet::storage]
+    #[pallet::getter(fn code_signature)]
+    pub type Staking<T: Config> = StorageDoubleMap<
+        _,
+        Identity,
+        T::AccountId,
+        Identity,
+        WeAssetId,
+        BlockNumberFor<T>,
+        ValueQuery,
+    >;
+
     /// success event
     /// 成功事件
     #[pallet::event]
@@ -60,11 +76,10 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
             if let Some(block_author) = pallet_authorship::Pallet::<T>::author() {
-                let initial_reward: u128 = 100 * UNIT;
                 let reduction_interval: u128 = 21024000;
 
                 let reward_amount =
-                    initial_reward / (1 + (n.into() / reduction_interval).saturated_into::<u128>());
+                    INITIAL_REWARD / (1 + (n.into() / reduction_interval).saturated_into::<u128>());
 
                 let amount: BalanceOf<T> = reward_amount.saturated_into::<BalanceOf<T>>();
 

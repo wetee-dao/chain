@@ -5,11 +5,11 @@
 // use crate::mock::*;
 // use frame_support::{assert_noop, assert_ok, debug};
 // use wetee_gov::MemberData;
-// use wetee_primitives::types::DaoAssetId;
+// use wetee_primitives::types::WeAssetId;
 // use wetee_primitives::types::ProjectId;
 
 // pub const PROJECT_INDEX: ProjectId = 1;
-// pub fn create_asset() -> DaoAssetId {
+// pub fn create_asset() -> WeAssetId {
 //     let dao_id = wetee_org::Pallet::<Test>::next_dao_id();
 
 //     wetee_org::Pallet::<Test>::create_dao(
@@ -66,7 +66,7 @@
 //     dao_id
 // }
 
-// pub fn project_join_reques() -> DaoAssetId {
+// pub fn project_join_reques() -> WeAssetId {
 //     let dao_id = create_asset();
 //     assert!(wetee_project::Pallet::<Test>::project_join_request(
 //         RuntimeOrigin::signed(BOB),
@@ -204,7 +204,7 @@
 //     });
 // }
 
-// pub fn print_account(dao_id: DaoAssetId) {
+// pub fn print_account(dao_id: WeAssetId) {
 //     let project_dao = wetee_assets::Pallet::<Test>::get_balance(
 //         dao_id,
 //         wetee_org::Pallet::<Test>::dao_project(dao_id, PROJECT_INDEX),

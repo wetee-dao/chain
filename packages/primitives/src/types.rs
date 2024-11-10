@@ -16,7 +16,7 @@ pub type RealCallId = u32;
 pub type CallId = u32;
 
 /// 资源ID
-pub type DaoAssetId = u64;
+pub type WeAssetId = u64;
 
 /// ProjectId
 /// 项目ID

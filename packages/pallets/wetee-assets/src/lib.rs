@@ -53,7 +53,7 @@ use sp_std::{
     marker, result,
 };
 use wetee_org::{self as dao};
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::WeAssetId;
 
 pub mod asset_adaper_in_pallet;
 mod asset_in_pallet;
@@ -77,7 +77,7 @@ pub use weights::WeightInfo;
 mod traits;
 use traits::CurrenciesHandler;
 
-pub const NATIVE_ASSET_ID: DaoAssetId = 0;
+pub const NATIVE_ASSET_ID: WeAssetId = 0;
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct DaoAssetMeta {
@@ -116,7 +116,7 @@ pub mod pallet {
 
         /// dao asset
         /// 组织内部资产
-        type MultiAsset: MultiCurrency<Self::AccountId, CurrencyId = DaoAssetId>
+        type MultiAsset: MultiCurrency<Self::AccountId, CurrencyId = WeAssetId>
             + MultiCurrencyExtended<Self::AccountId>
             + MultiLockableCurrency<Self::AccountId>
             + MultiReservableCurrency<Self::AccountId>;
@@ -136,7 +136,7 @@ pub mod pallet {
 
         /// Maximum assets that can be created
         /// 最多可创建组织数量
-        type MaxCreatableId: Get<DaoAssetId>;
+        type MaxCreatableId: Get<WeAssetId>;
     }
 
     #[pallet::error]
@@ -166,24 +166,24 @@ pub mod pallet {
     #[pallet::generate_deposit(pub (crate) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Currency transfer success. [dao_id, from, to, amount]
-        Transferred(DaoAssetId, T::AccountId, T::AccountId, BalanceOf<T>),
+        Transferred(WeAssetId, T::AccountId, T::AccountId, BalanceOf<T>),
         /// Update balance success. [dao_id, who, amount]
-        BalanceUpdated(DaoAssetId, T::AccountId, AmountOf<T>),
+        BalanceUpdated(WeAssetId, T::AccountId, AmountOf<T>),
         /// Deposit success. [dao_id, who, amount]
-        Deposited(DaoAssetId, T::AccountId, BalanceOf<T>),
+        Deposited(WeAssetId, T::AccountId, BalanceOf<T>),
         /// Withdraw success. [dao_id, who, amount]
-        Withdrawn(DaoAssetId, T::AccountId, BalanceOf<T>),
+        Withdrawn(WeAssetId, T::AccountId, BalanceOf<T>),
         /// Create asset success. [dao_id, metadata]
-        CreateAsset(T::AccountId, DaoAssetId, BalanceOf<T>),
+        CreateAsset(T::AccountId, WeAssetId, BalanceOf<T>),
         /// Update metadata success. [dao_id, metadata]
-        SetMetadata(T::AccountId, DaoAssetId, DaoAssetMeta),
+        SetMetadata(T::AccountId, WeAssetId, DaoAssetMeta),
         /// Burn success. [dao_id, who, amount]
-        Burn(T::AccountId, DaoAssetId, BalanceOf<T>),
+        Burn(T::AccountId, WeAssetId, BalanceOf<T>),
         /// Set weight rate success. [dao_id, multiple]
-        SetWeightRateMultiple { dao_id: DaoAssetId, multiple: u128 },
+        SetWeightRateMultiple { dao_id: WeAssetId, multiple: u128 },
         /// Set existenial deposit success. [dao_id, existenial_deposit]
         SetExistenialDepposit {
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             existenial_deposit: BalanceOf<T>,
         },
     }
@@ -191,16 +191,16 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn asset_info)]
     pub type DaoAssetsInfo<T: Config> =
-        StorageMap<_, Blake2_128Concat, DaoAssetId, DaoAssetInfo<T::AccountId, DaoAssetMeta>>;
+        StorageMap<_, Blake2_128Concat, WeAssetId, DaoAssetInfo<T::AccountId, DaoAssetMeta>>;
 
     #[pallet::storage]
     #[pallet::getter(fn users_number)]
-    pub type UsersNumber<T: Config> = StorageMap<_, Identity, DaoAssetId, u32, ValueQuery>;
+    pub type UsersNumber<T: Config> = StorageMap<_, Identity, WeAssetId, u32, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn existenial_deposits)]
     pub type ExistentDeposits<T: Config> =
-        StorageMap<_, Identity, DaoAssetId, BalanceOf<T>, ValueQuery>;
+        StorageMap<_, Identity, WeAssetId, BalanceOf<T>, ValueQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -217,7 +217,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::create_asset())]
         pub fn create_asset(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             metadata: DaoAssetMeta,
             amount: BalanceOf<T>,
             init_dao_asset: BalanceOf<T>,
@@ -258,7 +258,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_existenial_deposit())]
         pub fn set_existenial_deposit(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             existenial_deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -280,7 +280,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata())]
         pub fn set_metadata(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             metadata: DaoAssetMeta,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -326,7 +326,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::burn())]
         pub fn burn(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             ensure!(
@@ -358,7 +358,7 @@ pub mod pallet {
         pub fn transfer(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             #[pallet::compact] amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let from = ensure_signed(origin)?;
@@ -392,7 +392,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// 获取账户金额
         pub fn get_balance(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
         ) -> result::Result<BalanceOf<T>, DispatchError> {
             let balance = <Self as MultiCurrency<T::AccountId>>::total_balance(dao_id, &who);
@@ -401,7 +401,7 @@ pub mod pallet {
 
         // 设置账户金额
         pub fn set_balance(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
@@ -411,7 +411,7 @@ pub mod pallet {
 
         /// 为...锁定保证金
         pub fn reserve(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
@@ -421,7 +421,7 @@ pub mod pallet {
 
         /// 解除保证
         pub fn unreserve(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
@@ -431,7 +431,7 @@ pub mod pallet {
 
         /// 尽可能解除保证
         pub fn slash_reserved(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> BalanceOf<T> {
@@ -439,13 +439,13 @@ pub mod pallet {
         }
 
         /// 总发行量
-        pub fn total_issuance(dao_id: DaoAssetId) -> BalanceOf<T> {
+        pub fn total_issuance(dao_id: WeAssetId) -> BalanceOf<T> {
             <Self as MultiCurrency<T::AccountId>>::total_issuance(dao_id)
         }
 
         /// 转帐
         pub fn try_transfer(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             from: T::AccountId,
             to: T::AccountId,
             value: BalanceOf<T>,
@@ -456,7 +456,7 @@ pub mod pallet {
 
         /// 转帐
         pub fn try_burn(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             from: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
@@ -466,7 +466,7 @@ pub mod pallet {
 
         /// 转帐
         pub fn burn_with_number(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             from: T::AccountId,
             value: u128,
         ) -> result::Result<(), DispatchError> {
@@ -478,7 +478,7 @@ pub mod pallet {
 
         // 产生 TOKEN
         pub fn try_deposit(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             dest: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
@@ -498,7 +498,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
     /// 判断资产是否存在
-    fn is_exists_metadata(dao_id: DaoAssetId) -> bool {
+    fn is_exists_metadata(dao_id: WeAssetId) -> bool {
         if dao_id == NATIVE_ASSET_ID {
             return true;
         }
@@ -509,7 +509,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// 判断资产ID是否太大
-    fn is_asset_id_too_large(dao_id: DaoAssetId) -> bool {
+    fn is_asset_id_too_large(dao_id: WeAssetId) -> bool {
         if dao_id >= T::MaxCreatableId::get() {
             return true;
         }

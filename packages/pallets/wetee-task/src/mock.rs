@@ -14,7 +14,7 @@ use sp_std::result::Result;
 use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
 use wetee_primitives::{
     traits::UHook,
-    types::{DaoAssetId, WorkId},
+    types::{WeAssetId, WorkId},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -102,7 +102,7 @@ impl wetee_org::Config for Test {
 
 pub struct WorkerQueueHook;
 impl UHook<WorkId, AccountId> for WorkerQueueHook {
-    fn run_hook(id: WorkId, dao_id: DaoAssetId) {}
+    fn run_hook(id: WorkId, dao_id: WeAssetId) {}
 }
 
 impl wetee_task::Config for Test {
@@ -137,7 +137,7 @@ impl orml_tokens::Config for Test {
     type CurrencyHooks = ();
     type Balance = Balance;
     type Amount = Amount;
-    type CurrencyId = DaoAssetId;
+    type CurrencyId = WeAssetId;
     type WeightInfo = ();
     type ExistentialDeposits = ExistentialDeposits;
     type MaxLocks = MaxLocks;
@@ -148,7 +148,7 @@ impl orml_tokens::Config for Test {
 
 parameter_types! {
     pub const MaxLocks: u32 = 50;
-    pub const MaxCreatableId: DaoAssetId = 100000;
+    pub const MaxCreatableId: WeAssetId = 100000;
 }
 
 impl wetee_assets::Config for Test {

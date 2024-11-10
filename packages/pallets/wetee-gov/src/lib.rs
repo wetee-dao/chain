@@ -42,7 +42,7 @@ use orml_traits::MultiCurrency;
 
 use wetee_org;
 use wetee_primitives::traits::{GovIsJoin, PalletGet};
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::WeAssetId;
 
 use weights::WeightInfo;
 
@@ -219,7 +219,7 @@ pub mod pallet {
         type Pledge: PledgeTrait<
             BalanceOf<Self>,
             Self::AccountId,
-            DaoAssetId,
+            WeAssetId,
             BlockNumberFor<Self>,
             DispatchError,
         >;
@@ -243,7 +243,7 @@ pub mod pallet {
     /// Number of public proposals so for.
     #[pallet::storage]
     #[pallet::getter(fn pre_prop_count)]
-    pub type PrePropCount<T: Config> = StorageMap<_, Identity, DaoAssetId, PropIndex, ValueQuery>;
+    pub type PrePropCount<T: Config> = StorageMap<_, Identity, WeAssetId, PropIndex, ValueQuery>;
 
     #[pallet::type_value]
     pub fn MaxPrePropsOnEmpty() -> PropIndex {
@@ -254,7 +254,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn max_pre_props)]
     pub type MaxPreProps<T: Config> =
-        StorageMap<_, Identity, DaoAssetId, u32, ValueQuery, MaxPrePropsOnEmpty>;
+        StorageMap<_, Identity, WeAssetId, u32, ValueQuery, MaxPrePropsOnEmpty>;
 
     /// 投票轨道
     #[pallet::storage]
@@ -262,7 +262,7 @@ pub mod pallet {
     pub type Periods<T: Config> = StorageMap<
         _,
         Identity,
-        DaoAssetId,
+        WeAssetId,
         BoundedVec<Period<BlockNumberFor<T>, BalanceOf<T>>, ConstU32<100>>,
         ValueQuery,
     >;
@@ -284,7 +284,7 @@ pub mod pallet {
     pub type PreProps<T: Config> = StorageMap<
         _,
         Identity,
-        DaoAssetId,
+        WeAssetId,
         Vec<
             PreProp<
                 BlockNumberFor<T>,
@@ -304,7 +304,7 @@ pub mod pallet {
     pub type DepositOf<T: Config> = StorageDoubleMap<
         _,
         Identity,
-        DaoAssetId,
+        WeAssetId,
         Identity,
         PropIndex,
         (Vec<T::AccountId>, BalanceOf<T>),
@@ -317,7 +317,7 @@ pub mod pallet {
     pub type Props<T: Config> = StorageDoubleMap<
         _,
         Identity,
-        DaoAssetId,
+        WeAssetId,
         Identity,
         PropIndex,
         Prop<BlockNumberFor<T>, <T as wetee_org::Config>::RuntimeCall, BalanceOf<T>>,
@@ -332,12 +332,12 @@ pub mod pallet {
     /// Number of props so far.
     #[pallet::storage]
     #[pallet::getter(fn prop_count)]
-    pub type PropCount<T: Config> = StorageMap<_, Identity, DaoAssetId, PropIndex, ValueQuery>;
+    pub type PropCount<T: Config> = StorageMap<_, Identity, WeAssetId, PropIndex, ValueQuery>;
 
     /// WETEE 投票模式默认 0，1 TOKEN 1 票
     #[pallet::storage]
     #[pallet::getter(fn vote_model)]
-    pub type VoteModel<T: Config> = StorageMap<_, Identity, DaoAssetId, u8, ValueQuery>;
+    pub type VoteModel<T: Config> = StorageMap<_, Identity, WeAssetId, u8, ValueQuery>;
 
     /// Everyone's voting information.
     #[pallet::storage]
@@ -346,7 +346,7 @@ pub mod pallet {
         _,
         Identity,
         T::AccountId,
-        Vec<VoteInfo<DaoAssetId, BlockNumberFor<T>, BalanceOf<T>, Opinion, PropIndex>>,
+        Vec<VoteInfo<WeAssetId, BlockNumberFor<T>, BalanceOf<T>, Opinion, PropIndex>>,
         ValueQuery,
     >;
 
@@ -354,38 +354,38 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// initiate a proposal.
-        Proposed(DaoAssetId, T::Hash),
+        Proposed(WeAssetId, T::Hash),
         /// Others support initiating proposals.
-        Recreate(DaoAssetId, BalanceOf<T>),
+        Recreate(WeAssetId, BalanceOf<T>),
         /// Open a prop.
-        StartTable(DaoAssetId, PropIndex),
+        StartTable(WeAssetId, PropIndex),
         /// Vote for the prop.
-        Vote(DaoAssetId, PropIndex, BalanceOf<T>),
+        Vote(WeAssetId, PropIndex, BalanceOf<T>),
         /// Cancel a vote on a prop.
-        CancelVote(DaoAssetId, PropIndex),
+        CancelVote(WeAssetId, PropIndex),
         /// Vote and execute the transaction corresponding to the proposa.
         EnactProposal {
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             index: PropIndex,
             result: DResult,
         },
         /// Unlock
-        Unlock(T::AccountId, DaoAssetId, BalanceOf<T>),
+        Unlock(T::AccountId, WeAssetId, BalanceOf<T>),
         /// Unlock
         Unreserved(T::AccountId, BalanceOf<T>),
         /// Set Origin for each Call.
-        SetMinVoteWeight(DaoAssetId, T::CallId, BalanceOf<T>),
+        SetMinVoteWeight(WeAssetId, T::CallId, BalanceOf<T>),
         /// Set the maximum number of proposals at the same time.
         SetMaxPreProps {
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             max: u32,
         },
         VoteModelUpdate {
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             model: u8,
         },
         PeriodUpdate {
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
         },
     }
 
@@ -494,7 +494,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::submit_proposal())]
         pub fn submit_proposal(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             member_data: MemberData,
             proposal: Box<<T as wetee_org::Config>::RuntimeCall>,
             period_index: u32,
@@ -574,7 +574,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::deposit_proposal())]
         pub fn deposit_proposal(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             propose_id: u32,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
@@ -609,7 +609,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::vote_for_prop())]
         pub fn vote_for_prop(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             prop_index: PropIndex,
             #[pallet::compact] pledge: BalanceOf<T>,
             opinion: Opinion,
@@ -684,7 +684,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_vote())]
         pub fn cancel_vote(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             index: PropIndex,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -743,7 +743,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::run_proposal())]
         pub fn run_proposal(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             index: PropIndex,
         ) -> DispatchResultWithPostInfo {
             ensure_signed(origin)?;
@@ -832,7 +832,7 @@ pub mod pallet {
         /// Unlock
         #[pallet::call_index(007)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::unlock())]
-        pub fn unlock(origin: OriginFor<T>, dao_id: DaoAssetId) -> DispatchResultWithPostInfo {
+        pub fn unlock(origin: OriginFor<T>, dao_id: WeAssetId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let now = Self::now();
 
@@ -883,7 +883,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_max_pre_props())]
         pub fn set_max_pre_props(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             max: u32,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
@@ -900,7 +900,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::update_vote_model())]
         pub fn update_vote_model(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             model: u8,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
@@ -917,7 +917,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_periods())]
         pub fn set_periods(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             periods: Vec<Period<BlockNumberFor<T>, BalanceOf<T>>>,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
@@ -936,7 +936,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// 获取当前投票的作用范围
         pub fn try_get_members(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             member_data: MemberData,
         ) -> result::Result<BoundedVec<T::AccountId, T::MaxMembers>, DispatchError> {
             let ms: BoundedVec<T::AccountId, T::MaxMembers> = match member_data {
@@ -949,7 +949,7 @@ pub mod pallet {
 
         /// 获取用户是否有 提案 的权利
         pub fn check_auth_for_proposal(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
             let ms = <wetee_org::Members<T>>::get(dao_id);
@@ -960,7 +960,7 @@ pub mod pallet {
 
         /// 获取用户是否有 提案//投票 的权利
         pub fn check_auth_for_vote(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             member_data: MemberData,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
@@ -976,7 +976,7 @@ pub mod pallet {
 
         /// 添加提案
         pub fn try_add_prop(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
             start: BlockNumberFor<T>,
             period_index: u32,
@@ -1024,7 +1024,7 @@ pub mod pallet {
 
         /// 获取投票轨道
         pub fn get_period(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             period_index: u32,
         ) -> result::Result<Period<BlockNumberFor<T>, BalanceOf<T>>, DispatchError> {
             let mut ps = Periods::<T>::get(dao_id);
@@ -1045,12 +1045,12 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-    pub fn backing_for(dao_id: DaoAssetId, proposal: PropIndex) -> Option<BalanceOf<T>> {
+    pub fn backing_for(dao_id: WeAssetId, proposal: PropIndex) -> Option<BalanceOf<T>> {
         Self::deposit_of(dao_id, proposal).map(|(l, d)| d.saturating_mul((l.len() as u32).into()))
     }
 
     fn inject_prop(
-        dao_id: DaoAssetId,
+        dao_id: WeAssetId,
         proposal: <T as wetee_org::Config>::RuntimeCall,
         now: BlockNumberFor<T>,
         period_index: u32,

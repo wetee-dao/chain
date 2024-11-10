@@ -4,7 +4,7 @@ use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use orml_traits::MultiCurrency;
 use sp_std::prelude::*;
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::WeAssetId;
 
 #[cfg(test)]
 mod mock;
@@ -49,14 +49,14 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// A new spend proposal has been approved.
         SpendApproved {
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             amount: BalanceOf<T>,
             beneficiary: T::AccountId,
         },
 
         /// A proposal was rejected;
         SpendRejected {
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             amount: BalanceOf<T>,
             beneficiary: T::AccountId,
         },
@@ -75,7 +75,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::spend())]
         pub fn spend(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             beneficiary: T::AccountId,
             #[pallet::compact] amount: BalanceOf<T>,
         ) -> DispatchResult {

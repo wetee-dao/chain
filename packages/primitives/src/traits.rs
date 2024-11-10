@@ -11,12 +11,12 @@ impl From<BadOrigin> for &'static str {
     }
 }
 
-pub trait UHook<AccountId, DaoAssetId> {
-    fn run_hook(a: AccountId, b: DaoAssetId);
+pub trait UHook<AccountId, WeAssetId> {
+    fn run_hook(a: AccountId, b: WeAssetId);
 }
 
-impl<AccountId: Clone, DaoAssetId: Clone> UHook<AccountId, DaoAssetId> for () {
-    fn run_hook(_a: AccountId, _b: DaoAssetId) {}
+impl<AccountId: Clone, WeAssetId: Clone> UHook<AccountId, WeAssetId> for () {
+    fn run_hook(_a: AccountId, _b: WeAssetId) {}
 }
 
 pub trait GovIsJoin<RuntimeCall> {

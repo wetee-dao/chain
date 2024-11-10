@@ -5,7 +5,7 @@ use sp_runtime::{DispatchError, RuntimeDebug};
 
 use crate::{AccountId, Balance, BlockNumber, WeTEEAsset};
 use wetee_gov::traits::PledgeTrait;
-use wetee_primitives::types::DaoAssetId;
+use wetee_primitives::types::WeAssetId;
 
 #[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, Clone, TypeInfo, Copy, MaxEncodedLen)]
 pub struct Pledge;
@@ -16,10 +16,10 @@ impl Default for Pledge {
     }
 }
 
-impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for Pledge {
+impl PledgeTrait<Balance, AccountId, WeAssetId, BlockNumber, DispatchError> for Pledge {
     fn try_vote(
         who: &AccountId,
-        dao_id: &DaoAssetId,
+        dao_id: &WeAssetId,
         vote_model: u8,
         amount: Balance,
     ) -> Result<(Balance, BlockNumber), DispatchError> {
@@ -39,7 +39,7 @@ impl PledgeTrait<Balance, AccountId, DaoAssetId, BlockNumber, DispatchError> for
 
     fn vote_end_do(
         who: &AccountId,
-        dao_id: &DaoAssetId,
+        dao_id: &WeAssetId,
         amount: Balance,
     ) -> Result<(), DispatchError> {
         WeTEEAsset::unreserve(*dao_id, who.clone(), amount)?;

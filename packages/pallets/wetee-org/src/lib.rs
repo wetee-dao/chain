@@ -9,7 +9,7 @@ use sp_runtime::{traits::BlockNumberProvider, RuntimeDebug};
 use sp_std::{prelude::*, result};
 use wetee_primitives::{
     traits::UHook,
-    types::{DaoAssetId, GuildId, ProjectId, TaskId},
+    types::{GuildId, ProjectId, TaskId, WeAssetId},
 };
 
 mod weights;
@@ -40,7 +40,7 @@ pub enum Status {
 /// 组织信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct OrgInfo<AccountId, BlockNumber> {
-    pub id: DaoAssetId,
+    pub id: WeAssetId,
     /// creator of DAO
     /// 创建者
     pub creator: AccountId,
@@ -81,8 +81,8 @@ pub struct OrgInfo<AccountId, BlockNumber> {
 /// 组织应用信息
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct OrgApp<BlockNumber> {
-    pub id: DaoAssetId,
-    pub app_id: DaoAssetId,
+    pub id: WeAssetId,
+    pub app_id: WeAssetId,
     /// The block that creates the DAO
     /// DAO创建的区块
     pub start_block: BlockNumber,
@@ -107,7 +107,7 @@ pub struct OrgApp<BlockNumber> {
 /// 组织应用信息
 #[derive(Default, PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct App<AccountId> {
-    pub id: DaoAssetId,
+    pub id: WeAssetId,
     /// url of the App.
     /// App url
     pub url: Vec<u8>,
@@ -185,14 +185,14 @@ pub struct QuarterTask<AccountId> {
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct DaoAssetAccount {
-    pub dao_id: DaoAssetId,
+    pub dao_id: WeAssetId,
     pub t: u8,
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct DaoGovAccount {
     // 组织id
-    pub id: DaoAssetId,
+    pub id: WeAssetId,
     // 投票轨道
     pub p: u32,
     // 是否同意
@@ -201,13 +201,13 @@ pub struct DaoGovAccount {
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct DaoProjectAccount {
-    pub dao_id: DaoAssetId,
+    pub dao_id: WeAssetId,
     pub project_id: ProjectId,
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
 pub struct DaoGuildAccount {
-    pub dao_id: DaoAssetId,
+    pub dao_id: WeAssetId,
     pub guild_id: GuildId,
 }
 
@@ -258,7 +258,7 @@ pub mod pallet {
 
         /// Do some things after creating dao, such as setting up a sudo account.
         /// 创建DAO之后的回调
-        type OrgHook: UHook<Self::AccountId, DaoAssetId>;
+        type OrgHook: UHook<Self::AccountId, WeAssetId>;
 
         /// max member number
         /// 组织最大的人数
@@ -280,10 +280,10 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn daos)]
     pub type Daos<T: Config> =
-        StorageMap<_, Identity, DaoAssetId, OrgInfo<T::AccountId, BlockNumberFor<T>>>;
+        StorageMap<_, Identity, WeAssetId, OrgInfo<T::AccountId, BlockNumberFor<T>>>;
 
     #[pallet::type_value]
-    pub fn DefaultForm5000() -> DaoAssetId {
+    pub fn DefaultForm5000() -> WeAssetId {
         5000
     }
 
@@ -291,13 +291,13 @@ pub mod pallet {
     /// 获取下一个组织id
     #[pallet::storage]
     #[pallet::getter(fn next_dao_id)]
-    pub type NextDaoId<T: Config> = StorageValue<_, DaoAssetId, ValueQuery, DefaultForm5000>;
+    pub type NextDaoId<T: Config> = StorageValue<_, WeAssetId, ValueQuery, DefaultForm5000>;
 
     /// The id of the next dao to be created.
     /// 获取下一个组织id
     #[pallet::storage]
     #[pallet::getter(fn next_app_id)]
-    pub type NextAppId<T: Config> = StorageValue<_, DaoAssetId, ValueQuery>;
+    pub type NextAppId<T: Config> = StorageValue<_, WeAssetId, ValueQuery>;
 
     /// the info of grutypes
     /// 组织内公会信息
@@ -306,7 +306,7 @@ pub mod pallet {
     pub type Guilds<T: Config> = StorageMap<
         _,
         Twox64Concat,
-        DaoAssetId,
+        WeAssetId,
         BoundedVec<GuildInfo<T::AccountId, BlockNumberFor<T>>, ConstU32<100>>,
         ValueQuery,
     >;
@@ -318,7 +318,7 @@ pub mod pallet {
     pub type RoadMaps<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
-        DaoAssetId,
+        WeAssetId,
         Twox64Concat,
         u32,
         BoundedVec<QuarterTask<T::AccountId>, ConstU32<100>>,
@@ -335,13 +335,8 @@ pub mod pallet {
     /// 团队的成员
     #[pallet::storage]
     #[pallet::getter(fn members)]
-    pub type Members<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        DaoAssetId,
-        BoundedVec<T::AccountId, T::MaxMembers>,
-        ValueQuery,
-    >;
+    pub type Members<T: Config> =
+        StorageMap<_, Twox64Concat, WeAssetId, BoundedVec<T::AccountId, T::MaxMembers>, ValueQuery>;
 
     /// guild members
     /// 公会成员
@@ -350,7 +345,7 @@ pub mod pallet {
     pub type GuildMembers<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
-        DaoAssetId,
+        WeAssetId,
         Twox64Concat,
         u64,
         BoundedVec<T::AccountId, T::MaxMembers>,
@@ -364,7 +359,7 @@ pub mod pallet {
     pub type ProjectMembers<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
-        DaoAssetId,
+        WeAssetId,
         Twox64Concat,
         ProjectId,
         BoundedVec<T::AccountId, T::MaxMembers>,
@@ -376,7 +371,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn app_hubs)]
     pub type AppHubs<T: Config> =
-        StorageMap<_, Twox64Concat, DaoAssetId, App<T::AccountId>, OptionQuery>;
+        StorageMap<_, Twox64Concat, WeAssetId, App<T::AccountId>, OptionQuery>;
 
     /// org apps
     /// 应用中心
@@ -385,7 +380,7 @@ pub mod pallet {
     pub type OrgApps<T: Config> = StorageMap<
         _,
         Twox64Concat,
-        DaoAssetId,
+        WeAssetId,
         BoundedVec<OrgApp<BlockNumberFor<T>>, ConstU32<100>>,
         ValueQuery,
     >;
@@ -395,7 +390,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn member_point)]
     pub type MemberPoint<T: Config> =
-        StorageDoubleMap<_, Twox64Concat, DaoAssetId, Twox64Concat, T::AccountId, u32, ValueQuery>;
+        StorageDoubleMap<_, Twox64Concat, WeAssetId, Twox64Concat, T::AccountId, u32, ValueQuery>;
 
     /// success event
     /// 成功事件
@@ -404,16 +399,16 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// DAO create event
         /// DAO创建成功事件
-        CreatedDao(T::AccountId, DaoAssetId),
+        CreatedDao(T::AccountId, WeAssetId),
         /// nomal success
         /// 成功的事件
         Success,
         /// task create event
         /// 任务创建成功事件
-        TaskCreated(DaoAssetId, u32, u64, T::AccountId),
+        TaskCreated(WeAssetId, u32, u64, T::AccountId),
         /// task update event
         /// 任务更新成功事件
-        TaskUpdated(DaoAssetId, u32, u64, T::AccountId),
+        TaskUpdated(WeAssetId, u32, u64, T::AccountId),
     }
 
     #[pallet::error]
@@ -566,7 +561,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::update_dao())]
         pub fn update_dao(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             name: Option<Vec<u8>>,
             desc: Option<Vec<u8>>,
             purpose: Option<Vec<u8>>,
@@ -632,7 +627,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::create_roadmap_task())]
         pub fn create_roadmap_task(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             roadmap_id: u32,
             name: Vec<u8>,
             priority: u8,
@@ -676,7 +671,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::update_roadmap_task())]
         pub fn update_roadmap_task(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             roadmap_id: u32,
             task_id: TaskId,
             priority: u8,
@@ -743,7 +738,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::update_app_status())]
         pub fn update_app_status(
             origin: OriginFor<T>,
-            app_id: DaoAssetId,
+            app_id: WeAssetId,
             status: Status,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
@@ -766,8 +761,8 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::org_integrate_app())]
         pub fn org_integrate_app(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
-            app_id: DaoAssetId,
+            dao_id: WeAssetId,
+            app_id: WeAssetId,
         ) -> DispatchResultWithPostInfo {
             let _me = ensure_signed(origin)?;
             // Pallet::<T>::ensrue_gov_approve_account(me, dao_id)?;
@@ -804,8 +799,8 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::update_org_app_status())]
         pub fn update_org_app_status(
             origin: OriginFor<T>,
-            dao_id: DaoAssetId,
-            app_id: DaoAssetId,
+            dao_id: WeAssetId,
+            app_id: WeAssetId,
             status: Status,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
@@ -832,12 +827,12 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         /// 获取DAO账户
-        pub fn dao_account(dao_id: DaoAssetId) -> T::AccountId {
+        pub fn dao_account(dao_id: WeAssetId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(dao_id)
         }
 
         /// 获取 DAO 账户
-        pub fn dao_asset_pending(dao_id: DaoAssetId) -> T::AccountId {
+        pub fn dao_asset_pending(dao_id: WeAssetId) -> T::AccountId {
             // pending 资金池
             T::PalletId::get().into_sub_account_truncating(DaoAssetAccount { dao_id, t: 2 })
         }
@@ -849,12 +844,12 @@ pub mod pallet {
         }
 
         /// 获取 DAO treasury 账户
-        pub fn dao_treasury(dao_id: DaoAssetId) -> T::AccountId {
+        pub fn dao_treasury(dao_id: WeAssetId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(DaoAssetAccount { dao_id, t: 3 })
         }
 
         /// 获取 DAO approve 账户
-        pub fn dao_approve(dao_id: DaoAssetId, period_id: u32) -> T::AccountId {
+        pub fn dao_approve(dao_id: WeAssetId, period_id: u32) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(DaoGovAccount {
                 id: dao_id,
                 p: period_id,
@@ -863,7 +858,7 @@ pub mod pallet {
         }
 
         /// 获取 DAO reject 账户
-        pub fn dao_reject(dao_id: DaoAssetId, period_id: u32) -> T::AccountId {
+        pub fn dao_reject(dao_id: WeAssetId, period_id: u32) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(DaoGovAccount {
                 id: dao_id,
                 p: period_id,
@@ -897,7 +892,7 @@ pub mod pallet {
         }
 
         /// 获取 DAO 项目 账户
-        pub fn dao_project(dao_id: DaoAssetId, p_id: ProjectId) -> T::AccountId {
+        pub fn dao_project(dao_id: WeAssetId, p_id: ProjectId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(DaoProjectAccount {
                 dao_id,
                 project_id: p_id,
@@ -905,7 +900,7 @@ pub mod pallet {
         }
 
         /// 获取 DAO guild 账户
-        pub fn dao_guild(dao_id: DaoAssetId, p_id: ProjectId) -> T::AccountId {
+        pub fn dao_guild(dao_id: WeAssetId, p_id: ProjectId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(DaoGuildAccount {
                 dao_id,
                 guild_id: p_id,
@@ -913,14 +908,14 @@ pub mod pallet {
         }
 
         /// 获取创建者
-        pub fn try_get_creator(dao_id: DaoAssetId) -> result::Result<T::AccountId, DispatchError> {
+        pub fn try_get_creator(dao_id: WeAssetId) -> result::Result<T::AccountId, DispatchError> {
             let dao = Daos::<T>::get(dao_id).ok_or(Error::<T>::DaoNotExists)?;
             Ok(dao.creator)
         }
 
         /// 获取组织信息
         pub fn try_get_dao(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
         ) -> Result<OrgInfo<T::AccountId, BlockNumberFor<T>>, DispatchError> {
             let dao = Daos::<T>::get(dao_id).ok_or(Error::<T>::DaoNotExists)?;
             Ok(dao)
@@ -928,7 +923,7 @@ pub mod pallet {
 
         /// 获取公会信息
         pub fn try_get_guild(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             guild_index: u32,
         ) -> Result<GuildInfo<T::AccountId, BlockNumberFor<T>>, DispatchError> {
             let guilds = <Guilds<T>>::get(dao_id);
@@ -940,7 +935,7 @@ pub mod pallet {
 
         /// 获取 DAO 账户ID
         pub fn try_get_dao_account_id(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
         ) -> result::Result<T::AccountId, DispatchError> {
             let dao = Daos::<T>::get(dao_id).ok_or(Error::<T>::DaoNotExists)?;
             Ok(dao.dao_account_id)
@@ -949,7 +944,7 @@ pub mod pallet {
         /// 确认为 DAO 本账户
         pub fn ensrue_dao_root(
             who: T::AccountId,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
         ) -> result::Result<T::AccountId, DispatchError> {
             let dao_account_id = Self::try_get_dao_account_id(dao_id)?;
             ensure!(who == dao_account_id, Error::<T>::BadOrigin);
@@ -959,7 +954,7 @@ pub mod pallet {
         /// 获取创建者
         pub fn ensrue_dao_creator(
             who: T::AccountId,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
         ) -> result::Result<T::AccountId, DispatchError> {
             let dao = Daos::<T>::get(dao_id).ok_or(Error::<T>::DaoNotExists)?;
             ensure!(who == dao.creator, Error::<T>::BadOrigin);
@@ -969,7 +964,7 @@ pub mod pallet {
         /// 获取创建者
         pub fn ensrue_root_guild(
             who: T::AccountId,
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             guild_id: u64,
         ) -> result::Result<T::AccountId, DispatchError> {
             let guild = <Guilds<T>>::get(dao_id);
@@ -987,7 +982,7 @@ pub mod pallet {
 
         /// 添加成员
         pub fn try_add_guild_member(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             guild_id: u64,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
@@ -1012,7 +1007,7 @@ pub mod pallet {
 
         /// 删除成员
         pub fn try_remove_guild_member(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             guild_id: u64,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
@@ -1034,7 +1029,7 @@ pub mod pallet {
 
         /// 添加成员
         pub fn try_add_member(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
             // 初始化成员
@@ -1053,7 +1048,7 @@ pub mod pallet {
 
         /// 删除成员
         pub fn try_remove_member(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
             let mut members = <Members<T>>::get(dao_id);
@@ -1070,7 +1065,7 @@ pub mod pallet {
 
         /// 添加项目成员
         pub fn try_add_project_member(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
@@ -1092,7 +1087,7 @@ pub mod pallet {
 
         /// 删除成员
         pub fn try_remove_project_member(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             project_id: ProjectId,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
@@ -1111,7 +1106,7 @@ pub mod pallet {
 
         /// 为成员添加荣誉积分
         pub fn try_add_member_point(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             who: T::AccountId,
             point: u32,
         ) -> result::Result<u32, DispatchError> {
@@ -1125,7 +1120,7 @@ pub mod pallet {
 
         /// 获取任务列表
         pub fn get_task(
-            dao_id: DaoAssetId,
+            dao_id: WeAssetId,
             roadmap_id: u32,
             task_id: TaskId,
         ) -> result::Result<

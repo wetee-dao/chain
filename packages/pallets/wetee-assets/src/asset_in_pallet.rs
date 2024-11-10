@@ -25,7 +25,7 @@ pub struct Asset<T, GetCurrencyId>(marker::PhantomData<T>, marker::PhantomData<G
 impl<T, GetCurrencyId> BasicCurrency<T::AccountId> for Asset<T, GetCurrencyId>
 where
     T: Config,
-    GetCurrencyId: Get<DaoAssetId>,
+    GetCurrencyId: Get<WeAssetId>,
 {
     type Balance = BalanceOf<T>;
 
@@ -73,7 +73,7 @@ where
 impl<T, GetCurrencyId> BasicCurrencyExtended<T::AccountId> for Asset<T, GetCurrencyId>
 where
     T: Config,
-    GetCurrencyId: Get<DaoAssetId>,
+    GetCurrencyId: Get<WeAssetId>,
 {
     type Amount = AmountOf<T>;
 
@@ -89,7 +89,7 @@ where
 impl<T, GetCurrencyId> BasicLockableCurrency<T::AccountId> for Asset<T, GetCurrencyId>
 where
     T: Config,
-    GetCurrencyId: Get<DaoAssetId>,
+    GetCurrencyId: Get<WeAssetId>,
 {
     type Moment = BlockNumberFor<T>;
 
@@ -131,7 +131,7 @@ where
 impl<T, GetCurrencyId> BasicReservableCurrency<T::AccountId> for Asset<T, GetCurrencyId>
 where
     T: Config,
-    GetCurrencyId: Get<DaoAssetId>,
+    GetCurrencyId: Get<WeAssetId>,
 {
     fn can_reserve(who: &T::AccountId, value: Self::Balance) -> bool {
         <Pallet<T> as MultiReservableCurrency<T::AccountId>>::can_reserve(
