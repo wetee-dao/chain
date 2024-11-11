@@ -99,7 +99,7 @@ impl UHook<AccountId, WeAssetId> for CreatedHook {
     }
 }
 
-impl wetee_org::Config for Runtime {
+impl wetee_dao::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = CallId;

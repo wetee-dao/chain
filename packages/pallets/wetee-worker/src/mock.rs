@@ -42,7 +42,7 @@ frame_support::construct_runtime!(
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
         Tokens: orml_tokens::{Pallet, Call, Config<T>, Storage, Event<T>},
         WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
-        WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
+        WETEE: wetee_dao::{ Pallet, Call, Event<T>, Storage },
         WeteeApp: wetee_app::{ Pallet, Call, Event<T>, Storage },
         WeteeWorker: wetee_worker::{ Pallet, Call, Event<T>, Storage },
     }
@@ -94,7 +94,7 @@ impl pallet_balances::Config for Test {
     type RuntimeFreezeReason = ();
 }
 
-impl wetee_org::Config for Test {
+impl wetee_dao::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = u64;

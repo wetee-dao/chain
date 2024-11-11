@@ -56,13 +56,13 @@ mod contract_extension;
 
 pub use wetee_app::Call as AppCall;
 pub use wetee_assets::Call as AssetsCall;
+pub use wetee_dao::Call as DaoCall;
 pub use wetee_dsecret::Call as SecretCall;
 pub use wetee_fairlanch::Call as FairlanchCall;
 pub use wetee_gov::Call as GovCall;
 pub use wetee_gpu::Call as GpuCall;
 pub use wetee_guild::Call as GuildCall;
 pub use wetee_matrix::Call as MatrixCall;
-pub use wetee_org::Call as OrgCall;
 pub use wetee_project::Call as ProjectCall;
 pub use wetee_sudo::Call as SudoCall;
 pub use wetee_task::Call as TaskCall;
@@ -343,7 +343,7 @@ mod runtime {
     #[runtime::pallet_index(104)]
     pub type Utility = pallet_utility;
     #[runtime::pallet_index(105)]
-    pub type Org = wetee_org;
+    pub type Dao = wetee_dao;
     #[runtime::pallet_index(106)]
     pub type Asset = wetee_assets;
     #[runtime::pallet_index(107)]
@@ -434,7 +434,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_sudo, Sudo]
-        [wetee_org, Org]
+        [wetee_dao, Org]
         [wetee_matrix, Matrix]
         [wetee_sudo, WeSudo]
         [wetee_guild, Guild]

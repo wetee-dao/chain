@@ -17,7 +17,6 @@ pub mod pallet {
     use super::*;
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     use frame_system::pallet_prelude::{BlockNumberFor, *};
-    use sp_runtime::traits::Block;
 
     pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
         <T as frame_system::Config>::AccountId,

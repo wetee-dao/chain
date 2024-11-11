@@ -7,9 +7,9 @@ use frame_support::{assert_noop, assert_ok, debug};
 use wetee_primitives::types::WeAssetId;
 
 pub fn create_asset() -> WeAssetId {
-    let dao_id = wetee_org::Pallet::<Test>::next_dao_id();
+    let dao_id = wetee_dao::Pallet::<Test>::next_dao_id();
 
-    wetee_org::Pallet::<Test>::create_dao(
+    wetee_dao::Pallet::<Test>::create_dao(
         RuntimeOrigin::signed(ALICE),
         vec![1; 4],
         vec![1; 4],
@@ -97,7 +97,7 @@ pub fn test_asset_burn() {
 //         let bob_dao = wetee_assets::Pallet::<Test>::get_balance(dao_id, BOB).unwrap();
 //         let bob = wetee_assets::Pallet::<Test>::get_balance(0, BOB).unwrap();
 
-//         let dao = wetee_org::Pallet::<Test>::dao_account(dao_id);
+//         let dao = wetee_dao::Pallet::<Test>::dao_account(dao_id);
 //         let dao_b = wetee_assets::Pallet::<Test>::get_balance(0, dao).unwrap();
 
 //         println!(

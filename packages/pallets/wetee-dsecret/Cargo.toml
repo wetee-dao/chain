@@ -26,7 +26,7 @@ sp-io = {workspace = true}
 sp-runtime = {workspace = true}
 sp-std = {workspace = true}
 
-wetee-org = {path = "../wetee-org", package = "wetee-org", default-features = false}
+wetee-dao = {path = "../wetee-dao", package = "wetee-dao", default-features = false}
 wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
 wetee-worker = {path = "../wetee-worker", package = "wetee-worker", default-features = false}
 
@@ -44,7 +44,7 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "scale-info/std",
-  "wetee-org/std",
+  "wetee-dao/std",
   "wetee-primitives/std",
   "wetee-worker/std",
 ]

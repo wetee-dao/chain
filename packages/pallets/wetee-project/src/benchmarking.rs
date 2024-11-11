@@ -12,7 +12,7 @@ use wetee_primitives::types::WeAssetId;
 //     let alice = get_alice::<T>();
 //     let dao_id = 5000;
 //     let second_id: WeAssetId = Default::default();
-//     assert!(wetee_org::Pallet::<T>::create_dao(
+//     assert!(wetee_dao::Pallet::<T>::create_dao(
 //         RawOrigin::Signed(alice).into(),
 //         vec![1; 4],
 //         vec![1; 4],
@@ -47,7 +47,7 @@ use wetee_primitives::types::WeAssetId;
 //     (dao_id, second_id)
 // }
 
-// #[benchmarks( where <T as wetee_org::Config>::RuntimeCall: From<frame_system::Call<T>>)]
+// #[benchmarks( where <T as wetee_dao::Config>::RuntimeCall: From<frame_system::Call<T>>)]
 // mod benchmarks {
 // 	use super::*;
 

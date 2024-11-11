@@ -10,9 +10,9 @@
 
 // pub const PROJECT_INDEX: ProjectId = 1;
 // pub fn create_asset() -> WeAssetId {
-//     let dao_id = wetee_org::Pallet::<Test>::next_dao_id();
+//     let dao_id = wetee_dao::Pallet::<Test>::next_dao_id();
 
-//     wetee_org::Pallet::<Test>::create_dao(
+//     wetee_dao::Pallet::<Test>::create_dao(
 //         RuntimeOrigin::signed(ALICE),
 //         vec![1; 4],
 //         vec![1; 4],
@@ -45,7 +45,7 @@
 //     });
 
 //     assert_ok!(wetee_sudo::Pallet::<Test>::sudo(
-//         RuntimeOrigin::signed(wetee_org::Daos::<Test>::get(dao_id).unwrap().creator),
+//         RuntimeOrigin::signed(wetee_dao::Daos::<Test>::get(dao_id).unwrap().creator),
 //         dao_id,
 //         Box::new(proposal)
 //     ));
@@ -58,7 +58,7 @@
 //     });
 
 //     assert_ok!(wetee_sudo::Pallet::<Test>::sudo(
-//         RuntimeOrigin::signed(wetee_org::Daos::<Test>::get(dao_id).unwrap().creator),
+//         RuntimeOrigin::signed(wetee_dao::Daos::<Test>::get(dao_id).unwrap().creator),
 //         dao_id,
 //         Box::new(proposal2)
 //     ));
@@ -93,7 +93,7 @@
 //         Box::new(proposal)
 //     ));
 
-//     let ms = wetee_org::ProjectMembers::<Test>::get(dao_id, PROJECT_INDEX);
+//     let ms = wetee_dao::ProjectMembers::<Test>::get(dao_id, PROJECT_INDEX);
 //     println!("项目成员 => {:?}", ms);
 //     assert!(ms.len() == 2);
 
@@ -120,7 +120,7 @@
 //         });
 
 //         assert_ok!(wetee_sudo::Pallet::<Test>::sudo(
-//             RuntimeOrigin::signed(wetee_org::Daos::<Test>::get(dao_id).unwrap().creator),
+//             RuntimeOrigin::signed(wetee_dao::Daos::<Test>::get(dao_id).unwrap().creator),
 //             dao_id,
 //             Box::new(proposal)
 //         ));
@@ -207,13 +207,13 @@
 // pub fn print_account(dao_id: WeAssetId) {
 //     let project_dao = wetee_assets::Pallet::<Test>::get_balance(
 //         dao_id,
-//         wetee_org::Pallet::<Test>::dao_project(dao_id, PROJECT_INDEX),
+//         wetee_dao::Pallet::<Test>::dao_project(dao_id, PROJECT_INDEX),
 //     )
 //     .unwrap();
 
 //     let dao = wetee_assets::Pallet::<Test>::get_balance(
 //         dao_id,
-//         wetee_org::Pallet::<Test>::dao_account(dao_id),
+//         wetee_dao::Pallet::<Test>::dao_account(dao_id),
 //     )
 //     .unwrap();
 

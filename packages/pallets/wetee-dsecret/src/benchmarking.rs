@@ -5,7 +5,7 @@ use frame_system::RawOrigin;
 use scale_info::prelude::vec;
 use wetee_primitives::types::{Ip, WeAssetId};
 
-#[benchmarks( where <T as wetee_org::Config>::RuntimeCall: From<frame_system::Call<T>>)]
+#[benchmarks( where <T as wetee_dao::Config>::RuntimeCall: From<frame_system::Call<T>>)]
 mod benchmarks {
     use super::*;
 

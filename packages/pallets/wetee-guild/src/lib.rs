@@ -5,7 +5,7 @@ use frame_support::pallet_prelude::*;
 use frame_system::{ensure_signed, pallet_prelude::*};
 use scale_info::prelude::vec::Vec;
 use sp_std::convert::TryInto;
-use wetee_org::{self as dao};
+use wetee_dao::{self as dao};
 use wetee_primitives::types::WeAssetId;
 
 pub use pallet::*;
@@ -64,12 +64,12 @@ pub mod pallet {
             who: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
+            let daogov = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
 
             log::info!("call by {:?}", daogov.1.id);
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
-            wetee_org::Pallet::<T>::try_add_guild_member(dao_id, guild_id, who.clone())?;
+            wetee_dao::Pallet::<T>::try_add_guild_member(dao_id, guild_id, who.clone())?;
 
             Self::deposit_event(Event::GuildJoined(dao_id, guild_id, who));
             Ok(().into())
@@ -87,7 +87,7 @@ pub mod pallet {
             creator: T::AccountId,
         ) -> DispatchResult {
             let me = ensure_signed(origin.clone())?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
+            let daogov = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             ensure!(desc.len() <= 50, dao::Error::<T>::PurposeTooLong);
@@ -103,7 +103,7 @@ pub mod pallet {
                     guilds.len(),
                     dao::GuildInfo {
                         id,
-                        dao_account_id: wetee_org::Pallet::<T>::dao_guild(dao_id, id),
+                        dao_account_id: wetee_dao::Pallet::<T>::dao_guild(dao_id, id),
                         creator: creator.clone(),
                         start_block: now,
                         name,

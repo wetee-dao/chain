@@ -28,7 +28,7 @@ sp-std = {workspace = true}
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
 
-wetee-org = {path = "../wetee-org", package = "wetee-org", default-features = false}
+wetee-dao = {path = "../wetee-dao", package = "wetee-dao", default-features = false}
 wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
 wetee-sudo = {path = "../wetee-sudo", package = "wetee-sudo", default-features = false}
 
@@ -55,7 +55,7 @@ std = [
   "orml-traits/std",
   "orml-tokens/std",
   "wetee-primitives/std",
-  "wetee-org/std",
+  "wetee-dao/std",
   "wetee-sudo/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

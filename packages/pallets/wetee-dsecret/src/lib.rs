@@ -46,7 +46,7 @@ pub mod pallet {
     }
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + wetee_org::Config + wetee_worker::Config {
+    pub trait Config: frame_system::Config + wetee_dao::Config + wetee_worker::Config {
         /// pallet event
         /// 组件消息
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;

@@ -19,7 +19,7 @@ members = [
   "packages/parachain/runtime", #
   # pallets
   "packages/pallets/message-queue",
-  "packages/pallets/wetee-org",
+  "packages/pallets/wetee-dao",
   "packages/pallets/wetee-sudo",
   "packages/pallets/wetee-gov",
   "packages/pallets/wetee-assets",

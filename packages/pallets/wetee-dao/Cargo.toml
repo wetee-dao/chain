@@ -1,7 +1,7 @@
 [package]
 authors = ["WeTEE DAO"]
 edition = "2021"
-name = "wetee-org"
+name = "wetee-dao"
 publish = false
 version = "1.0.0"
 

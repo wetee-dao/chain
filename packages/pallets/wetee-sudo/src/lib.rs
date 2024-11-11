@@ -7,7 +7,7 @@ use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::result;
 
-use wetee_org::{self};
+use wetee_dao::{self};
 use wetee_primitives::types::WeAssetId;
 
 #[cfg(test)]
@@ -46,7 +46,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + wetee_org::Config {
+    pub trait Config: frame_system::Config + wetee_dao::Config {
         /// pallet event
         /// 组件消息
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -81,7 +81,7 @@ pub mod pallet {
         Identity,
         WeAssetId,
         BoundedVec<
-            SudoTask<BlockNumberFor<T>, <T as wetee_org::Config>::RuntimeCall>,
+            SudoTask<BlockNumberFor<T>, <T as wetee_dao::Config>::RuntimeCall>,
             ConstU32<100>,
         >,
         ValueQuery,
@@ -122,7 +122,7 @@ pub mod pallet {
         pub fn sudo(
             origin: OriginFor<T>,
             dao_id: WeAssetId,
-            call: Box<<T as wetee_org::Config>::RuntimeCall>,
+            call: Box<<T as wetee_dao::Config>::RuntimeCall>,
         ) -> DispatchResultWithPostInfo {
             Self::check_enable(dao_id)?;
             let sudo = Self::check_sudo(dao_id, origin)?;
@@ -142,7 +142,7 @@ pub mod pallet {
             SudoTasks::<T>::insert(dao_id, tasks);
 
             let res = call.dispatch_bypass_filter(
-                frame_system::RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(dao_id, 0))
+                frame_system::RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(dao_id, 0))
                     .into(),
             );
 
@@ -198,7 +198,7 @@ pub mod pallet {
             o: OriginFor<T>,
         ) -> result::Result<T::AccountId, DispatchError> {
             let who = ensure_signed(o)?;
-            let dao = wetee_org::Pallet::<T>::daos(dao_id).unwrap();
+            let dao = wetee_dao::Pallet::<T>::daos(dao_id).unwrap();
             let sudo_account = Account::<T>::get(dao_id).unwrap_or(dao.creator);
 
             // 确认是否是sudo用户

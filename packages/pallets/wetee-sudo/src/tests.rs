@@ -10,7 +10,7 @@ pub const BOB: u64 = 2;
 pub const DAO_ID: u64 = 5000;
 
 pub fn create_dao() {
-    wetee_org::Pallet::<Test>::create_dao(
+    wetee_dao::Pallet::<Test>::create_dao(
         RuntimeOrigin::signed(ALICE),
         vec![1; 4],
         vec![1; 4],
@@ -32,7 +32,7 @@ pub fn set_sudo() {
         create_dao();
 
         assert_ok!(WETEESudo::set_sudo_account(
-            RuntimeOrigin::signed(wetee_org::Daos::<Test>::get(DAO_ID).unwrap().creator),
+            RuntimeOrigin::signed(wetee_dao::Daos::<Test>::get(DAO_ID).unwrap().creator),
             DAO_ID,
             BOB,
         ));
@@ -46,7 +46,7 @@ pub fn set_sudo() {
 pub fn sudo_should_work() {
     new_test_run().execute_with(|| {
         create_dao();
-        // let proposal = RuntimeCall::WETEE(wetee_org::Call::create_guild {
+        // let proposal = RuntimeCall::WETEE(wetee_dao::Call::create_guild {
         //     dao_id: DAO_ID,
         //     name: "name".as_bytes().to_vec(),
         //     desc: "desc".as_bytes().to_vec(),
@@ -54,7 +54,7 @@ pub fn sudo_should_work() {
         // });
 
         // assert_ok!(crate::Pallet::<Test>::sudo(
-        //     RuntimeOrigin::signed(wetee_org::Daos::<Test>::get(DAO_ID).unwrap().creator),
+        //     RuntimeOrigin::signed(wetee_dao::Daos::<Test>::get(DAO_ID).unwrap().creator),
         //     DAO_ID,
         //     Box::new(proposal)
         // ));
@@ -67,7 +67,7 @@ pub fn close_sudo_should_work() {
         create_dao();
 
         assert_ok!(WETEESudo::close_sudo(
-            RuntimeOrigin::signed(wetee_org::Daos::<Test>::get(DAO_ID).unwrap().creator),
+            RuntimeOrigin::signed(wetee_dao::Daos::<Test>::get(DAO_ID).unwrap().creator),
             DAO_ID,
         ));
 

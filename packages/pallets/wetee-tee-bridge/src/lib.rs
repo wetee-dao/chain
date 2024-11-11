@@ -14,7 +14,7 @@ use wetee_primitives::{
     types::{ApiMeta, InkArg, WorkId},
 };
 
-use wetee_org::{self};
+use wetee_dao::{self};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -67,7 +67,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config:
         frame_system::Config
-        + wetee_org::Config
+        + wetee_dao::Config
         + pallet_contracts::Config
         + wetee_assets::Config
         + wetee_worker::Config
@@ -242,7 +242,11 @@ pub mod pallet {
             // fee to burn
             // 销毁手续费
             // TODO 帐户余额检测
-            wetee_assets::Pallet::<T>::burn_with_number(0, owner_account, gas.into())?;
+            wetee_assets::Pallet::<T>::burn_with_number(
+                wetee_assets::NATIVE_ASSET_ID,
+                owner_account,
+                gas.into(),
+            )?;
 
             // remove call
             TEECalls::<T>::remove(cluster_id, call_id);
@@ -318,7 +322,11 @@ pub mod pallet {
             // fee to burn
             // 销毁手续费
             // TODO 帐户余额检测
-            wetee_assets::Pallet::<T>::burn_with_number(0, owner_account, gas.into())?;
+            wetee_assets::Pallet::<T>::burn_with_number(
+                wetee_assets::NATIVE_ASSET_ID,
+                owner_account,
+                gas.into(),
+            )?;
 
             if call_result.result.is_err() {
                 return Err(Error::<T>::CallInkError.into());

@@ -28,7 +28,7 @@
 //     {
 //         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 
-//         WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
+//         WETEE: wetee_dao::{ Pallet, Call, Event<T>, Storage },
 //         WeteeTreasury: wetee_treasury::{ Pallet, Call, Event<T>, Storage },
 //     }
 // );
@@ -75,7 +75,7 @@
 //     }
 // }
 
-// impl wetee_org::Config for Test {
+// impl wetee_dao::Config for Test {
 //     type RuntimeEvent = RuntimeEvent;
 //     type RuntimeCall = RuntimeCall;
 //     type CallId = u64;

@@ -13,7 +13,7 @@ fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
     let alice = get_alice::<T>();
     let dao_id = WeAssetId::default();
     let second_id: WeAssetId = Default::default();
-    assert!(wetee_org::Pallet::<T>::create_dao(
+    assert!(wetee_dao::Pallet::<T>::create_dao(
         RawOrigin::Signed(alice).into(),
         vec![1; 4],
         vec![1; 4],
@@ -29,7 +29,7 @@ fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
     (dao_id, second_id)
 }
 
-#[benchmarks( where <T as wetee_org::Config>::RuntimeCall: From<frame_system::Call<T>>)]
+#[benchmarks( where <T as wetee_dao::Config>::RuntimeCall: From<frame_system::Call<T>>)]
 mod benchmarks {
     use super::*;
 
@@ -37,12 +37,12 @@ mod benchmarks {
     fn sudo() {
         let (_dao_id, _second_id) = creat_dao::<T>();
         let alice = get_alice::<T>();
-        let proposal: <T as wetee_org::Config>::RuntimeCall = wetee_org::Call::org_integrate_app {
+        let proposal: <T as wetee_dao::Config>::RuntimeCall = wetee_dao::Call::org_integrate_app {
             dao_id: 5000,
             app_id: 0,
         }
         .into();
-        let _ = wetee_org::Pallet::<T>::create_app(
+        let _ = wetee_dao::Pallet::<T>::create_app(
             RawOrigin::Signed(alice.clone()).into(),
             vec![1; 4],
             vec![1; 4],

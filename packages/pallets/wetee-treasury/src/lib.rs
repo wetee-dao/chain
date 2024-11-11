@@ -29,7 +29,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config:
-        frame_system::Config + wetee_org::Config + wetee_assets::Config + wetee_gov::Config
+        frame_system::Config + wetee_dao::Config + wetee_assets::Config + wetee_gov::Config
     {
         /// 组件消息
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -80,7 +80,7 @@ pub mod pallet {
             #[pallet::compact] amount: BalanceOf<T>,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
-            let (_, account) = wetee_org::Pallet::<T>::ensrue_gov_approve_account(who.clone())?;
+            let (_, account) = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(who.clone())?;
             ensure!(account.id == dao_id, Error::<T>::BadDaoOrigin);
 
             // 确定金额是否超过最大金额
@@ -90,7 +90,7 @@ pub mod pallet {
             // 执行转账
             wetee_assets::Pallet::<T>::try_transfer(
                 dao_id,
-                wetee_org::Pallet::<T>::dao_treasury(dao_id),
+                wetee_dao::Pallet::<T>::dao_treasury(dao_id),
                 beneficiary.clone(),
                 amount,
             )?;

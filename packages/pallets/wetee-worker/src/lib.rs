@@ -39,7 +39,7 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config
         + wetee_assets::Config
-        + wetee_org::Config
+        + wetee_dao::Config
         + pallet_insecure_randomness_collective_flip::Config
     {
         /// pallet event

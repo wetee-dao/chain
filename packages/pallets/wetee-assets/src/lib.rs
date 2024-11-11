@@ -221,14 +221,14 @@ pub mod pallet {
             // <Self as MultiCurrency<T::AccountId>>::transfer(
             //     NATIVE_ASSET_ID,
             //     &user,
-            //     &wetee_org::Pallet::<T>::we_account(asset_id),
+            //     &wetee_dao::Pallet::<T>::we_account(asset_id),
             //     amount,
             // )?;
 
             // // 初始化账户基本资产
             // <Self as MultiCurrency<T::AccountId>>::deposit(
             //     asset_id,
-            //     &wetee_org::Pallet::<T>::we_account(asset_id),
+            //     &wetee_dao::Pallet::<T>::we_account(asset_id),
             //     init_we_asset,
             // )?;
 
@@ -393,7 +393,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// 转帐
+        /// 销毁资产
         pub fn try_burn(
             asset_id: WeAssetId,
             from: T::AccountId,

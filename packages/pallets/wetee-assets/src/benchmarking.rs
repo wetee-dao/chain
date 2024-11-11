@@ -10,7 +10,7 @@ fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
     let caller = whitelisted_caller();
     let dao_id = WeAssetId::default();
     let second_id: WeAssetId = Default::default();
-    assert!(wetee_org::Pallet::<T>::create_dao(
+    assert!(wetee_dao::Pallet::<T>::create_dao(
         RawOrigin::Signed(caller).into(),
         vec![1; 4],
         vec![1; 4],
@@ -27,7 +27,7 @@ fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
 }
 
 #[benchmarks( where 
-    <T as wetee_org::Config>::RuntimeCall: From<frame_system::Call<T>>,
+    <T as wetee_dao::Config>::RuntimeCall: From<frame_system::Call<T>>,
     T: pallet_balances::Config
 )]
 mod benchmarks {

@@ -7,7 +7,7 @@
 // use sp_runtime::{traits::BlakeTwo256, BoundedVec};
 
 // pub fn create_dao() {
-//     wetee_org::Pallet::<Test>::create_dao(
+//     wetee_dao::Pallet::<Test>::create_dao(
 //         RuntimeOrigin::signed(ALICE),
 //         vec![1; 4],
 //         vec![1; 4],
@@ -34,7 +34,7 @@
 //     )
 //     .unwrap();
 
-//     let proposal: <Test as wetee_org::Config>::RuntimeCall = Call::set_periods {
+//     let proposal: <Test as wetee_dao::Config>::RuntimeCall = Call::set_periods {
 //         dao_id: DAO_ID,
 //         periods: vec![Period {
 //             name: "gov".into(),
@@ -103,7 +103,7 @@
 //     create_dao();
 //     frame_system::Pallet::<Test>::set_block_number(2);
 
-//     let proposal: <Test as wetee_org::Config>::RuntimeCall = Call::set_max_pre_props {
+//     let proposal: <Test as wetee_dao::Config>::RuntimeCall = Call::set_max_pre_props {
 //         dao_id: 5000,
 //         max: 100,
 //     }

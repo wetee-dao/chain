@@ -21,7 +21,7 @@ parameter_types! {
 frame_support::construct_runtime!(
     pub struct Test {
         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
-        WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
+        WETEE: wetee_dao::{ Pallet, Call, Event<T>, Storage },
         WETEESudo: sudo::{ Pallet, Call, Event<T>, Storage },
     }
 );
@@ -48,7 +48,7 @@ impl TryFrom<RuntimeCall> for u64 {
     }
 }
 
-impl wetee_org::Config for Test {
+impl wetee_dao::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = u64;

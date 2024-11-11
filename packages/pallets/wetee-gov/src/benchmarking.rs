@@ -12,7 +12,7 @@ use frame_system::{RawOrigin,Pallet as System};
 use sp_runtime::RuntimeDebug;
 use scale_info::prelude::boxed::Box;
 use scale_info::prelude::vec;
-use wetee_org::{self};
+use wetee_dao::{self};
 
 fn get_alice<T: Config>() -> T::AccountId {
 	account("alice", 1, 1)
@@ -21,7 +21,7 @@ fn get_alice<T: Config>() -> T::AccountId {
 fn creat_dao<T: Config>(init:bool) -> (WeAssetId, WeAssetId) {
 	let alice = get_alice::<T>();
 	let dao_id = 5000;
-	wetee_org::Pallet::<T>::create_dao(
+	wetee_dao::Pallet::<T>::create_dao(
 		RawOrigin::Signed(alice.clone()).into(),
 		vec![1; 4],
 		vec![1; 4],
@@ -53,7 +53,7 @@ fn creat_dao<T: Config>(init:bool) -> (WeAssetId, WeAssetId) {
   let _v100: BlockNumberFor<T> = 100u32.into();
   let max_balance: BalanceOf<T> = 10000u32.into();
   Pallet::<T>::set_periods(
-    RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(dao_id,0)).into(),
+    RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(dao_id,0)).into(),
     dao_id,
     vec![Period{ 
       name: "gov".into(), 
@@ -71,7 +71,7 @@ fn creat_dao<T: Config>(init:bool) -> (WeAssetId, WeAssetId) {
   );
   
   
-  let proposal: <T as wetee_org::Config>::RuntimeCall  = wetee_org::Call::create_roadmap_task {
+  let proposal: <T as wetee_dao::Config>::RuntimeCall  = wetee_dao::Call::create_roadmap_task {
     dao_id,
     roadmap_id: 202301,
     name: vec![1; 4],
@@ -85,7 +85,7 @@ fn creat_dao<T: Config>(init:bool) -> (WeAssetId, WeAssetId) {
 }
 
 #[benchmarks( where 
-  <T as wetee_org::Config>::RuntimeCall: From<frame_system::Call<T>>,
+  <T as wetee_dao::Config>::RuntimeCall: From<frame_system::Call<T>>,
 )]
 mod benchmarks {
 	use super::*;
@@ -94,7 +94,7 @@ mod benchmarks {
   fn submit_proposal(){
     let (dao_id, _) = creat_dao::<T>(false);
     let alice = get_alice::<T>();
-    let proposal: <T as wetee_org::Config>::RuntimeCall  = wetee_org::Call::create_roadmap_task {
+    let proposal: <T as wetee_dao::Config>::RuntimeCall  = wetee_dao::Call::create_roadmap_task {
       dao_id,
       roadmap_id: 202301,
       name: vec![1; 4],
@@ -116,7 +116,7 @@ mod benchmarks {
 
     #[block]{
       Pallet::<T>::set_periods(
-        RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(dao_id,0)).into(),
+        RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(dao_id,0)).into(),
         dao_id,
         vec![Period{ 
           name: "gov".into(), 
@@ -141,7 +141,7 @@ mod benchmarks {
     
     #[block]{
       Pallet::<T>::update_vote_model(
-        RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(dao_id,0)).into(),
+        RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(dao_id,0)).into(),
         dao_id,
         1,
       );
@@ -154,7 +154,7 @@ mod benchmarks {
 
     #[block]{
       Pallet::<T>::set_max_pre_props(
-        RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(dao_id,0)).into(),
+        RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(dao_id,0)).into(),
         dao_id,
         100,
       );
@@ -212,7 +212,7 @@ mod benchmarks {
 
     #[block]{
       Pallet::<T>::cancel_vote(
-        RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(dao_id,0)).into(),
+        RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(dao_id,0)).into(),
         dao_id,
         0,
       );
@@ -235,7 +235,7 @@ mod benchmarks {
 
     #[block]{
       Pallet::<T>::run_proposal(
-        RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(dao_id,0)).into(),
+        RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(dao_id,0)).into(),
         dao_id,
         0,
       );
@@ -258,14 +258,14 @@ mod benchmarks {
 
     
     Pallet::<T>::run_proposal(
-      RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(dao_id,0)).into(),
+      RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(dao_id,0)).into(),
       dao_id,
       0,
     );
     
     #[block]{
       Pallet::<T>::unlock(
-        RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(dao_id,0)).into(),
+        RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(dao_id,0)).into(),
         dao_id,
       );
     }

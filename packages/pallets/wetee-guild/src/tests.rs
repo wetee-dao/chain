@@ -9,9 +9,9 @@
 // use wetee_primitives::types::WeAssetId;
 
 // pub fn create_asset() -> WeAssetId {
-//     let dao_id = wetee_org::Pallet::<Test>::next_dao_id();
+//     let dao_id = wetee_dao::Pallet::<Test>::next_dao_id();
 
-//     wetee_org::Pallet::<Test>::create_dao(
+//     wetee_dao::Pallet::<Test>::create_dao(
 //         RuntimeOrigin::signed(ALICE),
 //         vec![1; 4],
 //         vec![1; 4],
@@ -44,7 +44,7 @@
 //     });
 
 //     assert_ok!(wetee_sudo::Pallet::<Test>::sudo(
-//         RuntimeOrigin::signed(wetee_org::Daos::<Test>::get(dao_id).unwrap().creator),
+//         RuntimeOrigin::signed(wetee_dao::Daos::<Test>::get(dao_id).unwrap().creator),
 //         dao_id,
 //         Box::new(proposal)
 //     ));
@@ -75,7 +75,7 @@
 //             Box::new(proposal)
 //         ));
 
-//         let ms = wetee_org::GuildMembers::<Test>::get(dao_id, 0);
+//         let ms = wetee_dao::GuildMembers::<Test>::get(dao_id, 0);
 //         assert!(ms.len() == 2);
 //     });
 // }

@@ -32,7 +32,7 @@
 //         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
 //         Tokens: orml_tokens::{Pallet, Call, Config<T>, Storage, Event<T>},
 
-//         WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
+//         WETEE: wetee_dao::{ Pallet, Call, Event<T>, Storage },
 //         WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
 //         WETEESudo: wetee_sudo::{ Pallet, Call, Event<T>, Storage },
 //         WETEEProject: wetee_project::{ Pallet, Call, Event<T>, Storage },
@@ -165,7 +165,7 @@
 //     }
 // }
 
-// impl wetee_org::Config for Test {
+// impl wetee_dao::Config for Test {
 //     type RuntimeEvent = RuntimeEvent;
 //     type RuntimeCall = RuntimeCall;
 //     type CallId = CallId;

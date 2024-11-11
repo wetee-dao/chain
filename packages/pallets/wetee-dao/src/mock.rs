@@ -1,4 +1,4 @@
-use crate as wetee_org;
+use crate as wetee_dao;
 use frame_support::{
     derive_impl, parameter_types,
     traits::{ConstU32, Contains},
@@ -20,7 +20,7 @@ frame_support::construct_runtime!(
     pub enum Test{
         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 
-        WETEE: wetee_org::{ Pallet, Call, Event<T>, Storage },
+        WETEE: wetee_dao::{ Pallet, Call, Event<T>, Storage },
     }
 );
 
@@ -53,7 +53,7 @@ impl UHook<WorkId, u64> for WorkerQueueHook {
     fn run_hook(_id: WorkId, _dao_id: WeAssetId) {}
 }
 
-impl wetee_org::Config for Test {
+impl wetee_dao::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type PalletId = DaoPalletId;

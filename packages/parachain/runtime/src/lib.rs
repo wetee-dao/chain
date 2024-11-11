@@ -53,7 +53,7 @@ pub use wetee_assets::Call as WeTEEAssetsCall;
 pub use wetee_gov::Call as WeTEEGovCall;
 pub use wetee_gpu::Call as WeTEEGpuCall;
 pub use wetee_guild::Call as WeTEEGuildCall;
-pub use wetee_org::Call as WeTEEOrgCall;
+pub use wetee_dao::Call as WeTEEOrgCall;
 pub use wetee_project::Call as WeTEEProjectCall;
 pub use wetee_sudo::Call as WeTEESudoCall;
 pub use wetee_task::Call as WeTEETaskCall;
@@ -292,7 +292,7 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 108,
         WeTEEMessageQueue: wetee_message_queue = 109,
         Utility: pallet_utility = 110,
-        WeTEEOrg: wetee_org = 111,
+        WeTEEOrg: wetee_dao = 111,
         WeTEEAsset: wetee_assets = 112,
         WeTEESudo: wetee_sudo = 113,
         WeTEEGuild: wetee_guild = 114,

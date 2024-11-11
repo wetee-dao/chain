@@ -95,11 +95,11 @@ wetee-message-queue = {path = "../../pallets/message-queue", default-features = 
 
 wetee-app = {path = "../../pallets/wetee-app", default-features = false}
 wetee-assets = {path = "../../pallets/wetee-assets", default-features = false}
+wetee-dao = {path = "../../pallets/wetee-dao", default-features = false}
 wetee-dsecret = {path = "../../pallets/wetee-dsecret", default-features = false}
 wetee-gov = {path = "../../pallets/wetee-gov", default-features = false}
 wetee-gpu = {path = "../../pallets/wetee-gpu", default-features = false}
 wetee-guild = {path = "../../pallets/wetee-guild", default-features = false}
-wetee-org = {path = "../../pallets/wetee-org", default-features = false}
 wetee-primitives = {path = "../../primitives", default-features = false}
 wetee-project = {path = "../../pallets/wetee-project", default-features = false}
 wetee-runtime-api = {path = "../../pallets/wetee-rpc/runtime-api", default-features = false, optional = true}
@@ -168,7 +168,7 @@ std = [
   "orml-traits/std",
   "orml-tokens/std",
   "wetee-primitives/std",
-  "wetee-org/std",
+  "wetee-dao/std",
   "wetee-sudo/std",
   "wetee-gov/std",
   "wetee-assets/std",
@@ -206,7 +206,7 @@ runtime-benchmarks = [
   "sp-runtime/runtime-benchmarks",
   "xcm-builder/runtime-benchmarks",
   "xcm-executor/runtime-benchmarks",
-  "wetee-org/runtime-benchmarks",
+  "wetee-dao/runtime-benchmarks",
   "wetee-sudo/runtime-benchmarks",
   "wetee-guild/runtime-benchmarks",
   "wetee-treasury/runtime-benchmarks",

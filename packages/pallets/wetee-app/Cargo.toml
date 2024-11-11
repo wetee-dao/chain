@@ -24,7 +24,7 @@ sp-std = {workspace = true}
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
 wetee-assets = {path = "../wetee-assets", package = "wetee-assets", default-features = false}
-wetee-org = {path = "../wetee-org", package = "wetee-org", default-features = false}
+wetee-dao = {path = "../wetee-dao", package = "wetee-dao", default-features = false}
 wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
 
 [dev-dependencies]
@@ -48,7 +48,7 @@ std = [
   "scale-info/std",
   "pallet-balances/std",
   "wetee-primitives/std",
-  "wetee-org/std",
+  "wetee-dao/std",
   "wetee-assets/std",
 ]
 try-runtime = [
@@ -56,6 +56,6 @@ try-runtime = [
   "frame-system/try-runtime",
   "sp-runtime/try-runtime",
   "pallet-balances/try-runtime",
-  "wetee-org/try-runtime",
+  "wetee-dao/try-runtime",
   "wetee-assets/try-runtime",
 ]

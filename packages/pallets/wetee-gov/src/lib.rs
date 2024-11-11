@@ -40,7 +40,7 @@ use traits::*;
 
 use orml_traits::MultiCurrency;
 
-use wetee_org;
+use wetee_dao;
 use wetee_primitives::traits::{GovIsJoin, PalletGet};
 use wetee_primitives::types::WeAssetId;
 
@@ -211,7 +211,7 @@ pub mod pallet {
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
-    pub trait Config: frame_system::Config + wetee_assets::Config + wetee_org::Config {
+    pub trait Config: frame_system::Config + wetee_assets::Config + wetee_dao::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -226,8 +226,8 @@ pub mod pallet {
 
         /// 判断是否是加入工会和项目的投票
         /// Determine whether it is a vote to join the guild and project.
-        type GovFunc: GovIsJoin<<Self as wetee_org::Config>::RuntimeCall>
-            + PalletGet<<Self as wetee_org::Config>::RuntimeCall>;
+        type GovFunc: GovIsJoin<<Self as wetee_dao::Config>::RuntimeCall>
+            + PalletGet<<Self as wetee_dao::Config>::RuntimeCall>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -288,7 +288,7 @@ pub mod pallet {
         Vec<
             PreProp<
                 BlockNumberFor<T>,
-                <T as wetee_org::Config>::RuntimeCall,
+                <T as wetee_dao::Config>::RuntimeCall,
                 T::Hash,
                 T::AccountId,
             >,
@@ -320,7 +320,7 @@ pub mod pallet {
         WeAssetId,
         Identity,
         PropIndex,
-        Prop<BlockNumberFor<T>, <T as wetee_org::Config>::RuntimeCall, BalanceOf<T>>,
+        Prop<BlockNumberFor<T>, <T as wetee_dao::Config>::RuntimeCall, BalanceOf<T>>,
     >;
 
     /// Amount of proposal locked.
@@ -496,7 +496,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             dao_id: WeAssetId,
             member_data: MemberData,
-            proposal: Box<<T as wetee_org::Config>::RuntimeCall>,
+            proposal: Box<<T as wetee_dao::Config>::RuntimeCall>,
             period_index: u32,
         ) -> DispatchResultWithPostInfo {
             let period = Self::get_period(dao_id, period_index)?;
@@ -505,7 +505,7 @@ pub mod pallet {
             let pallet_id = T::GovFunc::get_pallet_id(*proposal.clone());
             ensure!(
                 pallet_id == period.pallet_index,
-                wetee_org::Error::<T>::InVailPallet
+                wetee_dao::Error::<T>::InVailPallet
             );
 
             // 获取提案通道
@@ -522,17 +522,17 @@ pub mod pallet {
 
             // 确认当前函数为 sudo/gov 可调用函数
             let call_id: T::CallId =
-                TryFrom::<<T as wetee_org::Config>::RuntimeCall>::try_from(*proposal.clone())
+                TryFrom::<<T as wetee_dao::Config>::RuntimeCall>::try_from(*proposal.clone())
                     .unwrap_or_default();
 
             // let ucall_id: u32 = call_id.into();
             // (call_id - call_id % 100) / 100;
-            // let ucall_id: u32 = <<T as wetee_org::Config>::CallId as frame_support::traits::Get>::get(call_id);
+            // let ucall_id: u32 = <<T as wetee_dao::Config>::CallId as frame_support::traits::Get>::get(call_id);
 
             // 确认提案为当前资产支持的 调用
             ensure!(
                 call_id != T::CallId::default(),
-                wetee_org::Error::<T>::InVailCall
+                wetee_dao::Error::<T>::InVailCall
             );
 
             let proposal_hash = T::Hashing::hash_of(&proposal);
@@ -779,7 +779,7 @@ pub mod pallet {
                 if state.tally.yes >= state.tally.no {
                     approved = true;
                     let res = state.proposal.dispatch_bypass_filter(
-                        frame_system::RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(
+                        frame_system::RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(
                             dao_id,
                             state.period_index,
                         ))
@@ -798,7 +798,7 @@ pub mod pallet {
                     }
                 } else {
                     let res = state.proposal.dispatch_bypass_filter(
-                        frame_system::RawOrigin::Signed(wetee_org::Pallet::<T>::dao_reject(
+                        frame_system::RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_reject(
                             dao_id,
                             state.period_index,
                         ))
@@ -887,7 +887,7 @@ pub mod pallet {
             max: u32,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(me)?;
+            let daogov = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(me)?;
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             MaxPreProps::<T>::insert(dao_id, max);
@@ -904,7 +904,7 @@ pub mod pallet {
             model: u8,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
+            let daogov = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             <VoteModel<T>>::insert(dao_id, model);
@@ -921,7 +921,7 @@ pub mod pallet {
             periods: Vec<Period<BlockNumberFor<T>, BalanceOf<T>>>,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
+            let daogov = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             let bperiods = BoundedVec::try_from(periods).unwrap();
@@ -940,9 +940,9 @@ pub mod pallet {
             member_data: MemberData,
         ) -> result::Result<BoundedVec<T::AccountId, T::MaxMembers>, DispatchError> {
             let ms: BoundedVec<T::AccountId, T::MaxMembers> = match member_data {
-                MemberData::GLOBAL => <wetee_org::Members<T>>::get(dao_id),
-                MemberData::GUILD(v) => <wetee_org::GuildMembers<T>>::get(dao_id, v),
-                MemberData::PROJECT(v) => <wetee_org::ProjectMembers<T>>::get(dao_id, v),
+                MemberData::GLOBAL => <wetee_dao::Members<T>>::get(dao_id),
+                MemberData::GUILD(v) => <wetee_dao::GuildMembers<T>>::get(dao_id, v),
+                MemberData::PROJECT(v) => <wetee_dao::ProjectMembers<T>>::get(dao_id, v),
             };
             Ok(ms)
         }
@@ -952,7 +952,7 @@ pub mod pallet {
             dao_id: WeAssetId,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
-            let ms = <wetee_org::Members<T>>::get(dao_id);
+            let ms = <wetee_dao::Members<T>>::get(dao_id);
             let index = ms.binary_search(&who).ok().ok_or(Error::<T>::Gov403)?;
 
             Ok(index)
@@ -965,9 +965,9 @@ pub mod pallet {
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
             let ms: BoundedVec<T::AccountId, T::MaxMembers> = match member_data {
-                MemberData::GLOBAL => <wetee_org::Members<T>>::get(dao_id),
-                MemberData::GUILD(v) => <wetee_org::GuildMembers<T>>::get(dao_id, v),
-                MemberData::PROJECT(v) => <wetee_org::ProjectMembers<T>>::get(dao_id, v),
+                MemberData::GLOBAL => <wetee_dao::Members<T>>::get(dao_id),
+                MemberData::GUILD(v) => <wetee_dao::GuildMembers<T>>::get(dao_id, v),
+                MemberData::PROJECT(v) => <wetee_dao::ProjectMembers<T>>::get(dao_id, v),
             };
             let index = ms.binary_search(&who).ok().ok_or(Error::<T>::Gov403)?;
 
@@ -981,7 +981,7 @@ pub mod pallet {
             start: BlockNumberFor<T>,
             period_index: u32,
             member_data: MemberData,
-            proposal: <T as wetee_org::Config>::RuntimeCall,
+            proposal: <T as wetee_dao::Config>::RuntimeCall,
             deposit: BalanceOf<T>,
         ) -> result::Result<PropIndex, DispatchError> {
             let now = Self::now();
@@ -1036,7 +1036,7 @@ pub mod pallet {
             let uperiod_index: usize = period_index.try_into().unwrap();
 
             // 判断提案通道是否存在
-            // ensure!(uperiod_index < ps.len(), wetee_org::Error::<T>::InVailCall);
+            // ensure!(uperiod_index < ps.len(), wetee_dao::Error::<T>::InVailCall);
             ensure!(uperiod_index < ps.len(), Error::<T>::Period404);
 
             Ok(ps.get(uperiod_index).unwrap().clone())
@@ -1051,7 +1051,7 @@ impl<T: Config> Pallet<T> {
 
     fn inject_prop(
         dao_id: WeAssetId,
-        proposal: <T as wetee_org::Config>::RuntimeCall,
+        proposal: <T as wetee_dao::Config>::RuntimeCall,
         now: BlockNumberFor<T>,
         period_index: u32,
         member_data: MemberData,

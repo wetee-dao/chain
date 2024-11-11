@@ -14,7 +14,7 @@ wetee-assets = {path = "../../pallets/wetee-assets", default-features = false}
 wetee-gov = {path = "../../pallets/wetee-gov", default-features = false}
 wetee-gpu = {path = "../../pallets/wetee-gpu", default-features = false}
 wetee-guild = {path = "../../pallets/wetee-guild", default-features = false}
-wetee-org = {path = "../../pallets/wetee-org", default-features = false}
+wetee-dao = {path = "../../pallets/wetee-dao", default-features = false}
 wetee-primitives = {path = "../../primitives", default-features = false}
 wetee-project = {path = "../../pallets/wetee-project", default-features = false}
 wetee-runtime-api = {path = "../../pallets/wetee-rpc/runtime-api", default-features = false, optional = true}
@@ -25,7 +25,7 @@ wetee-worker = {path = "../../pallets/wetee-worker", default-features = false}
 ```
 
 ```
-  "wetee-org/runtime-benchmarks",
+  "wetee-dao/runtime-benchmarks",
   "wetee-sudo/runtime-benchmarks",
   "wetee-guild/runtime-benchmarks",
   "wetee-treasury/runtime-benchmarks",
@@ -40,7 +40,7 @@ wetee-worker = {path = "../../pallets/wetee-worker", default-features = false}
 "orml-traits/std",
 "orml-tokens/std",
 "wetee-primitives/std",
-"wetee-org/std",
+"wetee-dao/std",
 "wetee-sudo/std",
 "wetee-gov/std",
 "wetee-assets/std",
@@ -72,7 +72,7 @@ pub use wetee_assets::Call as WeteeAssetsCall;
 pub use wetee_gov::Call as WeteeGovCall;
 pub use wetee_gpu::Call as WeteeGpuCall;
 pub use wetee_guild::Call as WeteeGuildCall;
-pub use wetee_org::Call as WeteeOrgCall;
+pub use wetee_dao::Call as WeteeOrgCall;
 pub use wetee_project::Call as WeteeProjectCall;
 pub use wetee_sudo::Call as WeteeSudoCall;
 pub use wetee_task::Call as WeteeTaskCall;
@@ -92,7 +92,7 @@ pub use wetee_worker::Call as WeteeWorkerCall;
     #[runtime::pallet_index(10)]
     pub type Utility = pallet_utility;
     #[runtime::pallet_index(11)]
-    pub type WeteeOrg = wetee_org;
+    pub type WeteeOrg = wetee_dao;
     #[runtime::pallet_index(12)]
     pub type WeteeAsset = wetee_assets;
     #[runtime::pallet_index(13)]
@@ -120,7 +120,7 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 		RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 108,
 		MessageQueue: pallet_message_queue = 109,
 		Utility : pallet_utility = 110,
-		WeteeOrg : wetee_org = 111,
+		WeteeOrg : wetee_dao = 111,
 		WeteeAsset : wetee_assets = 112,
 		WeteeSudo : wetee_sudo = 113,
 		WeteeGuild : wetee_guild = 114,
@@ -136,7 +136,7 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 ```
 
 ```rust
-[wetee_org, WeteeOrg]
+[wetee_dao, WeteeOrg]
 // [wetee_assets, WeteeAsset]
 [wetee_sudo, WeteeSudo]
 [wetee_guild, WeteeGuild]

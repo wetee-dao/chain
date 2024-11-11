@@ -16,7 +16,7 @@ fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
     let alice = get_alice::<T>();
     let dao_id = WeAssetId::default();
     let second_id: WeAssetId = Default::default();
-    assert!(wetee_org::Pallet::<T>::create_dao(
+    assert!(wetee_dao::Pallet::<T>::create_dao(
         RawOrigin::Signed(alice).into(),
         vec![1; 4],
         vec![1; 4],
@@ -32,7 +32,7 @@ fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
     (dao_id, second_id)
 }
 
-#[benchmarks( where <T as wetee_org::Config>::RuntimeCall: From<frame_system::Call<T>>)]
+#[benchmarks( where <T as wetee_dao::Config>::RuntimeCall: From<frame_system::Call<T>>)]
 mod benchmarks {
     use super::*;
 
@@ -44,7 +44,7 @@ mod benchmarks {
 
         #[extrinsic_call]
         _(
-            RawOrigin::Signed(wetee_org::Pallet::<T>::dao_approve(5000, 0)),
+            RawOrigin::Signed(wetee_dao::Pallet::<T>::dao_approve(5000, 0)),
             5000,
             bob.clone(),
             value,

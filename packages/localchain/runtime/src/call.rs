@@ -20,9 +20,9 @@ impl PalletGet<RuntimeCall> for GovFunc {
 
 fn call2id(call: RuntimeCall) -> Result<u32, ()> {
     match call {
-        RuntimeCall::Org(func) => match func {
-            wetee_org::Call::create_dao { .. } => Ok(101 as CallId),
-            wetee_org::Call::create_roadmap_task { .. } => Ok(102 as CallId),
+        RuntimeCall::Dao(func) => match func {
+            wetee_dao::Call::create_dao { .. } => Ok(101 as CallId),
+            wetee_dao::Call::create_roadmap_task { .. } => Ok(102 as CallId),
             _ => Err(()),
         },
         RuntimeCall::Asset(func) => match func {
@@ -40,7 +40,6 @@ fn call2id(call: RuntimeCall) -> Result<u32, ()> {
         },
         RuntimeCall::Gov(func) => match func {
             wetee_gov::Call::submit_proposal { .. } => Ok(401 as CallId),
-            // wetee_gov::Call::recreate { .. } => Ok(402 as CallId),
             wetee_gov::Call::deposit_proposal { .. } => Ok(403 as CallId),
             wetee_gov::Call::vote_for_prop { .. } => Ok(404 as CallId),
             wetee_gov::Call::cancel_vote { .. } => Ok(405 as CallId),

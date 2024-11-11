@@ -13,7 +13,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_org::{self};
+use wetee_dao::{self};
 use wetee_primitives::types::{ProjectId, TaskId, WeAssetId};
 
 pub use pallet::*;
@@ -161,7 +161,7 @@ pub mod pallet {
     >>::Balance;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + wetee_org::Config + wetee_assets::Config {
+    pub trait Config: frame_system::Config + wetee_dao::Config + wetee_assets::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Weight information for extrinsics in this pallet.
@@ -284,10 +284,10 @@ pub mod pallet {
             who: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
+            let daogov = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
-            wetee_org::Pallet::<T>::try_add_project_member(dao_id, project_id, who.clone())?;
+            wetee_dao::Pallet::<T>::try_add_project_member(dao_id, project_id, who.clone())?;
 
             Self::deposit_event(Event::ProjectJoined(dao_id, project_id, who));
 
@@ -305,7 +305,7 @@ pub mod pallet {
             creator: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
+            let daogov = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             let project_id = Self::try_add_project(
@@ -335,14 +335,14 @@ pub mod pallet {
             amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
+            let daogov = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
 
             let project = Self::get_project(dao_id, project_id)?;
 
             wetee_assets::Pallet::<T>::try_transfer(
                 dao_id,
-                wetee_org::Pallet::<T>::dao_account(dao_id),
+                wetee_dao::Pallet::<T>::dao_account(dao_id),
                 project.dao_account_id,
                 amount,
             )?;
@@ -700,7 +700,7 @@ pub mod pallet {
                     assignee.clone(),
                     amount,
                 )?;
-                wetee_org::Pallet::<T>::try_add_member_point(
+                wetee_dao::Pallet::<T>::try_add_member_point(
                     dao_id,
                     assignee.clone(),
                     task.point.into(),
@@ -777,7 +777,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
             let project_id = NextProjectId::<T>::get();
-            let dao_account_id = wetee_org::Pallet::<T>::dao_project(0, project_id);
+            let dao_account_id = wetee_dao::Pallet::<T>::dao_project(0, project_id);
             wetee_assets::Pallet::<T>::try_transfer(
                 0,
                 me.clone(),
@@ -810,7 +810,7 @@ pub mod pallet {
         pub fn proxy_call(
             origin: OriginFor<T>,
             project_id: ProjectId,
-            call: Box<<T as wetee_org::Config>::RuntimeCall>,
+            call: Box<<T as wetee_dao::Config>::RuntimeCall>,
         ) -> DispatchResultWithPostInfo {
             let me = ensure_signed(origin)?;
             if let Some(project) = <ProxyProjects<T>>::get(me.clone(), project_id) {
@@ -818,7 +818,7 @@ pub mod pallet {
             }
 
             // 获取项目账户
-            let dao_account_id = wetee_org::Pallet::<T>::dao_project(0, project_id);
+            let dao_account_id = wetee_dao::Pallet::<T>::dao_project(0, project_id);
 
             // 签名并提交操作
             let res = call.dispatch_bypass_filter(
@@ -849,7 +849,7 @@ pub mod pallet {
         ) -> result::Result<ProjectId, DispatchError> {
             let project_id = NextProjectId::<T>::get();
             project.id = project_id;
-            project.dao_account_id = wetee_org::Pallet::<T>::dao_project(dao_id, project_id);
+            project.dao_account_id = wetee_dao::Pallet::<T>::dao_project(dao_id, project_id);
 
             let mut projects = <DaoProjects<T>>::get(dao_id);
             projects
@@ -857,7 +857,7 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::TooManyMembers)?;
             <DaoProjects<T>>::insert(dao_id, projects);
 
-            wetee_org::Pallet::<T>::try_add_project_member(dao_id, project_id, project.creator)?;
+            wetee_dao::Pallet::<T>::try_add_project_member(dao_id, project_id, project.creator)?;
             NextProjectId::<T>::put(project_id + 1);
 
             Ok(project_id)
@@ -890,7 +890,7 @@ pub mod pallet {
             project_id: ProjectId,
             who: T::AccountId,
         ) -> result::Result<usize, DispatchError> {
-            let ms = <wetee_org::ProjectMembers<T>>::get(dao_id, project_id);
+            let ms = <wetee_dao::ProjectMembers<T>>::get(dao_id, project_id);
             let index = ms.binary_search(&who).ok().ok_or(Error::<T>::Project403)?;
 
             Ok(index)
