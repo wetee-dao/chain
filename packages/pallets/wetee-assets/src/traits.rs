@@ -20,22 +20,14 @@
 
 use sp_std::result;
 
-pub trait CurrenciesHandler<
-    CurrencyId,
-    DicoAssetMetadata,
-    DispatchErr,
-    AccountId,
-    Balance,
-    DispatchResult,
->
+pub trait CurrenciesHandler<CurrencyId, AssetMeta, DispatchErr, AccountId, Balance, DispatchResult>
 {
-    fn get_metadata(currency: CurrencyId) -> result::Result<DicoAssetMetadata, DispatchErr>;
+    fn get_metadata(currency: CurrencyId) -> result::Result<AssetMeta, DispatchErr>;
     fn do_create(
         user: AccountId,
         currency_id: CurrencyId,
-        metadata: DicoAssetMetadata,
+        metadata: AssetMeta,
         amount: Balance,
-        is_swap_deposit: bool,
     ) -> DispatchResult;
 }
 

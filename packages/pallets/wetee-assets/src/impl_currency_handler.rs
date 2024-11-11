@@ -23,20 +23,20 @@ use super::*;
 impl<T: Config>
     CurrenciesHandler<
         WeAssetId,
-        DaoAssetMeta,
+        AssetMeta,
         DispatchError,
         T::AccountId,
         BalanceOf<T>,
         DispatchResult,
     > for Pallet<T>
 {
-    fn get_metadata(asset_id: WeAssetId) -> result::Result<DaoAssetMeta, DispatchError> {
-        let asset_info_opt = DaoAssetsInfo::<T>::get(asset_id);
+    fn get_metadata(asset_id: WeAssetId) -> result::Result<AssetMeta, DispatchError> {
+        let asset_info_opt = AssetsInfo::<T>::get(asset_id);
         let asset_info = match asset_info_opt {
             Some(x) => x,
             _ => {
                 if cfg!(any(feature = "std", feature = "runtime-benchmarks", test)) {
-                    return Ok(DaoAssetMeta {
+                    return Ok(AssetMeta {
                         name: [].into(),
                         symbol: [].into(),
                         decimals: 12,
@@ -52,12 +52,11 @@ impl<T: Config>
     fn do_create(
         user: T::AccountId,
         asset_id: WeAssetId,
-        metadata: DaoAssetMeta,
+        metadata: AssetMeta,
         amount: BalanceOf<T>,
-        _is_swap_deposit: bool,
     ) -> DispatchResult {
         ensure!(
-            !Self::is_exists_metadata(asset_id)
+            !Self::is_exists(asset_id)
                 && <T as pallet::Config>::MultiAsset::total_issuance(asset_id)
                     == BalanceOf::<T>::from(0u32),
             Error::<T>::AssetAlreadyExists
@@ -76,9 +75,9 @@ impl<T: Config>
 
         <T as pallet::Config>::MultiAsset::deposit(asset_id, &user, amount)?;
 
-        DaoAssetsInfo::<T>::insert(
+        AssetsInfo::<T>::insert(
             asset_id,
-            DaoAssetInfo {
+            AssetInfo {
                 owner: user.clone(),
                 metadata,
             },

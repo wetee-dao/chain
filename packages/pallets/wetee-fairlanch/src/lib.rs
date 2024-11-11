@@ -78,13 +78,18 @@ pub mod pallet {
             if let Some(block_author) = pallet_authorship::Pallet::<T>::author() {
                 let reduction_interval: u128 = 21024000;
 
-                let reward_amount =
-                    INITIAL_REWARD / (1 + (n.into() / reduction_interval).saturated_into::<u128>());
+                let reward_amount = INITIAL_REWARD
+                    / 10
+                    / (1 + (n.into() / reduction_interval).saturated_into::<u128>());
 
                 let amount: BalanceOf<T> = reward_amount.saturated_into::<BalanceOf<T>>();
 
                 // 奖励出块
-                let _ = wetee_assets::Pallet::<T>::try_deposit(0, block_author, amount);
+                let _ = wetee_assets::Pallet::<T>::try_deposit(
+                    wetee_assets::NATIVE_ASSET_ID,
+                    block_author,
+                    amount,
+                );
             }
 
             Weight::zero()

@@ -1,5 +1,5 @@
 use super::*;
-use crate::{ Config, DaoAssetMeta, Pallet as Asset};
+use crate::{ Config, AssetMeta, Pallet as Asset};
 use frame_benchmarking::v2::*;
 use frame_support::traits::Currency;
 use frame_system::RawOrigin;
@@ -45,7 +45,7 @@ mod benchmarks {
             Asset::<T>::create_asset(
                 RawOrigin::Signed(caller).into(),
                 5000,
-                DaoAssetMeta {
+                AssetMeta {
                     name: "TestA".as_bytes().to_vec(),
                     symbol: "TA".as_bytes().to_vec(),
                     decimals: 10,
@@ -67,7 +67,7 @@ mod benchmarks {
         Asset::<T>::create_asset(
             RawOrigin::Signed(caller).into(),
             5000,
-            DaoAssetMeta {
+            AssetMeta {
                 name: "TestA".as_bytes().to_vec(),
                 symbol: "TA".as_bytes().to_vec(),
                 decimals: 10,
@@ -98,7 +98,7 @@ mod benchmarks {
         Asset::<T>::create_asset(
             RawOrigin::Signed(caller).into(),
             5000,
-            DaoAssetMeta {
+            AssetMeta {
                 name: "TestA".as_bytes().to_vec(),
                 symbol: "TA".as_bytes().to_vec(),
                 decimals: 10,
@@ -112,7 +112,7 @@ mod benchmarks {
             Asset::<T>::set_metadata(
                 RawOrigin::Signed(caller1).into(),
                 5000,
-                DaoAssetMeta {
+                AssetMeta {
                     name: "TestA".as_bytes().to_vec(),
                     symbol: "TA".as_bytes().to_vec(),
                     decimals: 10,
@@ -132,7 +132,7 @@ mod benchmarks {
         Asset::<T>::create_asset(
             RawOrigin::Signed(caller).into(),
             5000,
-            DaoAssetMeta {
+            AssetMeta {
                 name: "TestA".as_bytes().to_vec(),
                 symbol: "TA".as_bytes().to_vec(),
                 decimals: 10,
@@ -163,7 +163,7 @@ mod benchmarks {
         Asset::<T>::create_asset(
             RawOrigin::Signed(caller).into(),
             5000,
-            DaoAssetMeta {
+            AssetMeta {
                 name: "TestA".as_bytes().to_vec(),
                 symbol: "TA".as_bytes().to_vec(),
                 decimals: 10,

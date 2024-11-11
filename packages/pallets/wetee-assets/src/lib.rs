@@ -52,7 +52,6 @@ use sp_std::{
     fmt::Debug,
     marker, result,
 };
-use wetee_org::{self as dao};
 use wetee_primitives::types::WeAssetId;
 
 pub mod asset_adaper_in_pallet;
@@ -80,7 +79,7 @@ use traits::CurrenciesHandler;
 pub const NATIVE_ASSET_ID: WeAssetId = 0;
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
-pub struct DaoAssetMeta {
+pub struct AssetMeta {
     /// project name
     /// token 名
     pub name: Vec<u8>,
@@ -93,9 +92,9 @@ pub struct DaoAssetMeta {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
-pub struct DaoAssetInfo<AccountId, DaoAssetMeta> {
+pub struct AssetInfo<AccountId, AssetMeta> {
     pub owner: AccountId,
-    pub metadata: DaoAssetMeta,
+    pub metadata: AssetMeta,
 }
 
 #[frame_support::pallet]
@@ -111,17 +110,17 @@ pub mod pallet {
     >>::Amount;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + dao::Config {
+    pub trait Config: frame_system::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// dao asset
+        /// we asset
         /// 组织内部资产
         type MultiAsset: MultiCurrency<Self::AccountId, CurrencyId = WeAssetId>
             + MultiCurrencyExtended<Self::AccountId>
             + MultiLockableCurrency<Self::AccountId>
             + MultiReservableCurrency<Self::AccountId>;
 
-        /// dao naive token
+        /// we naive token
         /// 链上原生通证
         type NativeAsset: BasicCurrencyExtended<
                 Self::AccountId,
@@ -153,54 +152,45 @@ pub mod pallet {
         NativeCurrency,
         CurrencyIdTooLarge,
         CurrencyIdTooLow,
-        DaoExists,
+        WeExists,
         CexTransferClosed,
         AssetIdExisted,
         DepositTooLow,
         DepositNotZero,
         DepositRateError,
-        BadDaoOrigin,
+        BadWeOrigin,
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Currency transfer success. [dao_id, from, to, amount]
+        /// Currency transfer success. [asset_id, from, to, amount]
         Transferred(WeAssetId, T::AccountId, T::AccountId, BalanceOf<T>),
-        /// Update balance success. [dao_id, who, amount]
+        /// Update balance success. [asset_id, who, amount]
         BalanceUpdated(WeAssetId, T::AccountId, AmountOf<T>),
-        /// Deposit success. [dao_id, who, amount]
+        /// Deposit success. [asset_id, who, amount]
         Deposited(WeAssetId, T::AccountId, BalanceOf<T>),
-        /// Withdraw success. [dao_id, who, amount]
+        /// Withdraw success. [asset_id, who, amount]
         Withdrawn(WeAssetId, T::AccountId, BalanceOf<T>),
-        /// Create asset success. [dao_id, metadata]
+        /// Create asset success. [asset_id, metadata]
         CreateAsset(T::AccountId, WeAssetId, BalanceOf<T>),
-        /// Update metadata success. [dao_id, metadata]
-        SetMetadata(T::AccountId, WeAssetId, DaoAssetMeta),
-        /// Burn success. [dao_id, who, amount]
+        /// Update metadata success. [asset_id, metadata]
+        SetMetadata(T::AccountId, WeAssetId, AssetMeta),
+        /// Burn success. [asset_id, who, amount]
         Burn(T::AccountId, WeAssetId, BalanceOf<T>),
-        /// Set weight rate success. [dao_id, multiple]
-        SetWeightRateMultiple { dao_id: WeAssetId, multiple: u128 },
-        /// Set existenial deposit success. [dao_id, existenial_deposit]
+        /// Set weight rate success. [asset_id, multiple]
+        SetWeightRateMultiple { asset_id: WeAssetId, multiple: u128 },
+        /// Set existenial deposit success. [asset_id, existenial_deposit]
         SetExistenialDepposit {
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             existenial_deposit: BalanceOf<T>,
         },
     }
 
     #[pallet::storage]
     #[pallet::getter(fn asset_info)]
-    pub type DaoAssetsInfo<T: Config> =
-        StorageMap<_, Blake2_128Concat, WeAssetId, DaoAssetInfo<T::AccountId, DaoAssetMeta>>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn users_number)]
-    pub type UsersNumber<T: Config> = StorageMap<_, Identity, WeAssetId, u32, ValueQuery>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn existenial_deposits)]
-    pub type ExistentDeposits<T: Config> =
-        StorageMap<_, Identity, WeAssetId, BalanceOf<T>, ValueQuery>;
+    pub type AssetsInfo<T: Config> =
+        StorageMap<_, Blake2_128Concat, WeAssetId, AssetInfo<T::AccountId, AssetMeta>>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -211,65 +201,36 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// create dao asset.
+        /// create we asset.
         /// 创建 WETEE 资产
         #[pallet::call_index(001)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::create_asset())]
         pub fn create_asset(
             origin: OriginFor<T>,
-            dao_id: WeAssetId,
-            metadata: DaoAssetMeta,
-            amount: BalanceOf<T>,
-            init_dao_asset: BalanceOf<T>,
+            metadata: AssetMeta,
+            init_amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
-            // 确认组织是否存在
-            ensure!(
-                wetee_org::Daos::<T>::contains_key(dao_id),
-                Error::<T>::AssetNotExists
-            );
-
             // 确认用户是否是组织创建者
-            let user = ensure_signed(origin)?;
-            wetee_org::Pallet::<T>::ensrue_dao_creator(user.clone(), dao_id)?;
+            let who = ensure_signed(origin)?;
+            let asset_id = 1;
 
             // 创建资产
-            Self::do_create(user.clone(), dao_id, metadata, init_dao_asset, false)?;
+            Self::try_create(who.clone(), asset_id, metadata, init_amount)?;
 
-            // 将资金转入资金池B池
-            <Self as MultiCurrency<T::AccountId>>::transfer(
-                NATIVE_ASSET_ID,
-                &user,
-                &wetee_org::Pallet::<T>::dao_account(dao_id),
-                amount,
-            )?;
+            // // 将资金转入资金池B池
+            // <Self as MultiCurrency<T::AccountId>>::transfer(
+            //     NATIVE_ASSET_ID,
+            //     &user,
+            //     &wetee_org::Pallet::<T>::we_account(asset_id),
+            //     amount,
+            // )?;
 
-            // 初始化账户基本资产
-            <Self as MultiCurrency<T::AccountId>>::deposit(
-                dao_id,
-                &wetee_org::Pallet::<T>::dao_account(dao_id),
-                init_dao_asset,
-            )?;
-
-            Ok(().into())
-        }
-
-        /// 设置加入WETEE所需要的最小抵押                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-        #[pallet::call_index(003)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_existenial_deposit())]
-        pub fn set_existenial_deposit(
-            origin: OriginFor<T>,
-            dao_id: WeAssetId,
-            existenial_deposit: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(who)?;
-            ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
-
-            ExistentDeposits::<T>::insert(dao_id, existenial_deposit);
-            Self::deposit_event(Event::SetExistenialDepposit {
-                dao_id,
-                existenial_deposit,
-            });
+            // // 初始化账户基本资产
+            // <Self as MultiCurrency<T::AccountId>>::deposit(
+            //     asset_id,
+            //     &wetee_org::Pallet::<T>::we_account(asset_id),
+            //     init_we_asset,
+            // )?;
 
             Ok(().into())
         }
@@ -280,17 +241,10 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata())]
         pub fn set_metadata(
             origin: OriginFor<T>,
-            dao_id: WeAssetId,
-            metadata: DaoAssetMeta,
+            asset_id: WeAssetId,
+            metadata: AssetMeta,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            let daogov = wetee_org::Pallet::<T>::ensrue_gov_approve_account(who.clone())?;
-            ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
-
-            ensure!(
-                wetee_org::Daos::<T>::contains_key(dao_id),
-                Error::<T>::AssetNotExists
-            );
 
             ensure!(
                 metadata.name.len() > 2
@@ -301,7 +255,7 @@ pub mod pallet {
             );
 
             let mut asset_info =
-                DaoAssetsInfo::<T>::get(dao_id).ok_or(Error::<T>::AssetNotExists)?;
+                AssetsInfo::<T>::get(asset_id).ok_or(Error::<T>::AssetNotExists)?;
 
             ensure!(
                 asset_info.metadata != metadata,
@@ -312,10 +266,13 @@ pub mod pallet {
                 Error::<T>::ShouldNotChangeDecimals
             );
 
+            // 确认用户是否是创建者
+            ensure!(who == asset_info.owner, Error::<T>::ShouldNotChangeDecimals);
+
             asset_info.metadata = metadata.clone();
 
-            DaoAssetsInfo::<T>::insert(dao_id, asset_info);
-            Self::deposit_event(Event::SetMetadata(who, dao_id, metadata));
+            AssetsInfo::<T>::insert(asset_id, asset_info);
+            Self::deposit_event(Event::SetMetadata(who, asset_id, metadata));
 
             Ok(().into())
         }
@@ -326,22 +283,14 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::burn())]
         pub fn burn(
             origin: OriginFor<T>,
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
-            ensure!(
-                wetee_org::Daos::<T>::contains_key(dao_id),
-                Error::<T>::AssetNotExists
-            );
+            ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
             let user = ensure_signed(origin)?;
 
-            ensure!(
-                Self::is_exists_metadata(dao_id),
-                Error::<T>::MetadataNotExists
-            );
-
-            <Self as MultiCurrency<T::AccountId>>::withdraw(dao_id, &user, amount)?;
-            Self::deposit_event(Event::Burn(user, dao_id, amount));
+            <Self as MultiCurrency<T::AccountId>>::withdraw(asset_id, &user, amount)?;
+            Self::deposit_event(Event::Burn(user, asset_id, amount));
             Ok(().into())
         }
 
@@ -358,33 +307,14 @@ pub mod pallet {
         pub fn transfer(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             #[pallet::compact] amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let from = ensure_signed(origin)?;
             let to = T::Lookup::lookup(dest)?;
-            ensure!(
-                wetee_org::Daos::<T>::contains_key(dao_id),
-                Error::<T>::AssetNotExists
-            );
+            ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
-            // 从WETEE转出手续费 TODO
-            // match wetee_org::Daos::<T>::get(dao_id) {
-            //     Some(dao) => {
-            //         let _dao_account = dao.dao_account_id;
-            //     }
-            // };
-
-            if let Some(dao) = wetee_org::Daos::<T>::get(dao_id) {
-                let _dao_account = dao.dao_account_id;
-            }
-
-            ensure!(
-                Self::is_exists_metadata(dao_id),
-                Error::<T>::MetadataNotExists
-            );
-
-            <Self as MultiCurrency<T::AccountId>>::transfer(dao_id, &from, &to, amount)?;
+            <Self as MultiCurrency<T::AccountId>>::transfer(asset_id, &from, &to, amount)?;
             Ok(().into())
         }
     }
@@ -392,104 +322,110 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// 获取账户金额
         pub fn get_balance(
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             who: T::AccountId,
         ) -> result::Result<BalanceOf<T>, DispatchError> {
-            let balance = <Self as MultiCurrency<T::AccountId>>::total_balance(dao_id, &who);
+            let balance = <Self as MultiCurrency<T::AccountId>>::total_balance(asset_id, &who);
             Ok(balance)
         }
 
         // 设置账户金额
         pub fn set_balance(
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiCurrency<T::AccountId>>::deposit(dao_id, &who, value)?;
+            <Self as MultiCurrency<T::AccountId>>::deposit(asset_id, &who, value)?;
             Ok(())
         }
 
         /// 为...锁定保证金
         pub fn reserve(
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiReservableCurrency<T::AccountId>>::reserve(dao_id, &who, value)?;
+            <Self as MultiReservableCurrency<T::AccountId>>::reserve(asset_id, &who, value)?;
             Ok(())
         }
 
         /// 解除保证
         pub fn unreserve(
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiReservableCurrency<T::AccountId>>::unreserve(dao_id, &who, value);
+            <Self as MultiReservableCurrency<T::AccountId>>::unreserve(asset_id, &who, value);
             Ok(())
         }
 
         /// 尽可能解除保证
         pub fn slash_reserved(
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> BalanceOf<T> {
-            <Self as MultiReservableCurrency<T::AccountId>>::slash_reserved(dao_id, &who, value)
+            <Self as MultiReservableCurrency<T::AccountId>>::slash_reserved(asset_id, &who, value)
         }
 
         /// 总发行量
-        pub fn total_issuance(dao_id: WeAssetId) -> BalanceOf<T> {
-            <Self as MultiCurrency<T::AccountId>>::total_issuance(dao_id)
+        pub fn total_issuance(asset_id: WeAssetId) -> BalanceOf<T> {
+            <Self as MultiCurrency<T::AccountId>>::total_issuance(asset_id)
+        }
+
+        pub fn try_create(
+            user: T::AccountId,
+            asset_id: WeAssetId,
+            metadata: AssetMeta,
+            amount: BalanceOf<T>,
+        ) -> DispatchResult {
+            Self::do_create(user, asset_id, metadata, amount)
         }
 
         /// 转帐
         pub fn try_transfer(
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             from: T::AccountId,
             to: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiCurrency<T::AccountId>>::transfer(dao_id, &from, &to, value)?;
+            <Self as MultiCurrency<T::AccountId>>::transfer(asset_id, &from, &to, value)?;
             Ok(())
         }
 
         /// 转帐
         pub fn try_burn(
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             from: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiCurrency<T::AccountId>>::withdraw(dao_id, &from, value)?;
+            <Self as MultiCurrency<T::AccountId>>::withdraw(asset_id, &from, value)?;
             Ok(())
         }
 
         /// 转帐
         pub fn burn_with_number(
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             from: T::AccountId,
             value: u128,
         ) -> result::Result<(), DispatchError> {
             let amount: BalanceOf<T> = value.saturated_into::<BalanceOf<T>>();
 
-            <Self as MultiCurrency<T::AccountId>>::withdraw(dao_id, &from, amount)?;
+            <Self as MultiCurrency<T::AccountId>>::withdraw(asset_id, &from, amount)?;
             Ok(())
         }
 
         // 产生 TOKEN
         pub fn try_deposit(
-            dao_id: WeAssetId,
+            asset_id: WeAssetId,
             dest: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
             // 确认组织是否存在
-            ensure!(
-                wetee_org::Daos::<T>::contains_key(dao_id),
-                Error::<T>::AssetNotExists
-            );
+            ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
             // 产生 Token
-            <Self as MultiCurrency<T::AccountId>>::deposit(dao_id, &dest, value)?;
+            <Self as MultiCurrency<T::AccountId>>::deposit(asset_id, &dest, value)?;
 
             Ok(().into())
         }
@@ -498,19 +434,19 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
     /// 判断资产是否存在
-    fn is_exists_metadata(dao_id: WeAssetId) -> bool {
-        if dao_id == NATIVE_ASSET_ID {
+    fn is_exists(asset_id: WeAssetId) -> bool {
+        if asset_id == NATIVE_ASSET_ID {
             return true;
         }
-        if DaoAssetsInfo::<T>::get(dao_id).is_some() {
+        if AssetsInfo::<T>::get(asset_id).is_some() {
             return true;
         }
         false
     }
 
     /// 判断资产ID是否太大
-    fn is_asset_id_too_large(dao_id: WeAssetId) -> bool {
-        if dao_id >= T::MaxCreatableId::get() {
+    fn is_asset_id_too_large(asset_id: WeAssetId) -> bool {
+        if asset_id >= T::MaxCreatableId::get() {
             return true;
         }
         false
