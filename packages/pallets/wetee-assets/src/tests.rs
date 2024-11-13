@@ -25,14 +25,12 @@ pub fn create_asset() -> WeAssetId {
 
     wetee_assets::Pallet::<Test>::create_asset(
         RuntimeOrigin::signed(ALICE),
-        dao_id,
         wetee_assets::AssetMeta {
             name: "TestA".as_bytes().to_vec(),
             symbol: "TA".as_bytes().to_vec(),
             decimals: 10,
         },
         10000,
-        99,
     )
     .unwrap();
 

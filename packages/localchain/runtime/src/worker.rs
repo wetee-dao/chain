@@ -31,6 +31,8 @@ use wetee_message_queue::OnQueueChanged;
 pub enum MessageOrigin {
     /// 用户发起的任务
     Work,
+    // Fair Launch
+    FairLaunch,
 }
 
 /// 任务队列变化处理器
@@ -72,6 +74,9 @@ impl ProcessMessage for WorkerMessageProcessor {
                 WorkType::TASK => Worker::match_deploy(msg_id, None).unwrap(),
                 WorkType::GPU => Worker::match_deploy(msg_id, None).unwrap(),
             },
+            MessageOrigin::FairLaunch => {
+                return Ok(true);
+            }
         };
 
         if !ok {

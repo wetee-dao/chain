@@ -58,9 +58,7 @@ impl wetee_dao::Config for Test {
     type RuntimeCall = RuntimeCall;
     type PalletId = DaoPalletId;
     type CallId = u64;
-    type OrgHook = ();
     type WeightInfo = ();
-    type MaxMembers = ConstU32<1000000>;
 }
 
 pub fn new_test_run() -> sp_io::TestExternalities {

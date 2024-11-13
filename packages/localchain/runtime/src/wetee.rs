@@ -60,6 +60,14 @@ impl wetee_project::Config for Runtime {
     type WeightInfo = ();
 }
 
+// pub struct FairlanchHook;
+// impl UHook<AccountId, Fairlanch> for FairlanchHook {
+//     fn run_hook(id: WorkId, _: AccountId) {
+//         // 添加消息到队列
+//         WeMessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::FairLaunch);
+//     }
+// }
+
 impl wetee_fairlanch::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
