@@ -330,9 +330,6 @@ mod runtime {
     #[runtime::pallet_index(7)]
     pub type Authorship: pallet_authorship;
 
-    #[runtime::pallet_index(8)]
-    pub type Contracts = pallet_contracts;
-
     // WETEE
     #[runtime::pallet_index(101)]
     pub type Tokens = orml_tokens;
@@ -354,16 +351,18 @@ mod runtime {
     pub type Project = wetee_project;
     #[runtime::pallet_index(110)]
     pub type Gov = wetee_gov;
-    #[runtime::pallet_index(112)]
+    #[runtime::pallet_index(111)]
     pub type Treasury = wetee_treasury;
-    #[runtime::pallet_index(113)]
+    #[runtime::pallet_index(112)]
     pub type App = wetee_app;
-    #[runtime::pallet_index(114)]
+    #[runtime::pallet_index(113)]
     pub type Task = wetee_task;
-    #[runtime::pallet_index(115)]
+    #[runtime::pallet_index(114)]
     pub type Gpu = wetee_gpu;
-    #[runtime::pallet_index(116)]
+    #[runtime::pallet_index(115)]
     pub type Worker = wetee_worker;
+    #[runtime::pallet_index(116)]
+    pub type Contracts = pallet_contracts;
     #[runtime::pallet_index(117)]
     pub type Dsecret = wetee_dsecret;
     #[runtime::pallet_index(118)]

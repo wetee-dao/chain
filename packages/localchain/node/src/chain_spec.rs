@@ -1,6 +1,8 @@
+use hex_literal::hex;
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
+use sp_core::crypto::UncheckedInto;
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use wetee_runtime::{AccountId, Signature, WASM_BINARY};
@@ -31,6 +33,16 @@ where
 /// Generate an Aura authority key.
 pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
     (get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
+}
+
+pub fn authority_keys_from_seed2(s: &str) -> (AuraId, GrandpaId) {
+    (get_from_seed2::<AuraId>(s), get_from_seed::<GrandpaId>(s))
+}
+
+pub fn get_from_seed2<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+    TPublic::Pair::from_string(&format!("{}", seed), None)
+        .expect("static values are valid; qed")
+        .public()
 }
 
 pub fn development_config() -> Result<ChainSpec, String> {
@@ -65,30 +77,16 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
     )
     .with_name("Local Testnet")
     .with_id("local_testnet")
-    .with_chain_type(ChainType::Local)
+    .with_chain_type(ChainType::Development)
     .with_genesis_config_patch(testnet_genesis(
         // Initial PoA authorities
-        vec![
-            authority_keys_from_seed("Alice"),
-            authority_keys_from_seed("Bob"),
-        ],
+        vec![authority_keys_from_seed2(
+            "0x853a300b51b3875fedd41b7856ffa54c834337a2e6aed24a6af07e79f1032744",
+        )],
         // Sudo account
-        get_account_id_from_seed::<sr25519::Public>("Alice"),
+        hex!["50b12ec06541ca12838ab0f6aa47f94df25c1351df28975e4ff5d8a4adaeff06"].into(),
         // Pre-funded accounts
-        vec![
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Bob"),
-            get_account_id_from_seed::<sr25519::Public>("Charlie"),
-            get_account_id_from_seed::<sr25519::Public>("Dave"),
-            get_account_id_from_seed::<sr25519::Public>("Eve"),
-            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-            get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-            get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-        ],
+        vec![hex!["50b12ec06541ca12838ab0f6aa47f94df25c1351df28975e4ff5d8a4adaeff06"].into()],
         true,
     ))
     .build())

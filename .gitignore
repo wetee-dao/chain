@@ -66,3 +66,5 @@ tmp
 /tools
 /native-nostd-hasher
 /orml
+
+/hacks/generate-node-key.sh

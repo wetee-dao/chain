@@ -60,19 +60,6 @@ impl wetee_project::Config for Runtime {
     type WeightInfo = ();
 }
 
-// pub struct FairlanchHook;
-// impl UHook<AccountId, Fairlanch> for FairlanchHook {
-//     fn run_hook(id: WorkId, _: AccountId) {
-//         // 添加消息到队列
-//         WeMessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::FairLaunch);
-//     }
-// }
-
-impl wetee_fairlanch::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-}
-
 parameter_types! {
     pub const TokensMaxReserves: u32 = 50;
 }
@@ -118,17 +105,6 @@ impl wetee_dao::Config for Runtime {
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
     type PalletId = DaoPalletId;
-}
-
-parameter_types! {
-    pub const MatrixPalletId: PalletId = PalletId(*b"wematrix");
-}
-impl wetee_matrix::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type CallId = CallId;
-    type PalletId = MatrixPalletId;
-    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -178,12 +154,6 @@ impl wetee_dsecret::Config for Runtime {
     type Helper = ();
 }
 
-impl wetee_tee_bridge::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-    type WorkExt = WorkExtIns;
-}
-
 impl wetee_guild::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
@@ -227,6 +197,36 @@ impl pallet_utility::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub const MatrixPalletId: PalletId = PalletId(*b"wematrix");
+}
+impl wetee_matrix::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type CallId = CallId;
+    type PalletId = MatrixPalletId;
+    type WeightInfo = ();
+}
+
+impl wetee_tee_bridge::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+    type WorkExt = WorkExtIns;
+}
+
+// pub struct FairlanchHook;
+// impl UHook<AccountId, Fairlanch> for FairlanchHook {
+//     fn run_hook(id: WorkId, _: AccountId) {
+//         // 添加消息到队列
+//         WeMessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::FairLaunch);
+//     }
+// }
+
+impl wetee_fairlanch::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 // WETEE END

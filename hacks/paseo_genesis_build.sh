@@ -9,19 +9,13 @@ while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a syml
 done
 DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
 cd "$DIR/../"
-pwd
 
-current=`date "+%Y-%m-%d-%H_%M"`
-TAG="dev.$current"
-ENV=`git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3`
 
-if [ $# -gt 0 ]; then
-  TAG="$1.$current"
-  if [ $# -gt 1 ]; then
-    ENV=$2
-  fi
-fi
+### build genesis
+./target/release/parachain-node export-genesis-state --chain wetee-paseo ./meta/paseo/genesis
 
-# 编译
-docker build -f ./pos_build.Dockerfile -t "wetee/wetee-node:$TAG"  . 
-docker push "wetee/wetee-node:$TAG"
+### build wasm
+./target/release/parachain-node export-genesis-wasm --chain wetee-paseo ./meta/paseo/genesis-wasm
+
+### build spec
+./target/release/parachain-node build-spec --disable-default-bootnode --chain wetee-paseo > ./meta/paseo/wetee-paseo.json

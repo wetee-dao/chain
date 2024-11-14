@@ -3,7 +3,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 pub use scale_info::TypeInfo;
 use sp_runtime::{DispatchError, RuntimeDebug};
 
-use crate::{AccountId, Balance, BlockNumber, WeTEEAsset};
+use crate::{AccountId, Asset, Balance, BlockNumber};
 use wetee_gov::traits::PledgeTrait;
 use wetee_primitives::types::WeAssetId;
 
@@ -24,7 +24,7 @@ impl PledgeTrait<Balance, AccountId, WeAssetId, BlockNumber, DispatchError> for 
         amount: Balance,
     ) -> Result<(Balance, BlockNumber), DispatchError> {
         let amount = {
-            WeTEEAsset::reserve(*dao_id, who.clone(), amount)?;
+            Asset::reserve(*dao_id, who.clone(), amount)?;
             if vote_model == 1 {
                 // 1 account = 1 vote
                 1
@@ -42,7 +42,7 @@ impl PledgeTrait<Balance, AccountId, WeAssetId, BlockNumber, DispatchError> for 
         dao_id: &WeAssetId,
         amount: Balance,
     ) -> Result<(), DispatchError> {
-        WeTEEAsset::unreserve(*dao_id, who.clone(), amount)?;
+        Asset::unreserve(*dao_id, who.clone(), amount)?;
         Ok(())
     }
 }

@@ -48,17 +48,21 @@ pub use wetee::*;
 mod contracts;
 pub use contracts::*;
 
-pub use wetee_app::Call as WeTEEAppCall;
-pub use wetee_assets::Call as WeTEEAssetsCall;
-pub use wetee_gov::Call as WeTEEGovCall;
-pub use wetee_gpu::Call as WeTEEGpuCall;
-pub use wetee_guild::Call as WeTEEGuildCall;
-pub use wetee_dao::Call as WeTEEOrgCall;
-pub use wetee_project::Call as WeTEEProjectCall;
-pub use wetee_sudo::Call as WeTEESudoCall;
-pub use wetee_task::Call as WeTEETaskCall;
-pub use wetee_treasury::Call as WeTEETreasuryCall;
-pub use wetee_worker::Call as WeTEEWorkerCall;
+pub use wetee_app::Call as AppCall;
+pub use wetee_assets::Call as AssetsCall;
+pub use wetee_dao::Call as DaoCall;
+pub use wetee_dsecret::Call as SecretCall;
+pub use wetee_fairlanch::Call as FairlanchCall;
+pub use wetee_gov::Call as GovCall;
+pub use wetee_gpu::Call as GpuCall;
+pub use wetee_guild::Call as GuildCall;
+pub use wetee_matrix::Call as MatrixCall;
+pub use wetee_project::Call as ProjectCall;
+pub use wetee_sudo::Call as SudoCall;
+pub use wetee_task::Call as TaskCall;
+pub use wetee_tee_bridge::Call as TeeBridgeCall;
+pub use wetee_treasury::Call as TreasuryCall;
+pub use wetee_worker::Call as WorkerCall;
 // End WETEE pallet.
 
 // parachain imports
@@ -288,23 +292,26 @@ construct_runtime!(
         MessageQueue: pallet_message_queue = 33,
 
         // WETEE
-        Tokens: orml_tokens = 107,
-        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 108,
-        WeTEEMessageQueue: wetee_message_queue = 109,
-        Utility: pallet_utility = 110,
-        WeTEEOrg: wetee_dao = 111,
-        WeTEEAsset: wetee_assets = 112,
-        WeTEESudo: wetee_sudo = 113,
-        WeTEEGuild: wetee_guild = 114,
-        WeTEEProject: wetee_project = 115,
-        WeTEEGov: wetee_gov = 116,
-        WeTEETreasury: wetee_treasury = 117,
-        WeTEEApp: wetee_app = 118,
-        WeTEETask: wetee_task = 119,
-        WeTEEGpu: wetee_gpu = 120,
-        WeTEEWorker: wetee_worker = 121,
-        Contracts: pallet_contracts = 122,
-        WeTEEDSecret: wetee_dsecret = 123,
+        Tokens: orml_tokens = 101,
+        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 102,
+        WeMessageQueue: wetee_message_queue = 103,
+        Utility: pallet_utility = 104,
+        Dao: wetee_dao = 105,
+        Asset: wetee_assets = 106,
+        WeSudo: wetee_sudo = 107,
+        Guild: wetee_guild = 108,
+        Project: wetee_project = 109,
+        Gov: wetee_gov = 110,
+        Treasury: wetee_treasury = 111,
+        App: wetee_app = 112,
+        Task: wetee_task = 113,
+        Gpu: wetee_gpu = 114,
+        Worker: wetee_worker = 115,
+        Contracts: pallet_contracts = 116,
+        DSecret: wetee_dsecret = 117,
+        Bridge: wetee_tee_bridge = 118,
+        Matrix:  wetee_matrix = 119,
+        Fairlanch: wetee_fairlanch = 120,
         // WETEE end
     }
 );

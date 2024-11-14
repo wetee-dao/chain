@@ -236,6 +236,18 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        #[pallet::call_index(002)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        pub fn v_unstaking(
+            origin: OriginFor<T>,
+            assert_id: WeAssetId,
+            amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -270,7 +282,7 @@ pub mod pallet {
             let real_staking_block = now - (user_reward.0 - epoch_block.into());
 
             let mut reward: u128 = 0;
-            for (asset_id, amount) in assets {
+            for (asset_id, asset_amount) in assets {
                 // 获取经济模型
                 let asset = economics.iter().find(|(k, _)| *k == asset_id).unwrap();
 
@@ -287,7 +299,7 @@ pub mod pallet {
 
                 // 计算当前帐户的奖励
                 reward += asset_reward / total.1.saturated_into::<u128>()
-                    * amount.saturated_into::<u128>();
+                    * asset_amount.saturated_into::<u128>();
             }
 
             // 存储用户奖励
@@ -295,6 +307,7 @@ pub mod pallet {
                 user.clone(),
                 (next_block, reward.saturated_into::<BalanceOf<T>>()),
             );
+            let _ = NextBlockRewards::<T>::remove(user_reward.0, user.clone());
 
             // 更新用户质押数据
             Stakings::<T>::try_mutate(
@@ -319,7 +332,6 @@ pub mod pallet {
             }
 
             // 触发下一次奖励
-            let _ = NextBlockRewards::<T>::remove(user_reward.0, user.clone());
             let _ = NextBlockRewards::<T>::insert(next_block, user.clone(), stakings);
 
             Ok(())

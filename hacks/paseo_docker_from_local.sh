@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# 来源于网络，用于获取当前shell文件的路径
+# 用于获取当前shell文件的路径
 SOURCE="$0"
 while [ -h "$SOURCE"  ]; do # resolve $SOURCE until the file is no longer a symlink
     DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
@@ -11,8 +11,9 @@ DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
 cd "$DIR/../"
 pwd
 
+
 current=`date "+%Y-%m-%d-%H_%M"`
-TAG="rococo.$current"
+TAG="paseo.$current"
 ENV=`git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3`
 
 if [ $# -gt 0 ]; then
@@ -25,7 +26,7 @@ fi
 # 编译
 cargo build --release -p parachain-node
 
-docker build . -f rococo_from_bin.Dockerfile -t "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:$TAG"
+docker build . -f paseo_from_bin.Dockerfile -t "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:$TAG"
 
 docker login --username=wetee registry.cn-hangzhou.aliyuncs.com
 

@@ -37,11 +37,11 @@ pub struct GovFunc;
 impl GovIsJoin<RuntimeCall> for GovFunc {
     fn is_join(call: RuntimeCall) -> bool {
         match call {
-            RuntimeCall::WeTEEGuild(func) => match func {
+            RuntimeCall::Guild(func) => match func {
                 wetee_guild::Call::guild_join { .. } => true,
                 _ => false,
             },
-            RuntimeCall::WeTEEProject(func) => match func {
+            RuntimeCall::Project(func) => match func {
                 wetee_project::Call::project_join_request { .. } => true,
                 _ => false,
             },
@@ -201,4 +201,33 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const MatrixPalletId: PalletId = PalletId(*b"wematrix");
+}
+impl wetee_matrix::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type CallId = CallId;
+    type PalletId = MatrixPalletId;
+    type WeightInfo = ();
+}
+
+impl wetee_tee_bridge::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+    type WorkExt = WorkExtIns;
+}
+
+// pub struct FairlanchHook;
+// impl UHook<AccountId, Fairlanch> for FairlanchHook {
+//     fn run_hook(id: WorkId, _: AccountId) {
+//         // 添加消息到队列
+//         WeMessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::FairLaunch);
+//     }
+// }
+
+impl wetee_fairlanch::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+}
 // WETEE END

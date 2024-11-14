@@ -149,13 +149,13 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 
 ```shell
 ### build genesis
-./target/release/parachain-node export-genesis-state --chain wetee-rococo ./meta/rococo/genesis
+./target/release/parachain-node export-genesis-state --chain wetee-paseo ./meta/paseo/genesis
 
 ### build wasm
-./target/release/parachain-node export-genesis-wasm --chain wetee-rococo ./meta/rococo/genesis-wasm
+./target/release/parachain-node export-genesis-wasm --chain wetee-paseo ./meta/paseo/genesis-wasm
 
 ### build spec
-./target/release/parachain-node build-spec --disable-default-bootnode --chain wetee-rococo > ./meta/rococo/wetee-rococo.json
+./target/release/parachain-node build-spec --disable-default-bootnode --chain wetee-paseo > ./meta/paseo/wetee-paseo.json
 ```
 
 ### 平行链启动命令
@@ -163,11 +163,11 @@ pub use wetee_worker::Call as WeteeWorkerCall;
 ```shell
 ./target/release/parachain-node --collator \
 --alice \
---chain ./meta/rococo/wetee-rococo.json \
+--chain ./meta/paseo/wetee-paseo.json \
 --force-authoring \
 --base-path  ./db \
 -- \
---chain=rococo \
+--chain=paseo \
 --sync fast-unsafe \
 --blocks-pruning 256 \
 --state-pruning 256
