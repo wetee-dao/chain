@@ -10,5 +10,7 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
 cd "$DIR/../"
 
+rm -rf ./db/chains/local_testnet/db/full
+
 ./target/release/wetee-node build-spec --disable-default-bootnode --chain local > ./meta/local.json
 ./target/release/wetee-node --base-path ./db --chain=local --force-authoring --validator --name local --unsafe-rpc-external --rpc-cors all

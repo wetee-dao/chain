@@ -273,22 +273,6 @@ impl pallet_sudo::Config for Runtime {
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
-pub struct AuraAccountAdapter;
-impl frame_support::traits::FindAuthor<AccountId> for AuraAccountAdapter {
-    fn find_author<'a, I>(digests: I) -> Option<AccountId>
-    where
-        I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
-    {
-        pallet_aura::AuraAuthorId::<Runtime>::find_author(digests)
-            .and_then(|k| AccountId::try_from(k.as_ref()).ok())
-    }
-}
-
-impl pallet_authorship::Config for Runtime {
-    type FindAuthor = AuraAccountAdapter;
-    type EventHandler = ();
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 #[frame_support::runtime]
 mod runtime {
@@ -326,9 +310,6 @@ mod runtime {
 
     #[runtime::pallet_index(6)]
     pub type Sudo = pallet_sudo;
-
-    #[runtime::pallet_index(7)]
-    pub type Authorship: pallet_authorship;
 
     // WETEE
     #[runtime::pallet_index(101)]

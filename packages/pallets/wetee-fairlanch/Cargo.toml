@@ -11,7 +11,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 frame-benchmarking = {workspace = true}
 frame-support = {workspace = true}
 frame-system = {workspace = true}
-pallet-authorship = {workspace = true}
 parity-scale-codec = {workspace = true, default-features = false, features = [
   "derive",
 ]}
@@ -46,7 +45,6 @@ std = [
   "frame-system/std",
   "scale-info/std",
   "wetee-primitives/std",
-  "pallet-authorship/std",
   "wetee-assets/std",
 ]
 try-runtime = [

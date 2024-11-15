@@ -74,7 +74,6 @@ frame-system-benchmarking = {workspace = true, default-features = false, optiona
 # Local Dependencies
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
-pallet-authorship = {workspace = true}
 pallet-contracts = {workspace = true}
 pallet-insecure-randomness-collective-flip = {workspace = true}
 pallet-utility = {workspace = true}
@@ -146,7 +145,6 @@ std = [
   "wetee-primitives/std",
   "wetee-dao/std",
   "wetee-fairlanch/std",
-  "pallet-authorship/std",
   "wetee-sudo/std",
   "wetee-gov/std",
   "wetee-assets/std",

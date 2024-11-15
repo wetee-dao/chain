@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
-use frame_support::{pallet_prelude::*, sp_runtime::SaturatedConversion};
+use frame_support::{pallet_prelude::*, sp_runtime::SaturatedConversion, traits::FindAuthor};
 use orml_traits::MultiCurrency;
 pub use pallet::*;
 use parity_scale_codec::{Decode, Encode};
@@ -11,8 +11,7 @@ use wetee_primitives::types::WeAssetId;
 mod weights;
 pub use weights::WeightInfo;
 
-const UNIT: u128 = 1_000_000_000_000;
-const INITIAL_REWARD: u128 = 100 * UNIT;
+const WTE: u128 = 1_000_000_000_000;
 
 #[derive(Default, PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct Wstaking<Balance, BlockNumber> {
@@ -30,18 +29,35 @@ pub mod pallet {
         <T as frame_system::Config>::AccountId,
     >>::Balance;
 
+    #[derive(frame_support::DefaultNoBound)]
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config> {
+        pub _config: sp_std::marker::PhantomData<T>,
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+        fn build(&self) {
+            Economics::<T>::insert(0, 10);
+            // 第一个块的奖励为 1 WTE
+            // 总量 28,800,000 WTE
+            BlockReward::<T>::set((0, WTE.saturated_into::<BalanceOf<T>>()));
+        }
+    }
+
     /// pallet config
     /// 组件配置文件
     #[pallet::config]
-    pub trait Config:
-        frame_system::Config + pallet_authorship::Config + wetee_assets::Config
-    {
+    pub trait Config: frame_system::Config + wetee_assets::Config {
         /// pallet event
         /// 组件消息
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
+
+        /// Find the author of a block.
+        type FindAuthor: FindAuthor<Self::AccountId>;
     }
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -50,6 +66,11 @@ pub mod pallet {
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
+
+    /// current block reward
+    #[pallet::storage]
+    #[pallet::getter(fn block_reward)]
+    pub type BlockReward<T: Config> = StorageValue<_, (u128, BalanceOf<T>), ValueQuery>;
 
     /// Staking
     #[pallet::storage]
@@ -105,7 +126,7 @@ pub mod pallet {
     /// WeAssetId => staking reward
     #[pallet::storage]
     #[pallet::getter(fn economics)]
-    pub type Economics<T: Config> = StorageMap<_, Identity, WeAssetId, (Vec<u8>, u8), ValueQuery>;
+    pub type Economics<T: Config> = StorageMap<_, Identity, WeAssetId, u8, ValueQuery>;
 
     /// success event
     /// 成功事件
@@ -114,7 +135,11 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// nomal success
         /// 成功的事件
-        Success,
+        NextBlockReward {
+            block: BlockNumberFor<T>,
+            author: T::AccountId,
+            reward: BalanceOf<T>,
+        },
     }
 
     #[pallet::error]
@@ -130,19 +155,30 @@ pub mod pallet {
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
             // 奖励周期 1天 一共 14400 个区块
             let epoch_block = 14400;
-            // 减半周期 4年(一共 1460 天)
-            let reduction_interval: u128 = 1460;
+
             // 获取当前是多少天(14400 是一天的区块数)
-            let epoch = n.saturated_into::<u128>() % epoch_block;
+            let epoch = n.saturated_into::<u128>() / epoch_block;
+            let (curr_epoch, mut curr_reward) = BlockReward::<T>::get();
+
+            // 如果进入了新的周期
+            if epoch > curr_epoch {
+                // a=1，公比 r=0.9995 1460天时（4年），奖励为0.9995^1460=0.99951460≈0.500474，即半年减半
+                curr_reward = curr_reward * 9995u32.into() / 10000u32.into();
+                BlockReward::<T>::set((epoch, curr_reward));
+            }
+
             // 区块总奖励
-            let reward_amount = INITIAL_REWARD / (1 + (epoch / reduction_interval));
+            let reward_amount = curr_reward.saturated_into::<u128>();
             // 经济模型
             let economics = Economics::<T>::iter().collect::<Vec<_>>();
+
+            // 节点奖励
             if let Some(index) = economics.iter().position(|(k, _)| *k == 0) {
-                // 节点挖矿奖励
-                let mint_reward_amount =
-                    reward_amount / 100 * (economics.get(index).unwrap().1 .1 as u128);
-                if let Some(block_author) = pallet_authorship::Pallet::<T>::author() {
+                let author = Self::author();
+                if let Some(block_author) = author {
+                    // 节点挖矿奖励
+                    let mint_reward_amount =
+                        reward_amount / 100 * (economics.get(index).unwrap().1 as u128);
                     let amount: BalanceOf<T> = mint_reward_amount.saturated_into::<BalanceOf<T>>();
 
                     // 奖励出块奖励
@@ -168,7 +204,7 @@ pub mod pallet {
                     let asset = economics.iter().find(|(k, _)| *k == asset_id).unwrap();
 
                     // 当前 epoch 的某种 token 的总奖励
-                    let asset_reward = reward_amount / 100 * (asset.1 .1 as u128) * epoch_block;
+                    let asset_reward = reward_amount / 100 * (asset.1 as u128) * epoch_block;
 
                     // 获取 epoch 的总质押量
                     let total = epoch_reward_total
@@ -258,16 +294,22 @@ pub mod pallet {
         ) -> DispatchResult {
             // 奖励周期 1天 一共 14400 个区块
             let epoch_block: u32 = 14400;
-            // 减半周期 4年(一共 1460 天)
-            let reduction_interval: u128 = 1460;
-
             let now = frame_system::Pallet::<T>::block_number();
             let next_block = now + epoch_block.into();
 
             // 获取当前是多少天(14400 是一天的区块数)
             let epoch = now.saturated_into::<u128>() / epoch_block as u128;
+            let (curr_epoch, mut curr_reward) = BlockReward::<T>::get();
+
+            // 如果进入了新的周期
+            if epoch > curr_epoch {
+                // a=1，公比 r=0.9995 1460天时（4年），奖励为0.9995^1460=0.99951460≈0.500474，即半年减半
+                curr_reward = curr_reward * 9995u32.into() / 10000u32.into();
+                BlockReward::<T>::set((epoch, curr_reward));
+            }
+
             // 区块总奖励
-            let reward_amount = INITIAL_REWARD / (1 + (epoch / reduction_interval));
+            let reward_amount = curr_reward.saturated_into::<u128>();
 
             // 获取经济模型
             let economics = Economics::<T>::iter().collect::<Vec<_>>();
@@ -288,7 +330,7 @@ pub mod pallet {
 
                 // 当前 epoch 的某种 token 的总奖励
                 let asset_reward = reward_amount / 100
-                    * (asset.1 .1 as u128)
+                    * (asset.1 as u128)
                     * real_staking_block.saturated_into::<u128>();
 
                 // 获取 epoch 的总质押量
@@ -335,6 +377,12 @@ pub mod pallet {
             let _ = NextBlockRewards::<T>::insert(next_block, user.clone(), stakings);
 
             Ok(())
+        }
+
+        pub fn author() -> Option<T::AccountId> {
+            let digest = <frame_system::Pallet<T>>::digest();
+            let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
+            T::FindAuthor::find_author(pre_runtime_digests)
         }
     }
 }
