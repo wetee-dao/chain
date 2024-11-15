@@ -229,5 +229,6 @@ impl wetee_tee_bridge::Config for Runtime {
 impl wetee_fairlanch::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
 }
 // WETEE END

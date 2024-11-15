@@ -95,14 +95,14 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 fn testnet_genesis(
     initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,
-    endowed_accounts: Vec<AccountId>,
+    _endowed_accounts: Vec<AccountId>,
     _enable_println: bool,
 ) -> serde_json::Value {
     serde_json::json!({
-        "balances": {
-            // Configure endowed accounts with initial balance of 1 << 60.
-            "balances": endowed_accounts.iter().cloned().map(|k| (k, 100*1_000_000_000_000u128)).collect::<Vec<_>>(),
-        },
+        // "balances": {
+        //     // Configure endowed accounts with initial balance of 1 << 60.
+        //     "balances": endowed_accounts.iter().cloned().map(|k| (k, 100*1_000_000_000_000u128)).collect::<Vec<_>>(),
+        // },
         "aura": {
             "authorities": initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
         },

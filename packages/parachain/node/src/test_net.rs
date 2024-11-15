@@ -51,14 +51,14 @@ pub fn paseo_config() -> ChainSpec {
 
 fn paseo_genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
-    endowed_accounts: Vec<AccountId>,
+    _endowed_accounts: Vec<AccountId>,
     root: AccountId,
     id: ParaId,
 ) -> serde_json::Value {
     serde_json::json!({
-        "balances": {
-            "balances": endowed_accounts.iter().cloned().map(|k| (k, 100*UNIT)).collect::<Vec<_>>(),
-        },
+        // "balances": {
+        //     "balances": endowed_accounts.iter().cloned().map(|k| (k, 100*UNIT)).collect::<Vec<_>>(),
+        // },
         "parachainInfo": {
             "parachainId": id,
         },
