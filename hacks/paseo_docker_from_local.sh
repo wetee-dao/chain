@@ -24,7 +24,7 @@ if [ $# -gt 0 ]; then
 fi
 
 # 编译
-cargo build --release -p parachain-node
+# cargo build --release -p parachain-node
 
 docker build . -f paseo_from_bin.Dockerfile -t "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:$TAG"
 

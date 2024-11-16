@@ -443,13 +443,14 @@ pub mod pallet {
                     * asset_amount.saturated_into::<u128>();
             }
 
-            // 存储用户奖励
+            // 存储用户奖励,删除结算事件
             UserReward::<T>::insert(
                 user.clone(),
                 (next_block, reward.saturated_into::<BalanceOf<T>>()),
             );
             let _ = NextStakingRewards::<T>::remove(user_reward.0, user.clone());
 
+            // 重新计算质押数量
             let asset_staking = Stakings::<T>::get(user.clone(), assert_id).unwrap();
             match func {
                 ReStakeFunc::Stake => {
@@ -482,14 +483,19 @@ pub mod pallet {
 
             // 存储用户质押数据，用于下一个周期的奖励
             let mut now_staking = Stakings::<T>::iter_prefix(user.clone());
+
             let mut stakings: Vec<(WeAssetId, BalanceOf<T>)> = Default::default();
+            let mut total_amount: BalanceOf<T> = Default::default();
             while let Some(v) = now_staking.next() {
                 let (asset_id, staking) = v;
+                total_amount = total_amount + staking.amount;
                 stakings.push((asset_id, staking.amount));
             }
 
             // 触发下一次奖励
-            let _ = NextStakingRewards::<T>::insert(next_block, user.clone(), stakings);
+            if total_amount > 0u32.into() {
+                let _ = NextStakingRewards::<T>::insert(next_block, user.clone(), stakings);
+            }
 
             Ok(())
         }
