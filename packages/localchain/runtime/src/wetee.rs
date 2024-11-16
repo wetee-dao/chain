@@ -235,10 +235,15 @@ impl frame_support::traits::FindAuthor<AccountId> for AuraAccountAdapter {
     }
 }
 
+parameter_types! {
+    pub const FairlanchPalletId: PalletId = PalletId(*b"fair0000");
+}
+
 impl wetee_fairlanch::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type FindAuthor = AuraAccountAdapter;
+    type PalletId = FairlanchPalletId;
 }
 
 // WETEE END
