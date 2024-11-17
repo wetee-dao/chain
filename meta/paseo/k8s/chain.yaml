@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wetee-paseo
+  namespace: worker-addon
+spec:
+  selector:
+    matchLabels:
+      app: wetee-paseo
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wetee-paseo
+    spec:
+      containers:
+        - image: registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:paseo.2024-11-16-16_48
+          name: c1
+          volumeMounts:
+            - name: wetee-chain
+              mountPath: /chain-data
+        - name: c2
+          command:
+            - /bin/sh
+            - "-c"
+            - 'nginx -g "daemon off;" -c  /mnt/ssl-proxy/nginx.conf'
+          image: anolis-registry.cn-zhangjiakou.cr.aliyuncs.com/openanolis/nginx:1.14.1-8.6
+          ports:
+            - containerPort: 443
+              name: wetee-paseo-443
+              protocol: TCP
+          volumeMounts:
+            - name: wetee-proxy
+              mountPath: /mnt/ssl-proxy
+      volumes:
+        - name: wetee-chain
+          hostPath:
+            type: DirectoryOrCreate
+            path: /home/wetee/Soft/chain_db/
+        - name: wetee-proxy
+          hostPath:
+            type: DirectoryOrCreate
+            path: /mnt/ssl-proxy
+      nodeSelector:
+        TEE: "SGX"
