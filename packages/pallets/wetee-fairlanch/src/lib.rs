@@ -93,7 +93,7 @@ pub mod pallet {
 
     /// Staking
     #[pallet::storage]
-    #[pallet::getter(fn staking)]
+    #[pallet::getter(fn stakings)]
     pub type Stakings<T: Config> =
         StorageDoubleMap<_, Identity, T::AccountId, Identity, WeAssetId, BalanceOf<T>, OptionQuery>;
 
@@ -144,27 +144,6 @@ pub mod pallet {
     pub type Vtoken2token<T: Config> =
         StorageMap<_, Identity, WeAssetId, (WeAssetId, (u128, u128)), OptionQuery>;
 
-    /// vtoken transfer rate
-    /// vtoken 转换为 token 的比例
-    // #[pallet::storage]
-    // #[pallet::getter(fn token_vtoken )]
-    // pub type Token2vtoken<T: Config> =
-    //     StorageMap<_, Identity, WeAssetId, (WeAssetId, (u128, u128)), OptionQuery>;
-
-    // /// vtoken transfer rate
-    // /// vtoken 转换为 token 的比例
-    // #[pallet::storage]
-    // #[pallet::getter(fn vtoken_unstaking )]
-    // pub type VtokenUnStaking<T: Config> = StorageDoubleMap<
-    //     _,
-    //     Identity,
-    //     T::AccountId,
-    //     Identity,
-    //     u128,
-    //     UnVstaking<BalanceOf<T>, BlockNumberFor<T>>,
-    //     OptionQuery,
-    // >;
-
     /// success event
     /// 成功事件
     #[pallet::event]
@@ -189,6 +168,12 @@ pub mod pallet {
         VtokenNotExists,
         /// 金额数值错误
         Amount403,
+        /// 资产id不匹配
+        AssetIdNotMatch,
+        /// Vtoken 不存在
+        Vtoken404,
+        /// 资产不存在
+        Asset404,
     }
 
     #[pallet::hooks]
@@ -256,6 +241,13 @@ pub mod pallet {
                     reward += asset_reward * amount / total.clone().1;
                 }
 
+                // 奖励质押
+                let _ = wetee_assets::Pallet::<T>::try_deposit(
+                    wetee_assets::NATIVE_ASSET_ID,
+                    user.clone(),
+                    reward,
+                );
+
                 // 存储用户质押数据，用于下一个周期的奖励
                 let to_staking = ToStakings::<T>::iter_prefix(user.clone()).collect::<Vec<_>>();
                 for (asset_id, mut staking) in to_staking {
@@ -266,7 +258,7 @@ pub mod pallet {
                     Stakings::<T>::set(user.clone(), asset_id, Some(staking));
 
                     // 触发总质押数钩子
-                    Self::total_hook(asset_id, StakeFunc::Stake, staking);
+                    Self::staking_hook(asset_id, StakeFunc::Stake, staking);
                 }
 
                 // 触发下一次奖励
@@ -285,7 +277,87 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::call_index(001)]
+        // /// 质押 vtoken
+        // #[pallet::call_index(001)]
+        // #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        // pub fn staking(
+        //     origin: OriginFor<T>,
+        //     asset_id: WeAssetId,
+        //     amount: BalanceOf<T>,
+        // ) -> DispatchResultWithPostInfo {
+        //     let who = ensure_signed(origin)?;
+
+        //     // 转账 asset 到质押池
+        //     let to = Self::staking_pool_account(asset_id);
+        //     wetee_assets::Pallet::<T>::try_transfer(asset_id, who.clone(), to, amount)?;
+
+        //     let mut camount = amount.clone();
+        //     // 获取当前区块
+        //     let n = frame_system::Pallet::<T>::block_number();
+
+        //     // 记录下个 epoch 的质押数据
+        //     let to_staking = ToStakings::<T>::get(who.clone(), asset_id);
+        //     if to_staking.is_some() {
+        //         camount += to_staking.unwrap();
+        //     }
+        //     let _ = ToStakings::<T>::insert(&who, asset_id, camount);
+
+        //     // 获取当前的质押数据
+        //     let pre_stakings = Stakings::<T>::iter_key_prefix(who.clone()).collect::<Vec<_>>();
+        //     let to_stakings = ToStakings::<T>::iter_key_prefix(who.clone()).collect::<Vec<_>>();
+        //     if pre_stakings.len() == 0 && to_stakings.len() == 0 {
+        //         let next_block = n + EPOCH_BLOCK.into();
+        //         // 触发下一次奖励
+        //         let _ = NextStakingRewards::<T>::insert(next_block, who.clone(), true);
+        //     }
+
+        //     Ok(().into())
+        // }
+
+        // /// 取消 vtoken 质押
+        // #[pallet::call_index(002)]
+        // #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        // pub fn unstaking(
+        //     origin: OriginFor<T>,
+        //     asset_id: WeAssetId,
+        //     amount: BalanceOf<T>,
+        // ) -> DispatchResultWithPostInfo {
+        //     let who = ensure_signed(origin)?;
+
+        //     // 从质押池转帐 vtoken 到用户
+        //     let to = Self::staking_pool_account(asset_id);
+        //     wetee_assets::Pallet::<T>::try_transfer(asset_id, to, who.clone(), amount)?;
+
+        //     // 获取当前的质押数据
+        //     let pre_staking =
+        //         Stakings::<T>::get(who.clone(), asset_id).ok_or(Error::<T>::StakingNotExists)?;
+
+        //     // 超过质押量的 unstaking 不允许
+        //     if pre_staking < amount {
+        //         return Err(Error::<T>::Amount403.into());
+        //     }
+
+        //     // 获取当前质押数据
+        //     let asset_staking = Stakings::<T>::get(who.clone(), asset_id).unwrap();
+
+        //     // 取现
+        //     let now_amount = asset_staking - amount;
+
+        //     // 如果某个币种的质押量已经为0，则删除该币种的质押数据
+        //     if now_amount == 0u32.into() {
+        //         Stakings::<T>::remove(who.clone(), asset_id);
+        //     } else {
+        //         Stakings::<T>::insert(who.clone(), asset_id, now_amount);
+        //     }
+
+        //     // 触发总质押数钩子
+        //     Self::staking_hook(asset_id, StakeFunc::UnStake, amount);
+
+        //     Ok(().into())
+        // }
+
+        /// 质押 vtoken
+        #[pallet::call_index(003)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
         pub fn v_staking(
             origin: OriginFor<T>,
@@ -326,7 +398,8 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::call_index(002)]
+        /// 取消 vtoken 质押
+        #[pallet::call_index(004)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
         pub fn v_unstaking(
             origin: OriginFor<T>,
@@ -354,10 +427,12 @@ pub mod pallet {
                 return Err(Error::<T>::Amount403.into());
             }
 
+            // 获取当前质押数据
             let asset_staking = Stakings::<T>::get(who.clone(), asset_id).unwrap();
 
             // 取现
             let now_amount = asset_staking - amount;
+
             // 如果某个币种的质押量已经为0，则删除该币种的质押数据
             if now_amount == 0u32.into() {
                 Stakings::<T>::remove(who.clone(), asset_id);
@@ -366,7 +441,80 @@ pub mod pallet {
             }
 
             // 触发总质押数钩子
-            Self::total_hook(asset_id, StakeFunc::UnStake, amount);
+            Self::staking_hook(asset_id, StakeFunc::UnStake, amount);
+
+            Ok(().into())
+        }
+
+        /// 设置 economic 质押比例
+        #[pallet::call_index(05)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        pub fn set_economics(
+            origin: OriginFor<T>,
+            asset_id: WeAssetId,
+            reward_rate: u8,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_signed_or_root(origin)?;
+
+            // 确保 asset 已经创建
+            ensure!(
+                wetee_assets::Pallet::<T>::is_exists(asset_id),
+                Error::<T>::Asset404
+            );
+
+            let _ = Economics::<T>::set(asset_id, Some(reward_rate));
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(06)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        pub fn register_vtoken(
+            origin: OriginFor<T>,
+            vasset_id: WeAssetId,
+            asset_id: WeAssetId,
+            vasset_pool: u128,
+            asset_pool: u128,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_signed_or_root(origin)?;
+
+            // 确保 vtoken asset 已经创建
+            ensure!(
+                wetee_assets::Pallet::<T>::is_exists(vasset_id),
+                Error::<T>::Asset404
+            );
+
+            // 确保 asset 已经创建
+            ensure!(
+                wetee_assets::Pallet::<T>::is_exists(asset_id),
+                Error::<T>::Asset404
+            );
+
+            let _ = Vtoken2token::<T>::set(vasset_id, Some((asset_id, (asset_pool, vasset_pool))));
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(07)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        pub fn set_vtoken_rate(
+            origin: OriginFor<T>,
+            vasset_id: WeAssetId,
+            asset_id: WeAssetId,
+            vasset_pool: u128,
+            asset_pool: u128,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_signed_or_root(origin)?;
+
+            let (casset_id, (_, _)) =
+                Vtoken2token::<T>::get(vasset_id).ok_or(Error::<T>::Vtoken404)?;
+
+            ensure!(casset_id == asset_id, Error::<T>::AssetIdNotMatch);
+
+            let _ = Vtoken2token::<T>::set(vasset_id, Some((asset_id, (asset_pool, vasset_pool))));
 
             Ok(().into())
         }
@@ -393,13 +541,14 @@ pub mod pallet {
 
         /// 检查质押周期
         pub fn check_epoch(n: BlockNumberFor<T>) -> (BalanceOf<T>, u128, BalanceOf<T>) {
-            // 获取当前是多少天(14400 是一天的区块数)
+            // 获取当前周期编号(一个周期约等于1天，14400 是一天的区块数)
             let new_epoch = n.saturated_into::<u128>() / EPOCH_BLOCK as u128;
             let (pre_reward, curr_epoch, curr_reward) = BlockReward::<T>::get();
 
             // 如果进入了新的周期
             if new_epoch > curr_epoch {
-                // a=1，公比 r=0.9995 1460天时（4年），奖励为0.9995^1460=0.99951460≈0.500474，即半年减半
+                // a=1，公比 r=0.9995 1460天时（4年），奖励为0.9995^1460=0.500474，即4年减半
+                // a=1 a+ar+ar^2...ar^n 结果无限趋近 2000
                 let new_epoch_reward = curr_reward * 9995u32.into() / 10000u32.into();
                 BlockReward::<T>::set((curr_reward, new_epoch, new_epoch_reward));
 
@@ -415,7 +564,7 @@ pub mod pallet {
             (pre_reward, curr_epoch, curr_reward)
         }
 
-        pub fn total_hook(asset_id: WeAssetId, func: StakeFunc, amount: BalanceOf<T>) {
+        pub fn staking_hook(asset_id: WeAssetId, func: StakeFunc, amount: BalanceOf<T>) {
             let mut total = StakingTotal::<T>::get(asset_id);
             match func {
                 StakeFunc::Stake => {

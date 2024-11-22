@@ -434,7 +434,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
     /// 判断资产是否存在
-    fn is_exists(asset_id: WeAssetId) -> bool {
+    pub fn is_exists(asset_id: WeAssetId) -> bool {
         if asset_id == NATIVE_ASSET_ID {
             return true;
         }
@@ -445,7 +445,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// 判断资产ID是否太大
-    fn is_asset_id_too_large(asset_id: WeAssetId) -> bool {
+    pub fn is_asset_id_too_large(asset_id: WeAssetId) -> bool {
         if asset_id >= T::MaxCreatableId::get() {
             return true;
         }
