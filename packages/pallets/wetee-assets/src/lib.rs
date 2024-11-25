@@ -110,7 +110,7 @@ pub mod pallet {
     >>::Amount;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config + wetee_dao::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// we asset
@@ -142,6 +142,7 @@ pub mod pallet {
     pub enum Error<T> {
         AmountIntoBalanceFailed,
         BalanceTooLow,
+        AssetIdOverflow,
         AssetAlreadyExists,
         AssetNotExists,
         MetadataNotChange,
@@ -152,7 +153,6 @@ pub mod pallet {
         NativeCurrency,
         CurrencyIdTooLarge,
         CurrencyIdTooLow,
-        WeExists,
         CexTransferClosed,
         AssetIdExisted,
         DepositTooLow,
@@ -212,25 +212,14 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // 确认用户是否是组织创建者
             let who = ensure_signed(origin)?;
-            let asset_id = 1;
+            let asset_id = wetee_dao::NextDaoId::<T>::get();
+
+            // 记录下一个 DAO id
+            let next_id = asset_id.checked_add(1).ok_or(Error::<T>::AssetIdOverflow)?;
+            wetee_dao::NextDaoId::<T>::put(next_id);
 
             // 创建资产
             Self::try_create(who.clone(), asset_id, metadata, init_amount)?;
-
-            // // 将资金转入资金池B池
-            // <Self as MultiCurrency<T::AccountId>>::transfer(
-            //     NATIVE_ASSET_ID,
-            //     &user,
-            //     &wetee_dao::Pallet::<T>::we_account(asset_id),
-            //     amount,
-            // )?;
-
-            // // 初始化账户基本资产
-            // <Self as MultiCurrency<T::AccountId>>::deposit(
-            //     asset_id,
-            //     &wetee_dao::Pallet::<T>::we_account(asset_id),
-            //     init_we_asset,
-            // )?;
 
             Ok(().into())
         }

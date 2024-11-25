@@ -52,6 +52,11 @@ pub mod pallet {
         fn build(&self) {
             // 0 => node mint reward, initial value 10%
             Economics::<T>::insert(0, 10);
+            // 1 => tee mint reward, initial value 10%
+            Economics::<T>::insert(1, 25);
+            // 3 => app mint reward, initial value 10%
+            // Economics::<T>::insert(2, 10);
+
             // 第一个块的奖励为 1 WTE
             // 总量 28,800,000 WTE
             BlockReward::<T>::set((0u32.into(), 0, WTE.saturated_into::<BalanceOf<T>>()));
@@ -263,7 +268,7 @@ pub mod pallet {
 
                 // 触发下一次奖励
                 let _ = NextStakingRewards::<T>::insert(next_block, user.clone(), true);
-                // 存储用户奖励
+                // 存储用户奖励区块
                 UserNextReward::<T>::insert(user, next_block);
             }
 
@@ -387,12 +392,12 @@ pub mod pallet {
             let _ = ToStakings::<T>::insert(&who, asset_id, amount);
 
             // 获取当前的质押数据
-            let pre_stakings = Stakings::<T>::iter_key_prefix(who.clone()).collect::<Vec<_>>();
-            let to_stakings = ToStakings::<T>::iter_key_prefix(who.clone()).collect::<Vec<_>>();
-            if pre_stakings.len() == 0 && to_stakings.len() == 0 {
+            let user_reward = UserNextReward::<T>::get(who.clone());
+            if user_reward == 0u32.into() {
                 let next_block = n + EPOCH_BLOCK.into();
                 // 触发下一次奖励
                 let _ = NextStakingRewards::<T>::insert(next_block, who.clone(), true);
+                let _ = UserNextReward::<T>::insert(who.clone(), next_block);
             }
 
             Ok(().into())
@@ -447,7 +452,7 @@ pub mod pallet {
         }
 
         /// 设置 economic 质押比例
-        #[pallet::call_index(05)]
+        #[pallet::call_index(005)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
         pub fn set_economics(
             origin: OriginFor<T>,
@@ -459,7 +464,7 @@ pub mod pallet {
 
             // 确保 asset 已经创建
             ensure!(
-                wetee_assets::Pallet::<T>::is_exists(asset_id),
+                wetee_assets::Pallet::<T>::is_exists(asset_id) || asset_id < 10,
                 Error::<T>::Asset404
             );
 
@@ -468,7 +473,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::call_index(06)]
+        #[pallet::call_index(006)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
         pub fn register_vtoken(
             origin: OriginFor<T>,
@@ -497,7 +502,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::call_index(07)]
+        #[pallet::call_index(007)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
         pub fn set_vtoken_rate(
             origin: OriginFor<T>,
@@ -518,6 +523,26 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        #[pallet::call_index(008)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        pub fn delete_economics(
+            origin: OriginFor<T>,
+            asset_id: WeAssetId,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_signed_or_root(origin)?;
+
+            // 确保 asset 已经创建
+            ensure!(
+                wetee_assets::Pallet::<T>::is_exists(asset_id) || asset_id < 10,
+                Error::<T>::Asset404
+            );
+
+            let _ = Economics::<T>::remove(asset_id);
+
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -530,7 +555,7 @@ pub mod pallet {
 
         /// 获取质押池的帐户
         pub fn staking_pool_account(id: WeAssetId) -> T::AccountId {
-            T::PalletId::get().into_sub_account_truncating(id)
+            <T as pallet::Config>::PalletId::get().into_sub_account_truncating(id)
         }
 
         /// 质押帐户解析出 asset id
