@@ -226,9 +226,16 @@ impl wetee_tee_bridge::Config for Runtime {
 //     }
 // }
 
+parameter_types! {
+    pub const FairlanchPalletId: PalletId = PalletId(*b"fair0000");
+    pub const EpochBlock: u32 = 14400;
+}
+
 impl wetee_fairlanch::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+    type PalletId = FairlanchPalletId;
+    type EpochBlock = EpochBlock;
 }
 // WETEE END

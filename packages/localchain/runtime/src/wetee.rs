@@ -237,6 +237,7 @@ impl frame_support::traits::FindAuthor<AccountId> for AuraAccountAdapter {
 
 parameter_types! {
     pub const FairlanchPalletId: PalletId = PalletId(*b"fair0000");
+    pub const EpochBlock: u32 = 50;
 }
 
 impl wetee_fairlanch::Config for Runtime {
@@ -244,6 +245,7 @@ impl wetee_fairlanch::Config for Runtime {
     type WeightInfo = ();
     type FindAuthor = AuraAccountAdapter;
     type PalletId = FairlanchPalletId;
+    type EpochBlock = EpochBlock;
 }
 
 // WETEE END

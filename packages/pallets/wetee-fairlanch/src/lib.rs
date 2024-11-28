@@ -19,8 +19,6 @@ pub use weights::WeightInfo;
 
 // 1 WTE = 1_000_000_000_000
 const WTE: u128 = 1_000_000_000_000;
-// 奖励周期 1天 一共 14400 个区块
-const EPOCH_BLOCK: u32 = 14400;
 
 // 质押中操作函数
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
@@ -70,6 +68,10 @@ pub mod pallet {
         /// pallet event
         /// 组件消息
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        /// each epoch block number
+        /// 每个 epoch 的区块数量
+        type EpochBlock: Get<u32>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -221,9 +223,11 @@ pub mod pallet {
             let epoch_reward_total =
                 StakingTotalCache::<T>::iter_prefix(curr_epoch - 1).collect::<Vec<_>>();
 
+            let epoch_block = <T as pallet::Config>::EpochBlock::get();
+
             // 奖励质押满一天的用户
             let mut iter = NextStakingRewards::<T>::iter_prefix(n);
-            let next_block = n + EPOCH_BLOCK.into();
+            let next_block = n + epoch_block.into();
             while let Some(v) = iter.next() {
                 let (user, _) = v;
                 let assets = Stakings::<T>::iter_prefix(user.clone()).collect::<Vec<_>>();
@@ -234,7 +238,7 @@ pub mod pallet {
 
                     // 当前 epoch 的某种 token 的总奖励
                     let asset_reward =
-                        pre_reward * asset.1.into() * EPOCH_BLOCK.into() / 100u32.into();
+                        pre_reward * asset.1.into() * epoch_block.into() / 100u32.into();
 
                     // 获取 epoch 的总质押量
                     let total = epoch_reward_total
@@ -255,25 +259,31 @@ pub mod pallet {
 
                 // 存储用户质押数据，用于下一个周期的奖励
                 let to_staking = ToStakings::<T>::iter_prefix(user.clone()).collect::<Vec<_>>();
-                for (asset_id, mut staking) in to_staking {
+                for (asset_id, pending_staking) in to_staking {
                     let cstaking = Stakings::<T>::get(user.clone(), asset_id);
-                    if cstaking.is_some() {
-                        staking = staking + cstaking.unwrap();
-                    }
-                    Stakings::<T>::set(user.clone(), asset_id, Some(staking));
+                    let new_staking = match cstaking.is_some() {
+                        true => pending_staking + cstaking.unwrap(),
+                        false => pending_staking,
+                    };
+
+                    Stakings::<T>::set(user.clone(), asset_id, Some(new_staking));
 
                     // 触发总质押数钩子
-                    Self::staking_hook(asset_id, StakeFunc::Stake, staking);
+                    Self::staking_hook(asset_id, StakeFunc::Stake, pending_staking);
                 }
+
+                // 删除已经处理的数据
+                let _ = ToStakings::<T>::clear_prefix(user.clone(), 100_0000, None);
 
                 // 触发下一次奖励
                 let _ = NextStakingRewards::<T>::insert(next_block, user.clone(), true);
+
                 // 存储用户奖励区块
                 UserNextReward::<T>::insert(user, next_block);
             }
 
             // 删除已经处理的数据
-            let _ = NextStakingRewards::<T>::clear_prefix(n, 0, None);
+            let _ = NextStakingRewards::<T>::clear_prefix(n, 100_0000, None);
 
             // ---------------------------------------- 结束结算上一个周期的质押奖励 ----------------------------------------------- //
             Weight::zero()
@@ -394,7 +404,8 @@ pub mod pallet {
             // 获取当前的质押数据
             let user_reward = UserNextReward::<T>::get(who.clone());
             if user_reward == 0u32.into() {
-                let next_block = n + EPOCH_BLOCK.into();
+                let epoch_block = <T as pallet::Config>::EpochBlock::get();
+                let next_block = n + epoch_block.into();
                 // 触发下一次奖励
                 let _ = NextStakingRewards::<T>::insert(next_block, who.clone(), true);
                 let _ = UserNextReward::<T>::insert(who.clone(), next_block);
@@ -566,8 +577,9 @@ pub mod pallet {
 
         /// 检查质押周期
         pub fn check_epoch(n: BlockNumberFor<T>) -> (BalanceOf<T>, u128, BalanceOf<T>) {
+            let epoch_block = <T as pallet::Config>::EpochBlock::get();
             // 获取当前周期编号(一个周期约等于1天，14400 是一天的区块数)
-            let new_epoch = n.saturated_into::<u128>() / EPOCH_BLOCK as u128;
+            let new_epoch = n.saturated_into::<u128>() / epoch_block as u128;
             let (pre_reward, curr_epoch, curr_reward) = BlockReward::<T>::get();
 
             // 如果进入了新的周期
