@@ -41,7 +41,7 @@ mod benchmarks {
                 RawOrigin::Root.into(),
                 1,
                 1,
-                vec![InkArg::Bool(true)],
+                vec![InkArg::TBool(true)],
                 10u32.into(),
                 None,
             );
@@ -60,7 +60,7 @@ mod benchmarks {
                 },
                 account("a", 1, 1),
                 [0, 0, 0, 42],
-                vec![InkArg::Bool(true)],
+                vec![InkArg::TBool(true)],
                 10u32.into(),
             );
         }

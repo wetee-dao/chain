@@ -44,48 +44,46 @@ mod benchmarks {
 		{
             Asset::<T>::create_asset(
                 RawOrigin::Signed(caller).into(),
-                5000,
                 AssetMeta {
                     name: "TestA".as_bytes().to_vec(),
                     symbol: "TA".as_bytes().to_vec(),
                     decimals: 10,
                 },
-                amount,
                 init_dao_asset,
             );
         }
     }
 
-    #[benchmark]
-    fn set_existenial_deposit() {
-        let caller = whitelisted_caller();
-        let caller1 = whitelisted_caller();
-        let (_dao_id, _second_id) = creat_dao::<T>();
-        let amount: BalanceOf<T> = 10u32.into();
-        let init_dao_asset: BalanceOf<T> = 9u32.into();
+    // #[benchmark]
+    // fn set_existenial_deposit() {
+    //     let caller = whitelisted_caller();
+    //     let caller1 = whitelisted_caller();
+    //     let (_dao_id, _second_id) = creat_dao::<T>();
+    //     let amount: BalanceOf<T> = 10u32.into();
+    //     let init_dao_asset: BalanceOf<T> = 9u32.into();
 
-        Asset::<T>::create_asset(
-            RawOrigin::Signed(caller).into(),
-            5000,
-            AssetMeta {
-                name: "TestA".as_bytes().to_vec(),
-                symbol: "TA".as_bytes().to_vec(),
-                decimals: 10,
-            },
-            amount,
-            init_dao_asset,
-        );
+    //     Asset::<T>::create_asset(
+    //         RawOrigin::Signed(caller).into(),
+    //         5000,
+    //         AssetMeta {
+    //             name: "TestA".as_bytes().to_vec(),
+    //             symbol: "TA".as_bytes().to_vec(),
+    //             decimals: 10,
+    //         },
+    //         amount,
+    //         init_dao_asset,
+    //     );
 
-        #[block]
-		{
+    //     #[block]
+	// 	{
 
-            Asset::<T>::set_existenial_deposit(
-                RawOrigin::Signed(caller1).into(),
-                5000,
-                amount,
-            );
-        }
-    }
+    //         Asset::<T>::set_existenial_deposit(
+    //             RawOrigin::Signed(caller1).into(),
+    //             5000,
+    //             amount,
+    //         );
+    //     }
+    // }
 
     #[benchmark]
     fn set_metadata() {
@@ -97,13 +95,11 @@ mod benchmarks {
 
         Asset::<T>::create_asset(
             RawOrigin::Signed(caller).into(),
-            5000,
             AssetMeta {
                 name: "TestA".as_bytes().to_vec(),
                 symbol: "TA".as_bytes().to_vec(),
                 decimals: 10,
             },
-            amount,
             init_dao_asset,
         );
 
@@ -131,13 +127,11 @@ mod benchmarks {
 
         Asset::<T>::create_asset(
             RawOrigin::Signed(caller).into(),
-            5000,
             AssetMeta {
                 name: "TestA".as_bytes().to_vec(),
                 symbol: "TA".as_bytes().to_vec(),
                 decimals: 10,
             },
-            amount,
             init_dao_asset,
         );
         
@@ -162,13 +156,11 @@ mod benchmarks {
 
         Asset::<T>::create_asset(
             RawOrigin::Signed(caller).into(),
-            5000,
             AssetMeta {
                 name: "TestA".as_bytes().to_vec(),
                 symbol: "TA".as_bytes().to_vec(),
                 decimals: 10,
             },
-            amount,
             init_dao_asset,
         );
 

@@ -44,7 +44,12 @@ pub fn init() {
     )
     .unwrap();
 
-    Pallet::<Test>::set_economics(OriginFor::<Test>::signed(ALICE), ASSET_ID, 65).unwrap();
+    Economics::<Test>::insert(0, 10);
+    Economics::<Test>::insert(1, 25);
+    Economics::<Test>::insert(ASSET_ID, 65);
+    BlockReward::<Test>::set((0u32.into(), 1, WTE.saturated_into::<BalanceOf<Test>>()));
+
+    System::set_block_number(1);
 }
 
 #[test]
@@ -57,7 +62,7 @@ pub fn v_staking() {
         let to_staking = Pallet::<Test>::to_stakings(ALICE, ASSET_ID).unwrap();
         assert!(to_staking == 120);
 
-        let reward = Pallet::<Test>::next_block_reward(50, ALICE).unwrap();
+        let reward = Pallet::<Test>::next_block_reward(51, ALICE).unwrap();
         assert!(reward);
     });
 }
@@ -68,14 +73,32 @@ pub fn v_staking_cancel() {
         init();
 
         Pallet::<Test>::v_staking(OriginFor::<Test>::signed(ALICE), VASSET_ID, 100).unwrap();
-
         let to_staking = Pallet::<Test>::to_stakings(ALICE, ASSET_ID).unwrap();
         assert!(to_staking == 120);
 
         Pallet::<Test>::v_staking_cancel(OriginFor::<Test>::signed(ALICE), VASSET_ID, 10).unwrap();
-
         let to_staking2 = Pallet::<Test>::to_stakings(ALICE, ASSET_ID).unwrap();
-        // assert!(to_staking == 120);
-        println!("{}", to_staking2)
+        assert!(to_staking2 == 108);
+    });
+}
+
+#[test]
+pub fn v_unstaking() {
+    new_test_run().execute_with(|| {
+        init();
+
+        Pallet::<Test>::v_staking(OriginFor::<Test>::signed(ALICE), VASSET_ID, 100).unwrap();
+        let to_staking = Pallet::<Test>::to_stakings(ALICE, ASSET_ID).unwrap();
+        assert!(to_staking == 120);
+
+        run_to_block(51);
+
+        let staking = Pallet::<Test>::stakings(ALICE, ASSET_ID).unwrap();
+        assert!(staking == 120);
+
+        Pallet::<Test>::v_unstaking(OriginFor::<Test>::signed(ALICE), VASSET_ID, 10).unwrap();
+
+        let staking2 = Pallet::<Test>::stakings(ALICE, ASSET_ID).unwrap();
+        assert!(staking2 == 110);
     });
 }

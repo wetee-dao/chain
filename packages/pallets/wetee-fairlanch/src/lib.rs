@@ -66,7 +66,7 @@ pub mod pallet {
 
             // 第一个块的奖励为 1 WTE
             // 总量 28,800,000 WTE
-            BlockReward::<T>::set((0u32.into(), 0, WTE.saturated_into::<BalanceOf<T>>()));
+            BlockReward::<T>::set((0u32.into(), 1, WTE.saturated_into::<BalanceOf<T>>()));
         }
     }
 
@@ -382,7 +382,7 @@ pub mod pallet {
 
         /// 质押 vtoken
         #[pallet::call_index(003)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::v_staking())]
         pub fn v_staking(
             origin: OriginFor<T>,
             vasset_id: WeAssetId,
@@ -425,7 +425,7 @@ pub mod pallet {
 
         /// 取消 vtoken 质押
         #[pallet::call_index(004)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::v_unstaking())]
         pub fn v_unstaking(
             origin: OriginFor<T>,
             vasset_id: WeAssetId,
@@ -473,7 +473,7 @@ pub mod pallet {
 
         /// 设置 economic 质押比例
         #[pallet::call_index(005)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_economics())]
         pub fn set_economics(
             origin: OriginFor<T>,
             asset_id: WeAssetId,
@@ -494,7 +494,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(006)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::register_vtoken())]
         pub fn register_vtoken(
             origin: OriginFor<T>,
             vasset_id: WeAssetId,
@@ -523,7 +523,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(007)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_vtoken_rate())]
         pub fn set_vtoken_rate(
             origin: OriginFor<T>,
             vasset_id: WeAssetId,
@@ -545,7 +545,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(008)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::delete_economics())]
         pub fn delete_economics(
             origin: OriginFor<T>,
             asset_id: WeAssetId,
@@ -565,7 +565,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(009)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::v_staking_cancel())]
         pub fn v_staking_cancel(
             origin: OriginFor<T>,
             vasset_id: WeAssetId,
@@ -629,11 +629,17 @@ pub mod pallet {
         pub fn check_epoch(n: BlockNumberFor<T>) -> (BalanceOf<T>, u128, BalanceOf<T>) {
             let epoch_block = <T as pallet::Config>::EpochBlock::get();
             // 获取当前周期编号(一个周期约等于1天，14400 是一天的区块数)
-            let new_epoch = n.saturated_into::<u128>() / epoch_block as u128;
+            let new_epoch = (n.saturated_into::<u128>() / epoch_block as u128) + 1;
             let (pre_reward, curr_epoch, curr_reward) = BlockReward::<T>::get();
 
             // 如果进入了新的周期
             if new_epoch > curr_epoch {
+                #[cfg(test)]
+                println!(
+                    "+++++++++++++++++++++++++++ go into new new_epoch {:?} blockNumber {:?}  pre_epoch {:?}",
+                    new_epoch, n, curr_epoch
+                );
+
                 // a=1，公比 r=0.9995 1460天时（4年），奖励为0.9995^1460=0.500474，即4年减半
                 // a=1 a+ar+ar^2...ar^n 结果无限趋近 2000
                 let new_epoch_reward = curr_reward * 9995u32.into() / 10000u32.into();

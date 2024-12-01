@@ -4,7 +4,7 @@
 use crate as wetee_fairlanch;
 use frame_support::{
     derive_impl, parameter_types,
-    traits::{ConstU32, Contains},
+    traits::{ConstU32, Contains, OnFinalize, OnInitialize},
     PalletId,
 };
 use frame_system;
@@ -173,6 +173,19 @@ impl wetee_assets::Config for Test {
     type NativeAsset = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 }
 
+/// Run until a particular block.
+pub fn run_to_block(n: u64) {
+    while System::block_number() < n {
+        if System::block_number() > 1 {
+            Fairlanch::on_finalize(System::block_number());
+            System::on_finalize(System::block_number());
+        }
+        System::set_block_number(System::block_number() + 1);
+        System::on_initialize(System::block_number());
+        Fairlanch::on_initialize(System::block_number());
+    }
+}
+
 pub fn new_test_run() -> sp_io::TestExternalities {
     let mut t = frame_system::GenesisConfig::<Test>::default()
         .build_storage()
@@ -184,5 +197,7 @@ pub fn new_test_run() -> sp_io::TestExternalities {
     .assimilate_storage(&mut t)
     .unwrap();
 
-    t.into()
+    let mut ext = sp_io::TestExternalities::new(t);
+    ext.execute_with(|| System::set_block_number(1));
+    ext
 }

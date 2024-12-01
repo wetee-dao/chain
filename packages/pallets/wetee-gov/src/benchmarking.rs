@@ -38,13 +38,11 @@ fn creat_dao<T: Config>(init:bool) -> (WeAssetId, WeAssetId) {
   let value2: BalanceOf<T> = 100u32.into();
   wetee_assets::Pallet::<T>::create_asset(
     RawOrigin::Signed(alice.clone()).into(),
-    dao_id,
-    wetee_assets::DaoAssetMeta {
+    wetee_assets::AssetMeta {
         name: "TESTA".as_bytes().to_vec(),
         symbol: "TA".as_bytes().to_vec(),
         decimals: 10,
     },
-    value,
     value2,
   );
 

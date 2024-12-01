@@ -414,8 +414,8 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_sudo, Sudo]
-        [wetee_dao, Org]
-        [wetee_matrix, Matrix]
+        [wetee_dao, Dao]
+        // [wetee_matrix, Matrix]
         [wetee_sudo, WeSudo]
         [wetee_guild, Guild]
         [wetee_treasury, Treasury]
@@ -427,6 +427,7 @@ mod benches {
         [wetee_dsecret, Dsecret]
         [wetee_tee_bridge, Bridge]
         [wetee_worker, Worker]
+        [wetee_fairlanch, Fairlanch]
     );
 }
 

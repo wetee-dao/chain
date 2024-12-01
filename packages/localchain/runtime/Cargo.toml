@@ -183,6 +183,8 @@ runtime-benchmarks = [
   "wetee-dsecret/runtime-benchmarks",
   "wetee-tee-bridge/runtime-benchmarks",
   "wetee-worker/runtime-benchmarks",
+  "wetee-matrix/runtime-benchmarks",
+  "wetee-fairlanch/runtime-benchmarks",
 ]
 
 try-runtime = [
