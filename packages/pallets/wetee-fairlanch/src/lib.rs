@@ -14,6 +14,15 @@ use scale_info::{prelude::vec::Vec, TypeInfo};
 
 use wetee_primitives::types::WeAssetId;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 mod weights;
 pub use weights::WeightInfo;
 
@@ -111,11 +120,11 @@ pub mod pallet {
         StorageDoubleMap<_, Identity, T::AccountId, Identity, WeAssetId, BalanceOf<T>, OptionQuery>;
 
     #[pallet::storage]
-    #[pallet::getter(fn reward_total)]
+    #[pallet::getter(fn staking_total)]
     pub type StakingTotal<T: Config> = StorageMap<_, Identity, WeAssetId, BalanceOf<T>, ValueQuery>;
 
     #[pallet::storage]
-    #[pallet::getter(fn reward_total_cache)]
+    #[pallet::getter(fn staking_total_cache)]
     pub type StakingTotalCache<T: Config> =
         StorageDoubleMap<_, Identity, u128, Identity, WeAssetId, BalanceOf<T>, ValueQuery>;
 
@@ -123,7 +132,7 @@ pub mod pallet {
     /// 下一次奖励的区块高度
     /// 24小时执行一次奖励
     #[pallet::storage]
-    #[pallet::getter(fn last_block_reward)]
+    #[pallet::getter(fn next_block_reward)]
     pub type NextStakingRewards<T: Config> =
         StorageDoubleMap<_, Identity, BlockNumberFor<T>, Identity, T::AccountId, bool, OptionQuery>;
 
@@ -431,8 +440,8 @@ pub mod pallet {
                 / pool.saturated_into::<BalanceOf<T>>();
 
             // 从质押池转帐 vtoken 到用户
-            let to = Self::staking_pool_account(vasset_id);
-            wetee_assets::Pallet::<T>::try_transfer(vasset_id, to, who.clone(), vamount)?;
+            let from = Self::staking_pool_account(vasset_id);
+            wetee_assets::Pallet::<T>::try_transfer(vasset_id, from, who.clone(), vamount)?;
 
             // 获取当前的质押数据
             let pre_staking =
@@ -551,6 +560,47 @@ pub mod pallet {
             );
 
             let _ = Economics::<T>::remove(asset_id);
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(009)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
+        pub fn v_staking_cancel(
+            origin: OriginFor<T>,
+            vasset_id: WeAssetId,
+            vamount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            // 获取 vtoken 对应的 token
+            let (asset_id, (pool, vpool)) =
+                Vtoken2token::<T>::get(vasset_id).ok_or(Error::<T>::VtokenNotExists)?;
+            let amount = vamount * pool.saturated_into::<BalanceOf<T>>()
+                / vpool.saturated_into::<BalanceOf<T>>();
+
+            // 从质押池转帐 vtoken 到用户
+            let from = Self::staking_pool_account(vasset_id);
+            wetee_assets::Pallet::<T>::try_transfer(vasset_id, from, who.clone(), vamount)?;
+
+            // 获取当前的质押数据
+            let pre_staking =
+                ToStakings::<T>::get(who.clone(), asset_id).ok_or(Error::<T>::StakingNotExists)?;
+
+            // 超过质押量的 unstaking 不允许
+            if pre_staking < amount {
+                return Err(Error::<T>::Amount403.into());
+            }
+
+            // 取现
+            let now_amount = pre_staking - amount;
+
+            // 如果某个币种的质押量已经为0，则删除该币种的质押数据
+            if now_amount == 0u32.into() {
+                ToStakings::<T>::remove(who.clone(), asset_id);
+            } else {
+                ToStakings::<T>::insert(who.clone(), asset_id, now_amount);
+            }
 
             Ok(().into())
         }
