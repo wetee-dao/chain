@@ -192,7 +192,7 @@ pub fn new_test_run() -> sp_io::TestExternalities {
         .unwrap();
 
     pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE, 100000000)],
+        balances: vec![(ALICE, 10000000000000000)],
     }
     .assimilate_storage(&mut t)
     .unwrap();

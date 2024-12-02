@@ -53,6 +53,18 @@ pub fn init() {
 }
 
 #[test]
+pub fn block_reward() {
+    new_test_run().execute_with(|| {
+        init();
+
+        run_to_block(2);
+
+        let banlance = System::account(BOB);
+        assert!(banlance.data.free == (WTE / 10) as u64);
+    });
+}
+
+#[test]
 pub fn v_staking() {
     new_test_run().execute_with(|| {
         init();
@@ -64,6 +76,14 @@ pub fn v_staking() {
 
         let reward = Pallet::<Test>::next_block_reward(51, ALICE).unwrap();
         assert!(reward);
+
+        let reward = System::account(ALICE);
+        assert!(reward.data.free == 10000000000000000);
+
+        run_to_block(101);
+
+        let reward2 = System::account(ALICE);
+        assert!(reward2.data.free == 10032483750000000);
     });
 }
 

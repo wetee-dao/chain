@@ -165,7 +165,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// nomal success
+        /// block reward success
         /// 成功的事件
         BlockReward {
             block: BlockNumberFor<T>,
@@ -278,7 +278,7 @@ pub mod pallet {
                     Stakings::<T>::set(user.clone(), asset_id, Some(new_staking));
 
                     // 触发总质押数钩子
-                    Self::staking_hook(asset_id, StakeFunc::Stake, pending_staking);
+                    Self::staking_hook(asset_id, StakeFunc::Stake, user.clone(), pending_staking);
                 }
 
                 // 删除已经处理的数据
@@ -466,7 +466,7 @@ pub mod pallet {
             }
 
             // 触发总质押数钩子
-            Self::staking_hook(asset_id, StakeFunc::UnStake, amount);
+            Self::staking_hook(asset_id, StakeFunc::UnStake, who, amount);
 
             Ok(().into())
         }
@@ -657,14 +657,21 @@ pub mod pallet {
             (pre_reward, curr_epoch, curr_reward)
         }
 
-        pub fn staking_hook(asset_id: WeAssetId, func: StakeFunc, amount: BalanceOf<T>) {
+        pub fn staking_hook(
+            asset_id: WeAssetId,
+            func: StakeFunc,
+            user: T::AccountId,
+            amount: BalanceOf<T>,
+        ) {
             let mut total = StakingTotal::<T>::get(asset_id);
             match func {
                 StakeFunc::Stake => {
                     total = total + amount;
+                    let _ = wetee_assets::Pallet::<T>::try_deposit(asset_id, user.clone(), amount);
                 }
                 StakeFunc::UnStake => {
                     total = total - amount;
+                    let _ = wetee_assets::Pallet::<T>::try_burn(asset_id, user.clone(), amount);
                 }
             };
             StakingTotal::<T>::insert(asset_id, total);
