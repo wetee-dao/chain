@@ -11,10 +11,10 @@ use frame_system;
 use orml_traits::parameter_type_with_key;
 use sp_runtime::{traits::Zero, BuildStorage};
 use sp_std::result::Result;
-use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
+use wetee_assets::ext::BasicCurrencyAdapter;
 use wetee_primitives::{
     traits::{UHook, WorkExt},
-    types::{WeAssetId, TEEVersion, WorkId},
+    types::{TEEVersion, WeAssetId, WorkId},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -222,8 +222,8 @@ impl wetee_assets::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type MaxCreatableId = MaxCreatableId;
-    type MultiAsset = Tokens;
-    type NativeAsset = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+    type MultiCurrency = Tokens;
+    type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 }
 
 pub fn new_test_run() -> sp_io::TestExternalities {

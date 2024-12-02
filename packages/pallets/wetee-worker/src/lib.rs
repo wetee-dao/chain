@@ -31,7 +31,7 @@ pub use pallet::*;
 pub mod pallet {
     use super::*;
 
-    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
+    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiCurrency as MultiCurrency<
         <T as frame_system::Config>::AccountId,
     >>::Balance;
 
@@ -524,7 +524,7 @@ pub mod pallet {
 
             // reserve assets
             // 质押保证金
-            wetee_assets::Pallet::<T>::reserve(0, creator, deposit)?;
+            wetee_assets::Pallet::<T>::try_reserve(0, creator, deposit)?;
 
             Ok(().into())
         }
@@ -574,7 +574,7 @@ pub mod pallet {
 
             // release assets
             // 释放质押保证金
-            wetee_assets::Pallet::<T>::unreserve(0, creator, d.deposit)?;
+            wetee_assets::Pallet::<T>::try_unreserve(0, creator, d.deposit)?;
 
             Ok(().into())
         }
@@ -790,7 +790,7 @@ pub mod pallet {
             // 解除所有的抵押
             while let Some(value) = iter.next() {
                 Deposits::<T>::remove(cluster_id, value.0);
-                wetee_assets::Pallet::<T>::unreserve(
+                wetee_assets::Pallet::<T>::try_unreserve(
                     wetee_assets::NATIVE_ASSET_ID,
                     who.clone(),
                     value.1.deposit,

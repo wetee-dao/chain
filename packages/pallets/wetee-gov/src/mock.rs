@@ -13,7 +13,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Zero, BuildStorage, DispatchError};
 use sp_std::result::Result;
-use wetee_assets::asset_adaper_in_pallet::BasicCurrencyAdapter;
+use wetee_assets::ext::BasicCurrencyAdapter;
 use wetee_primitives::{
     traits::{GovIsJoin, PalletGet, UHook},
     types::{CallId, WeAssetId},
@@ -162,8 +162,8 @@ impl wetee_assets::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type MaxCreatableId = MaxCreatableId;
-    type MultiAsset = Tokens;
-    type NativeAsset = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+    type MultiCurrency = Tokens;
+    type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 }
 
 #[derive(

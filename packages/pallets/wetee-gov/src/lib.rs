@@ -205,7 +205,7 @@ pub mod pallet {
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     // use frame_system::pallet_prelude::*;
 
-    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
+    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiCurrency as MultiCurrency<
         <T as frame_system::Config>::AccountId,
     >>::Balance;
 
@@ -844,7 +844,7 @@ pub mod pallet {
                     if h.1 > now {
                         true
                     } else {
-                        wetee_assets::Pallet::<T>::unreserve(dao_id, who.clone(), h.0).unwrap();
+                        wetee_assets::Pallet::<T>::try_unreserve(dao_id, who.clone(), h.0).unwrap();
                         total += h.0;
                         false
                     }
@@ -1002,7 +1002,7 @@ pub mod pallet {
 
             // 添加提案抵押
             #[cfg(not(feature = "runtime-benchmarks"))]
-            wetee_assets::Pallet::<T>::reserve(dao_id, who.clone(), deposit)?;
+            wetee_assets::Pallet::<T>::try_reserve(dao_id, who.clone(), deposit)?;
 
             // 确认用户属于可提案的用户范围
             Self::check_auth_for_vote(dao_id, member_data.clone(), who.clone())?;

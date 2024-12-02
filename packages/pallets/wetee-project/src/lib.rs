@@ -156,7 +156,7 @@ pub struct Tally {
 pub mod pallet {
     use super::*;
 
-    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
+    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiCurrency as MultiCurrency<
         <T as frame_system::Config>::AccountId,
     >>::Balance;
 
@@ -405,7 +405,7 @@ pub mod pallet {
             let project = Self::get_project(dao_id, project_id)?;
 
             // 预备资金
-            wetee_assets::Pallet::<T>::reserve(dao_id, project.dao_account_id, amount)?;
+            wetee_assets::Pallet::<T>::try_reserve(dao_id, project.dao_account_id, amount)?;
 
             // 插入任务id
             let mut tasks = <Tasks<T>>::get(project_id);
@@ -690,7 +690,7 @@ pub mod pallet {
             let amount: BalanceOf<T> = amount_u64.saturated_into();
 
             // 解锁预备资金
-            wetee_assets::Pallet::<T>::unreserve(dao_id, project_account.clone(), total)?;
+            wetee_assets::Pallet::<T>::try_unreserve(dao_id, project_account.clone(), total)?;
 
             // 为所有的贡献者转帐
             for assignee in task.assignees.iter() {

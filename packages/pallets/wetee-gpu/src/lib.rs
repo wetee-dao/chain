@@ -93,7 +93,7 @@ pub struct Price {
 pub mod pallet {
     use super::*;
 
-    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
+    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiCurrency as MultiCurrency<
         <T as frame_system::Config>::AccountId,
     >>::Balance;
 

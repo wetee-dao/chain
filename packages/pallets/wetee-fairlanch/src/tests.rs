@@ -5,6 +5,7 @@ use crate as wetee_app;
 use crate::mock::{RuntimeCall, *};
 use frame_support::{assert_noop, assert_ok, debug};
 use frame_system::pallet_prelude::OriginFor;
+use orml_traits::MultiCurrency;
 use wetee_primitives::types::{DiskClass, EnvKey};
 
 pub const ALICE: u64 = 1;
@@ -59,8 +60,8 @@ pub fn block_reward() {
 
         run_to_block(2);
 
-        let banlance = System::account(BOB);
-        assert!(banlance.data.free == (WTE / 10) as u64);
+        let balance = System::account(BOB);
+        assert!(balance.data.free == (WTE / 10) as u64);
     });
 }
 
@@ -115,6 +116,12 @@ pub fn v_unstaking() {
 
         let staking = Pallet::<Test>::stakings(ALICE, ASSET_ID).unwrap();
         assert!(staking == 120);
+
+        let balance = Tokens::free_balance(ASSET_ID, &ALICE);
+        println!("balance_free: {}", balance);
+
+        let balance_lock = Tokens::locks(ASSET_ID, &ALICE.clone());
+        println!("balance_lock: {:?}", balance_lock);
 
         Pallet::<Test>::v_unstaking(OriginFor::<Test>::signed(ALICE), VASSET_ID, 10).unwrap();
 

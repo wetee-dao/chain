@@ -215,8 +215,8 @@
 //     type RuntimeEvent = RuntimeEvent;
 //     type WeightInfo = ();
 //     type MaxCreatableId = MaxCreatableId;
-//     type MultiAsset = Tokens;
-//     type NativeAsset = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+//     type MultiCurrency = Tokens;
+//     type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 // }
 
 // impl wetee_sudo::Config for Test {

@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 use super::*;
-use crate::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
+use crate::{self as wetee_assets, ext::BasicCurrencyAdapter};
 use frame_support::{construct_runtime, derive_impl, parameter_types, traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
-use sp_runtime::BuildStorage;
+use sp_runtime::{traits::Zero, BuildStorage};
 
 use wetee_primitives::{
     traits::UHook,
@@ -160,8 +160,8 @@ impl wetee_assets::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type MaxCreatableId = MaxCreatableId;
-    type MultiAsset = Tokens;
-    type NativeAsset = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+    type MultiCurrency = Tokens;
+    type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 }
 
 impl wetee_sudo::Config for Test {

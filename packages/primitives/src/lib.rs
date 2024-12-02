@@ -18,6 +18,9 @@ pub mod types;
 //     Ok(s.as_bytes().to_vec())
 // }
 
+// 1 WTE = 1_000_000_000_000
+pub const WTE: u128 = 1_000_000_000_000;
+
 pub fn msg2bytes<N: Get<u32>>(x: &str) -> BoundedSlice<u8, N> {
     BoundedSlice::defensive_truncate_from(x.as_bytes())
 }

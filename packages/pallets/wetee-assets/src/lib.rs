@@ -25,40 +25,26 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     pallet_prelude::*,
-    sp_runtime::SaturatedConversion,
-    traits::{
-        Currency as PalletCurrency, ExistenceRequirement, Get,
-        LockableCurrency as PalletLockableCurrency, ReservableCurrency as PalletReservableCurrency,
-        WithdrawReasons,
-    },
+    traits::{Get, LockIdentifier},
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
 use orml_traits::{
-    arithmetic::{Signed, SimpleArithmetic},
-    BalanceStatus, BasicCurrency, BasicCurrencyExtended, BasicLockableCurrency,
-    BasicReservableCurrency, LockIdentifier, MultiCurrency, MultiCurrencyExtended,
-    MultiLockableCurrency, MultiReservableCurrency,
+    currency::TransferAll, BasicCurrencyExtended, BasicLockableCurrency, BasicReservableCurrency,
+    MultiCurrency, MultiCurrencyExtended, MultiLockableCurrency, MultiReservableCurrency,
+    NamedBasicReservableCurrency, NamedMultiReservableCurrency,
 };
-use parity_scale_codec::{Codec, Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode};
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
 
-use sp_runtime::{
-    traits::{CheckedSub, MaybeSerializeDeserialize, StaticLookup, Zero},
-    RuntimeDebug,
-};
+use sp_runtime::{traits::StaticLookup, RuntimeDebug};
 use sp_std::{
     convert::{TryFrom, TryInto},
-    fmt::Debug,
-    marker, result,
+    result,
 };
 use wetee_primitives::types::WeAssetId;
 
-pub mod asset_adaper_in_pallet;
-mod asset_in_pallet;
-mod impl_currency_handler;
-mod impl_multi_currency;
-
+pub mod ext;
 pub use pallet::*;
 
 #[cfg(test)]
@@ -72,9 +58,6 @@ mod benchmarking;
 
 mod weights;
 pub use weights::WeightInfo;
-
-mod traits;
-use traits::CurrenciesHandler;
 
 pub const NATIVE_ASSET_ID: WeAssetId = 0;
 
@@ -99,43 +82,52 @@ pub struct AssetInfo<AccountId, AssetMeta> {
 
 #[frame_support::pallet]
 pub mod pallet {
+    use sp_runtime::SaturatedConversion;
+
     use super::*;
 
-    pub(crate) type BalanceOf<T> = <<T as Config>::MultiAsset as MultiCurrency<
+    pub(crate) type BalanceOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<
         <T as frame_system::Config>::AccountId,
     >>::Balance;
-
-    pub(crate) type AmountOf<T> = <<T as Config>::MultiAsset as MultiCurrencyExtended<
+    pub(crate) type AmountOf<T> = <<T as Config>::MultiCurrency as MultiCurrencyExtended<
         <T as frame_system::Config>::AccountId,
     >>::Amount;
+    pub(crate) type ReserveIdentifierOf<T> =
+        <<T as Config>::MultiCurrency as NamedMultiReservableCurrency<
+            <T as frame_system::Config>::AccountId,
+        >>::ReserveIdentifier;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + wetee_dao::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// we asset
+        /// multi asset
         /// 组织内部资产
-        type MultiAsset: MultiCurrency<Self::AccountId, CurrencyId = WeAssetId>
+        type MultiCurrency: TransferAll<Self::AccountId>
+            + MultiCurrency<Self::AccountId, CurrencyId = WeAssetId>
             + MultiCurrencyExtended<Self::AccountId>
             + MultiLockableCurrency<Self::AccountId>
-            + MultiReservableCurrency<Self::AccountId>;
+            + MultiReservableCurrency<Self::AccountId>
+            + NamedMultiReservableCurrency<Self::AccountId>;
 
-        /// we naive token
-        /// 链上原生通证
-        type NativeAsset: BasicCurrencyExtended<
+        type NativeCurrency: BasicCurrencyExtended<
                 Self::AccountId,
                 Balance = BalanceOf<Self>,
                 Amount = AmountOf<Self>,
             > + BasicLockableCurrency<Self::AccountId, Balance = BalanceOf<Self>>
-            + BasicReservableCurrency<Self::AccountId, Balance = BalanceOf<Self>>;
-
-        /// Weight information for extrinsics in this pallet.
-        /// 链上 weight
-        type WeightInfo: WeightInfo;
+            + BasicReservableCurrency<Self::AccountId, Balance = BalanceOf<Self>>
+            + NamedBasicReservableCurrency<
+                Self::AccountId,
+                ReserveIdentifierOf<Self>,
+                Balance = BalanceOf<Self>,
+            >;
 
         /// Maximum assets that can be created
         /// 最多可创建组织数量
         type MaxCreatableId: Get<WeAssetId>;
+
+        /// Weight information for extrinsics in this module.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::error]
@@ -159,6 +151,8 @@ pub mod pallet {
         DepositNotZero,
         DepositRateError,
         BadWeOrigin,
+        /// Deposit result is not expected
+        DepositFailed,
     }
 
     #[pallet::event]
@@ -309,6 +303,11 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        /// 总发行量
+        pub fn total_issuance(asset_id: WeAssetId) -> BalanceOf<T> {
+            <Self as MultiCurrency<T::AccountId>>::total_issuance(asset_id)
+        }
+
         /// 获取账户金额
         pub fn get_balance(
             asset_id: WeAssetId,
@@ -319,7 +318,7 @@ pub mod pallet {
         }
 
         // 设置账户金额
-        pub fn set_balance(
+        pub fn try_set_balance(
             asset_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
@@ -329,7 +328,7 @@ pub mod pallet {
         }
 
         /// 为...锁定保证金
-        pub fn reserve(
+        pub fn try_reserve(
             asset_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
@@ -339,7 +338,7 @@ pub mod pallet {
         }
 
         /// 解除保证
-        pub fn unreserve(
+        pub fn try_unreserve(
             asset_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
@@ -349,17 +348,12 @@ pub mod pallet {
         }
 
         /// 尽可能解除保证
-        pub fn slash_reserved(
+        pub fn try_slash_reserved(
             asset_id: WeAssetId,
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> BalanceOf<T> {
             <Self as MultiReservableCurrency<T::AccountId>>::slash_reserved(asset_id, &who, value)
-        }
-
-        /// 总发行量
-        pub fn total_issuance(asset_id: WeAssetId) -> BalanceOf<T> {
-            <Self as MultiCurrency<T::AccountId>>::total_issuance(asset_id)
         }
 
         pub fn try_create(
@@ -368,7 +362,38 @@ pub mod pallet {
             metadata: AssetMeta,
             amount: BalanceOf<T>,
         ) -> DispatchResult {
-            Self::do_create(user, asset_id, metadata, amount)
+            // Self::do_create(user, asset_id, metadata, amount)
+
+            ensure!(
+                !Self::is_exists(asset_id)
+                    && <T as pallet::Config>::MultiCurrency::total_issuance(asset_id)
+                        == BalanceOf::<T>::from(0u32),
+                Error::<T>::AssetAlreadyExists
+            );
+
+            ensure!(
+                !Self::is_asset_id_too_large(asset_id),
+                Error::<T>::CurrencyIdTooLarge
+            );
+
+            #[cfg(test)]
+            println!(
+                "\n初始化 TOKEN 池 =>> Asset_id:{:?} ||| Free_amount: {:?}",
+                asset_id, amount
+            );
+
+            <T as pallet::Config>::MultiCurrency::deposit(asset_id, &user, amount)?;
+
+            AssetsInfo::<T>::insert(
+                asset_id,
+                AssetInfo {
+                    owner: user.clone(),
+                    metadata,
+                },
+            );
+            Self::deposit_event(Event::CreateAsset(user, asset_id, amount));
+
+            Ok(())
         }
 
         /// 转帐
@@ -418,26 +443,49 @@ pub mod pallet {
 
             Ok(().into())
         }
-    }
-}
 
-impl<T: Config> Pallet<T> {
-    /// 判断资产是否存在
-    pub fn is_exists(asset_id: WeAssetId) -> bool {
-        if asset_id == NATIVE_ASSET_ID {
-            return true;
-        }
-        if AssetsInfo::<T>::get(asset_id).is_some() {
-            return true;
-        }
-        false
-    }
+        // 锁定资产
+        pub fn try_extend_lock(
+            lock_id: LockIdentifier,
+            asset_id: WeAssetId,
+            who: T::AccountId,
+            amount: BalanceOf<T>,
+        ) -> result::Result<(), DispatchError> {
+            // 确认组织是否存在
+            ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
-    /// 判断资产ID是否太大
-    pub fn is_asset_id_too_large(asset_id: WeAssetId) -> bool {
-        if asset_id >= T::MaxCreatableId::get() {
-            return true;
+            T::MultiCurrency::extend_lock(lock_id, asset_id, &who, amount)
         }
-        false
+
+        // 解除资产锁定
+        pub fn try_remove_lock(
+            lock_id: LockIdentifier,
+            asset_id: WeAssetId,
+            who: T::AccountId,
+        ) -> result::Result<(), DispatchError> {
+            // 确认组织是否存在
+            ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
+
+            T::MultiCurrency::remove_lock(lock_id, asset_id, &who)
+        }
+
+        /// 判断资产是否存在
+        pub fn is_exists(asset_id: WeAssetId) -> bool {
+            if asset_id == NATIVE_ASSET_ID {
+                return true;
+            }
+            if AssetsInfo::<T>::get(asset_id).is_some() {
+                return true;
+            }
+            false
+        }
+
+        /// 判断资产ID是否太大
+        pub fn is_asset_id_too_large(asset_id: WeAssetId) -> bool {
+            if asset_id >= T::MaxCreatableId::get() {
+                return true;
+            }
+            false
+        }
     }
 }

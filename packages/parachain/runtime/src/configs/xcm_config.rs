@@ -15,7 +15,7 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom,
     DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FixedWeightBounds,
-    FrameTransactionalProcessor, FungibleAdapter, IsConcrete, NativeAsset, ParentIsPreset,
+    FrameTransactionalProcessor, FungibleAdapter, IsConcrete, NativeCurrency, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     TrailingSetTopicAsId, UsingComponents, WithComputedOrigin, WithUniqueTopic,
@@ -127,7 +127,7 @@ impl xcm_executor::Config for XcmConfig {
     // How to withdraw and deposit an asset.
     type AssetTransactor = LocalAssetTransactor;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = NativeAsset;
+    type IsReserve = NativeCurrency;
     type IsTeleporter = (); // Teleporting is disabled.
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;

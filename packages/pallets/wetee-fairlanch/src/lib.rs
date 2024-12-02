@@ -5,14 +5,16 @@ use frame_support::{
     pallet_prelude::*,
     sp_runtime::{traits::AccountIdConversion, SaturatedConversion},
     traits::FindAuthor,
+    traits::LockIdentifier,
     PalletId,
 };
-use orml_traits::MultiCurrency;
 pub use pallet::*;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
+use wetee_primitives::{types::WeAssetId, WTE};
 
-use wetee_primitives::types::WeAssetId;
+use orml_traits::MultiCurrency;
+use sp_std::result;
 
 #[cfg(test)]
 mod mock;
@@ -26,8 +28,7 @@ mod benchmarking;
 mod weights;
 pub use weights::WeightInfo;
 
-// 1 WTE = 1_000_000_000_000
-const WTE: u128 = 1_000_000_000_000;
+pub const STAKING_LOCK: LockIdentifier = *b"staking ";
 
 // 质押中操作函数
 #[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
@@ -44,7 +45,7 @@ pub mod pallet {
     use frame_support::dispatch::DispatchResultWithPostInfo;
     use frame_system::pallet_prelude::{BlockNumberFor, *};
 
-    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiAsset as MultiCurrency<
+    pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiCurrency as MultiCurrency<
         <T as frame_system::Config>::AccountId,
     >>::Balance;
 
@@ -278,7 +279,8 @@ pub mod pallet {
                     Stakings::<T>::set(user.clone(), asset_id, Some(new_staking));
 
                     // 触发总质押数钩子
-                    Self::staking_hook(asset_id, StakeFunc::Stake, user.clone(), pending_staking);
+                    Self::staking_hook(asset_id, StakeFunc::Stake, user.clone(), pending_staking)
+                        .unwrap();
                 }
 
                 // 删除已经处理的数据
@@ -466,7 +468,7 @@ pub mod pallet {
             }
 
             // 触发总质押数钩子
-            Self::staking_hook(asset_id, StakeFunc::UnStake, who, amount);
+            Self::staking_hook(asset_id, StakeFunc::UnStake, who, amount)?;
 
             Ok(().into())
         }
@@ -636,8 +638,8 @@ pub mod pallet {
             if new_epoch > curr_epoch {
                 #[cfg(test)]
                 println!(
-                    "+++++++++++++++++++++++++++ go into new new_epoch {:?} blockNumber {:?}  pre_epoch {:?}",
-                    new_epoch, n, curr_epoch
+                    ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> into new_epoch => {:?} | blockNumber => {:?}",
+                    new_epoch, n
                 );
 
                 // a=1，公比 r=0.9995 1460天时（4年），奖励为0.9995^1460=0.500474，即4年减半
@@ -662,19 +664,35 @@ pub mod pallet {
             func: StakeFunc,
             user: T::AccountId,
             amount: BalanceOf<T>,
-        ) {
+        ) -> result::Result<(), DispatchError> {
+            wetee_assets::Pallet::<T>::try_remove_lock(STAKING_LOCK, asset_id, user.clone())?;
+
             let mut total = StakingTotal::<T>::get(asset_id);
             match func {
                 StakeFunc::Stake => {
                     total = total + amount;
-                    let _ = wetee_assets::Pallet::<T>::try_deposit(asset_id, user.clone(), amount);
+                    wetee_assets::Pallet::<T>::try_deposit(asset_id, user.clone(), amount)?;
                 }
                 StakeFunc::UnStake => {
                     total = total - amount;
-                    let _ = wetee_assets::Pallet::<T>::try_burn(asset_id, user.clone(), amount);
+                    wetee_assets::Pallet::<T>::try_burn(asset_id, user.clone(), amount)?;
                 }
             };
+
+            let user_total =
+                wetee_assets::Pallet::<T>::get_balance(asset_id, user.clone()).unwrap();
+
+            if user_total > 0u32.into() {
+                wetee_assets::Pallet::<T>::try_extend_lock(
+                    STAKING_LOCK,
+                    asset_id,
+                    user.clone(),
+                    user_total,
+                )?;
+            }
+
             StakingTotal::<T>::insert(asset_id, total);
+            Ok(())
         }
     }
 }

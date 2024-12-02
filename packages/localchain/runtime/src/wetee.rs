@@ -134,8 +134,8 @@ impl wetee_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type MaxCreatableId = MaxCreatableId;
-    type MultiAsset = Tokens;
-    type NativeAsset = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
+    type MultiCurrency = Tokens;
+    type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
 }
 
 impl wetee_sudo::Config for Runtime {

@@ -7,7 +7,7 @@ use orml_traits::parameter_type_with_key;
 use sp_runtime::{traits::Zero, BuildStorage};
 use wetee_gov::traits::PledgeTrait;
 
-use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
+use wetee_assets::{self as wetee_assets, ext::BasicCurrencyAdapter};
 use wetee_primitives::{
     traits::{GovIsJoin, PalletGet, UHook},
     types::{CallId, WeAssetId},
@@ -208,8 +208,8 @@ impl wetee_assets::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type MaxCreatableId = MaxCreatableId;
-    type MultiAsset = Tokens;
-    type NativeAsset = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+    type MultiCurrency = Tokens;
+    type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 }
 
 impl wetee_sudo::Config for Test {
