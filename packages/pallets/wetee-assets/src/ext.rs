@@ -68,11 +68,11 @@ use sp_std::{fmt::Debug, marker, result};
 use super::*;
 
 impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
-    type CurrencyId = WeAssetId;
+    type CurrencyId = CurrencyIdOf<T>;
     type Balance = BalanceOf<T>;
 
     fn minimum_balance(currency_id: Self::CurrencyId) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::minimum_balance()
         } else {
             T::MultiCurrency::minimum_balance(currency_id)
@@ -80,7 +80,7 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
     }
 
     fn total_issuance(currency_id: Self::CurrencyId) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::total_issuance()
         } else {
             T::MultiCurrency::total_issuance(currency_id)
@@ -88,7 +88,7 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
     }
 
     fn total_balance(currency_id: Self::CurrencyId, who: &T::AccountId) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::total_balance(who)
         } else {
             T::MultiCurrency::total_balance(currency_id, who)
@@ -96,7 +96,7 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
     }
 
     fn free_balance(currency_id: Self::CurrencyId, who: &T::AccountId) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::free_balance(who)
         } else {
             T::MultiCurrency::free_balance(currency_id, who)
@@ -108,7 +108,7 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         amount: Self::Balance,
     ) -> DispatchResult {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::ensure_can_withdraw(who, amount)
         } else {
             T::MultiCurrency::ensure_can_withdraw(currency_id, who, amount)
@@ -124,7 +124,7 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
         if amount.is_zero() || from == to {
             return Ok(());
         }
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::transfer(from, to, amount)
         } else {
             T::MultiCurrency::transfer(currency_id, from, to, amount)
@@ -139,7 +139,7 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
         if amount.is_zero() {
             return Ok(());
         }
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::deposit(who, amount)
         } else {
             T::MultiCurrency::deposit(currency_id, who, amount)
@@ -154,7 +154,7 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
         if amount.is_zero() {
             return Ok(());
         }
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::withdraw(who, amount)
         } else {
             T::MultiCurrency::withdraw(currency_id, who, amount)
@@ -162,7 +162,7 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
     }
 
     fn can_slash(currency_id: Self::CurrencyId, who: &T::AccountId, amount: Self::Balance) -> bool {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::can_slash(who, amount)
         } else {
             T::MultiCurrency::can_slash(currency_id, who, amount)
@@ -174,7 +174,7 @@ impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         amount: Self::Balance,
     ) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::slash(who, amount)
         } else {
             T::MultiCurrency::slash(currency_id, who, amount)
@@ -190,7 +190,7 @@ impl<T: Config> MultiCurrencyExtended<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         by_amount: Self::Amount,
     ) -> DispatchResult {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::update_balance(who, by_amount)
         } else {
             T::MultiCurrency::update_balance(currency_id, who, by_amount)
@@ -207,7 +207,7 @@ impl<T: Config> MultiLockableCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         amount: Self::Balance,
     ) -> DispatchResult {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::set_lock(lock_id, who, amount)
         } else {
             T::MultiCurrency::set_lock(lock_id, currency_id, who, amount)
@@ -220,7 +220,7 @@ impl<T: Config> MultiLockableCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         amount: Self::Balance,
     ) -> DispatchResult {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::extend_lock(lock_id, who, amount)
         } else {
             T::MultiCurrency::extend_lock(lock_id, currency_id, who, amount)
@@ -232,7 +232,7 @@ impl<T: Config> MultiLockableCurrency<T::AccountId> for Pallet<T> {
         currency_id: Self::CurrencyId,
         who: &T::AccountId,
     ) -> DispatchResult {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::remove_lock(lock_id, who)
         } else {
             T::MultiCurrency::remove_lock(lock_id, currency_id, who)
@@ -246,7 +246,7 @@ impl<T: Config> MultiReservableCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         value: Self::Balance,
     ) -> bool {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::can_reserve(who, value)
         } else {
             T::MultiCurrency::can_reserve(currency_id, who, value)
@@ -258,7 +258,7 @@ impl<T: Config> MultiReservableCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         value: Self::Balance,
     ) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::slash_reserved(who, value)
         } else {
             T::MultiCurrency::slash_reserved(currency_id, who, value)
@@ -266,7 +266,7 @@ impl<T: Config> MultiReservableCurrency<T::AccountId> for Pallet<T> {
     }
 
     fn reserved_balance(currency_id: Self::CurrencyId, who: &T::AccountId) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::reserved_balance(who)
         } else {
             T::MultiCurrency::reserved_balance(currency_id, who)
@@ -278,7 +278,7 @@ impl<T: Config> MultiReservableCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         value: Self::Balance,
     ) -> DispatchResult {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::reserve(who, value)
         } else {
             T::MultiCurrency::reserve(currency_id, who, value)
@@ -290,7 +290,7 @@ impl<T: Config> MultiReservableCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         value: Self::Balance,
     ) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::unreserve(who, value)
         } else {
             T::MultiCurrency::unreserve(currency_id, who, value)
@@ -304,7 +304,7 @@ impl<T: Config> MultiReservableCurrency<T::AccountId> for Pallet<T> {
         value: Self::Balance,
         status: BalanceStatus,
     ) -> result::Result<Self::Balance, DispatchError> {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::repatriate_reserved(slashed, beneficiary, value, status)
         } else {
             T::MultiCurrency::repatriate_reserved(currency_id, slashed, beneficiary, value, status)
@@ -321,7 +321,7 @@ impl<T: Config> NamedMultiReservableCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         value: Self::Balance,
     ) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::slash_reserved_named(id, who, value)
         } else {
             T::MultiCurrency::slash_reserved_named(id, currency_id, who, value)
@@ -333,7 +333,7 @@ impl<T: Config> NamedMultiReservableCurrency<T::AccountId> for Pallet<T> {
         currency_id: Self::CurrencyId,
         who: &T::AccountId,
     ) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::reserved_balance_named(id, who)
         } else {
             T::MultiCurrency::reserved_balance_named(id, currency_id, who)
@@ -346,7 +346,7 @@ impl<T: Config> NamedMultiReservableCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         value: Self::Balance,
     ) -> DispatchResult {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::reserve_named(id, who, value)
         } else {
             T::MultiCurrency::reserve_named(id, currency_id, who, value)
@@ -359,7 +359,7 @@ impl<T: Config> NamedMultiReservableCurrency<T::AccountId> for Pallet<T> {
         who: &T::AccountId,
         value: Self::Balance,
     ) -> Self::Balance {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::unreserve_named(id, who, value)
         } else {
             T::MultiCurrency::unreserve_named(id, currency_id, who, value)
@@ -374,7 +374,7 @@ impl<T: Config> NamedMultiReservableCurrency<T::AccountId> for Pallet<T> {
         value: Self::Balance,
         status: BalanceStatus,
     ) -> result::Result<Self::Balance, DispatchError> {
-        if currency_id == NATIVE_ASSET_ID {
+        if currency_id == T::GetNativeCurrencyId::get() {
             T::NativeCurrency::repatriate_reserved_named(id, slashed, beneficiary, value, status)
         } else {
             T::MultiCurrency::repatriate_reserved_named(
@@ -394,7 +394,7 @@ pub struct Currency<T, GetCurrencyId>(marker::PhantomData<T>, marker::PhantomDat
 impl<T, GetCurrencyId> BasicCurrency<T::AccountId> for Currency<T, GetCurrencyId>
 where
     T: Config,
-    GetCurrencyId: Get<WeAssetId>,
+    GetCurrencyId: Get<CurrencyIdOf<T>>,
 {
     type Balance = BalanceOf<T>;
 
@@ -442,7 +442,7 @@ where
 impl<T, GetCurrencyId> BasicCurrencyExtended<T::AccountId> for Currency<T, GetCurrencyId>
 where
     T: Config,
-    GetCurrencyId: Get<WeAssetId>,
+    GetCurrencyId: Get<CurrencyIdOf<T>>,
 {
     type Amount = AmountOf<T>;
 
@@ -458,7 +458,7 @@ where
 impl<T, GetCurrencyId> BasicLockableCurrency<T::AccountId> for Currency<T, GetCurrencyId>
 where
     T: Config,
-    GetCurrencyId: Get<WeAssetId>,
+    GetCurrencyId: Get<CurrencyIdOf<T>>,
 {
     type Moment = BlockNumberFor<T>;
 
@@ -500,7 +500,7 @@ where
 impl<T, GetCurrencyId> BasicReservableCurrency<T::AccountId> for Currency<T, GetCurrencyId>
 where
     T: Config,
-    GetCurrencyId: Get<WeAssetId>,
+    GetCurrencyId: Get<CurrencyIdOf<T>>,
 {
     fn can_reserve(who: &T::AccountId, value: Self::Balance) -> bool {
         <Pallet<T> as MultiReservableCurrency<T::AccountId>>::can_reserve(
@@ -561,7 +561,7 @@ impl<T, GetCurrencyId> NamedBasicReservableCurrency<T::AccountId, ReserveIdentif
     for Currency<T, GetCurrencyId>
 where
     T: Config,
-    GetCurrencyId: Get<WeAssetId>,
+    GetCurrencyId: Get<CurrencyIdOf<T>>,
 {
     fn slash_reserved_named(
         id: &ReserveIdentifierOf<T>,
@@ -628,7 +628,7 @@ where
     }
 }
 
-pub type NativeCurrencyOf<T> = Currency<T, WeAssetId>;
+pub type NativeCurrencyOf<T> = Currency<T, <T as Config>::GetNativeCurrencyId>;
 
 /// Adapt other currency traits implementation to `BasicCurrency`.
 pub struct BasicCurrencyAdapter<T, Currency, Amount, Moment>(

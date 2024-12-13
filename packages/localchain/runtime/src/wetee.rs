@@ -3,7 +3,7 @@ use crate::*;
 use frame_support::{traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
 use sp_runtime::traits::{Verify, Zero};
-use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
+use wetee_assets::{self as wetee_assets, ext::BasicCurrencyAdapter};
 use wetee_primitives::{
     traits::{GovIsJoin, UHook},
     types::{CallId, WeAssetId},

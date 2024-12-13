@@ -718,9 +718,9 @@ pub mod pallet {
 
             let mint_account = Self::get_mint_account(work_id.clone(), cluster_id);
             ensure!(
-                wetee_assets::Pallet::<T>::free_balance(
+                wetee_assets::Pallet::<T>::get_free_balance(
                     wetee_assets::NATIVE_ASSET_ID,
-                    &mint_account
+                    mint_account.clone()
                 ) >= amount,
                 Error::<T>::InsufficientBalance
             );

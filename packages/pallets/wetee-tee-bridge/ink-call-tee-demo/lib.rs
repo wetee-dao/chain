@@ -14,7 +14,7 @@ mod test_contract {
         /// been started yet
         NotStarted,
         /// end with status code
-        End(u8)
+        End(u8),
     }
 
     #[ink(storage)]
@@ -74,11 +74,11 @@ mod test_contract {
 
         #[ink(message)]
         pub fn test_input(
-            &mut self, 
-            account: AccountId, 
-            balance: Balance,
-            status: Status,
-            o: Option<u8> 
+            &mut self,
+            _account: AccountId,
+            _balance: Balance,
+            _status: Status,
+            _o: Option<u8>,
         ) -> Result<(), TbExtErr> {
             Ok(())
         }

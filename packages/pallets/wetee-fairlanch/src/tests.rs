@@ -118,7 +118,9 @@ pub fn v_unstaking() {
         assert!(staking == 120);
 
         let balance = Tokens::free_balance(ASSET_ID, &ALICE);
-        println!("balance_free: {}", balance);
+        assert!(balance == 120);
+
+        assert!(Asset::transfer(OriginFor::<Test>::signed(ALICE), BOB, ASSET_ID, 100).is_err());
 
         let balance_lock = Tokens::locks(ASSET_ID, &ALICE.clone());
         println!("balance_lock: {:?}", balance_lock);

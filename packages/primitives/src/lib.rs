@@ -7,6 +7,7 @@ use scale_info::prelude::vec::Vec;
 use sp_runtime::BoundedSlice;
 use sp_runtime::DispatchError;
 
+pub mod converter;
 pub mod traits;
 pub mod types;
 

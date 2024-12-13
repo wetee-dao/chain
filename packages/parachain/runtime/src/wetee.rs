@@ -1,15 +1,15 @@
 use crate::*;
 
+use crate::configs::RuntimeBlockWeights;
 use frame_support::{traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
 use sp_runtime::traits::Zero;
-use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
+use wetee_assets::{self as wetee_assets, ext::BasicCurrencyAdapter};
 use wetee_primitives::{
+    converter::{CurrencyId, CurrencyIdConvert},
     traits::{GovIsJoin, UHook},
     types::{CallId, WeAssetId},
 };
-
-use crate::configs::RuntimeBlockWeights;
 
 /// WETEE Start
 type Amount = i128;
@@ -78,7 +78,7 @@ impl orml_tokens::Config for Runtime {
     type CurrencyHooks = ();
     type Balance = Balance;
     type Amount = Amount;
-    type CurrencyId = WeAssetId;
+    type CurrencyId = CurrencyId;
     type WeightInfo = ();
     type ExistentialDeposits = ExistentialDeposits;
     type MaxLocks = MaxLocks;
@@ -115,7 +115,7 @@ parameter_types! {
 }
 
 parameter_type_with_key! {
-    pub ExistentialDeposits: |_currency_id: u64| -> Balance {
+    pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
         Zero::zero()
     };
 }
@@ -130,6 +130,7 @@ impl Contains<AccountId> for MockDustRemovalWhitelist {
 parameter_types! {
     pub const MaxLocks: u32 = 50;
     pub const MaxCreatableId: WeAssetId = 90000;
+    pub const NativeCurrencyId: CurrencyId = CurrencyId::NativeToken(wetee_assets::NATIVE_ASSET_ID);
 }
 
 impl wetee_assets::Config for Runtime {
@@ -138,6 +139,8 @@ impl wetee_assets::Config for Runtime {
     type MaxCreatableId = MaxCreatableId;
     type MultiCurrency = Tokens;
     type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
+    type GetNativeCurrencyId = NativeCurrencyId;
+    type CurrencyIdConvert = CurrencyIdConvert;
 }
 
 impl wetee_sudo::Config for Runtime {

@@ -9,6 +9,7 @@ use frame_support::{
 };
 use frame_system;
 use orml_traits::parameter_type_with_key;
+use sp_runtime::traits::Convert;
 use sp_runtime::{traits::Zero, BuildStorage};
 use sp_std::result::Result;
 use wetee_assets::ext::BasicCurrencyAdapter;
@@ -213,9 +214,18 @@ impl orml_tokens::Config for Test {
     type DustRemovalWhitelist = DustRemovalWhitelist;
 }
 
+type CurrencyId = u64;
 parameter_types! {
     pub const MaxLocks: u32 = 50;
-    pub const MaxCreatableId: WeAssetId = 100000;
+    pub const MaxCreatableId: WeAssetId = 90000;
+    pub const GetNativeCurrencyId: CurrencyId = 1;
+}
+
+pub struct CurrencyIdConvert;
+impl Convert<WeAssetId, CurrencyId> for CurrencyIdConvert {
+    fn convert(id: WeAssetId) -> CurrencyId {
+        return id;
+    }
 }
 
 impl wetee_assets::Config for Test {
@@ -224,6 +234,8 @@ impl wetee_assets::Config for Test {
     type MaxCreatableId = MaxCreatableId;
     type MultiCurrency = Tokens;
     type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+    type GetNativeCurrencyId = GetNativeCurrencyId;
+    type CurrencyIdConvert = CurrencyIdConvert;
 }
 
 pub fn new_test_run() -> sp_io::TestExternalities {

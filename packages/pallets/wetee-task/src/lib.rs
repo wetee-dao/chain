@@ -339,7 +339,7 @@ pub mod pallet {
             // Check deposit
             // 检查抵押金额是否足够
             let fee_unit = Self::get_fee(id)?;
-            let deposit = wetee_assets::Pallet::<T>::free_balance(0, &who.clone());
+            let deposit = wetee_assets::Pallet::<T>::get_free_balance(0, who.clone());
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
             Self::deposit_event(Event::<T>::CreatedTask {
@@ -369,7 +369,7 @@ pub mod pallet {
             let account = <TaskIdAccounts<T>>::get(id).ok_or(Error::<T>::TaskNotExists)?;
             ensure!(who == account, Error::<T>::Task403);
 
-            let deposit = wetee_assets::Pallet::<T>::free_balance(0, &account);
+            let deposit = wetee_assets::Pallet::<T>::get_free_balance(0, account);
 
             let task = Self::tee_apps(who.clone(), id).unwrap();
             ensure!(task.status == 2, Error::<T>::TaskStatusMismatch);
@@ -616,7 +616,7 @@ pub mod pallet {
             to: T::AccountId,
         ) -> result::Result<u8, DispatchError> {
             let account = <TaskIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::TaskNotExists)?;
-            let app_total = wetee_assets::Pallet::<T>::free_balance(0, &account);
+            let app_total = wetee_assets::Pallet::<T>::get_free_balance(0, account.clone());
             log::warn!(
                 "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++app_total {:?}",
                 app_total

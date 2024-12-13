@@ -68,3 +68,4 @@ tmp
 /orml
 
 /hacks/generate-node-key.sh
+hacks/zombienet/data

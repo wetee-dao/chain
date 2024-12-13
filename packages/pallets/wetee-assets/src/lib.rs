@@ -37,7 +37,10 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
 
-use sp_runtime::{traits::StaticLookup, RuntimeDebug};
+use sp_runtime::{
+    traits::{Convert, StaticLookup},
+    RuntimeDebug,
+};
 use sp_std::{
     convert::{TryFrom, TryInto},
     result,
@@ -89,9 +92,15 @@ pub mod pallet {
     pub(crate) type BalanceOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<
         <T as frame_system::Config>::AccountId,
     >>::Balance;
+
+    pub(crate) type CurrencyIdOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<
+        <T as frame_system::Config>::AccountId,
+    >>::CurrencyId;
+
     pub(crate) type AmountOf<T> = <<T as Config>::MultiCurrency as MultiCurrencyExtended<
         <T as frame_system::Config>::AccountId,
     >>::Amount;
+
     pub(crate) type ReserveIdentifierOf<T> =
         <<T as Config>::MultiCurrency as NamedMultiReservableCurrency<
             <T as frame_system::Config>::AccountId,
@@ -104,7 +113,6 @@ pub mod pallet {
         /// multi asset
         /// 组织内部资产
         type MultiCurrency: TransferAll<Self::AccountId>
-            + MultiCurrency<Self::AccountId, CurrencyId = WeAssetId>
             + MultiCurrencyExtended<Self::AccountId>
             + MultiLockableCurrency<Self::AccountId>
             + MultiReservableCurrency<Self::AccountId>
@@ -125,6 +133,12 @@ pub mod pallet {
         /// Maximum assets that can be created
         /// 最多可创建组织数量
         type MaxCreatableId: Get<WeAssetId>;
+
+        #[pallet::constant]
+        type GetNativeCurrencyId: Get<CurrencyIdOf<Self>>;
+
+        /// Convert `T::CurrencyId` to `Location`.
+        type CurrencyIdConvert: Convert<WeAssetId, CurrencyIdOf<Self>>;
 
         /// Weight information for extrinsics in this module.
         type WeightInfo: WeightInfo;
@@ -272,7 +286,11 @@ pub mod pallet {
             ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
             let user = ensure_signed(origin)?;
 
-            <Self as MultiCurrency<T::AccountId>>::withdraw(asset_id, &user, amount)?;
+            <Self as MultiCurrency<T::AccountId>>::withdraw(
+                T::CurrencyIdConvert::convert(asset_id),
+                &user,
+                amount,
+            )?;
             Self::deposit_event(Event::Burn(user, asset_id, amount));
             Ok(().into())
         }
@@ -297,15 +315,22 @@ pub mod pallet {
             let to = T::Lookup::lookup(dest)?;
             ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
-            <Self as MultiCurrency<T::AccountId>>::transfer(asset_id, &from, &to, amount)?;
+            <Self as MultiCurrency<T::AccountId>>::transfer(
+                T::CurrencyIdConvert::convert(asset_id),
+                &from,
+                &to,
+                amount,
+            )?;
             Ok(().into())
         }
     }
 
     impl<T: Config> Pallet<T> {
         /// 总发行量
-        pub fn total_issuance(asset_id: WeAssetId) -> BalanceOf<T> {
-            <Self as MultiCurrency<T::AccountId>>::total_issuance(asset_id)
+        pub fn get_total_issuance(asset_id: WeAssetId) -> BalanceOf<T> {
+            <Self as MultiCurrency<T::AccountId>>::total_issuance(T::CurrencyIdConvert::convert(
+                asset_id,
+            ))
         }
 
         /// 获取账户金额
@@ -313,8 +338,20 @@ pub mod pallet {
             asset_id: WeAssetId,
             who: T::AccountId,
         ) -> result::Result<BalanceOf<T>, DispatchError> {
-            let balance = <Self as MultiCurrency<T::AccountId>>::total_balance(asset_id, &who);
+            let balance = <Self as MultiCurrency<T::AccountId>>::total_balance(
+                T::CurrencyIdConvert::convert(asset_id),
+                &who,
+            );
             Ok(balance)
+        }
+
+        // 获取可用金额
+        pub fn get_free_balance(asset_id: WeAssetId, who: T::AccountId) -> BalanceOf<T> {
+            let balance = <Self as MultiCurrency<T::AccountId>>::free_balance(
+                T::CurrencyIdConvert::convert(asset_id),
+                &who.clone(),
+            );
+            balance
         }
 
         // 设置账户金额
@@ -323,7 +360,11 @@ pub mod pallet {
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiCurrency<T::AccountId>>::deposit(asset_id, &who, value)?;
+            <Self as MultiCurrency<T::AccountId>>::deposit(
+                T::CurrencyIdConvert::convert(asset_id),
+                &who,
+                value,
+            )?;
             Ok(())
         }
 
@@ -333,7 +374,11 @@ pub mod pallet {
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiReservableCurrency<T::AccountId>>::reserve(asset_id, &who, value)?;
+            <Self as MultiReservableCurrency<T::AccountId>>::reserve(
+                T::CurrencyIdConvert::convert(asset_id),
+                &who,
+                value,
+            )?;
             Ok(())
         }
 
@@ -343,7 +388,11 @@ pub mod pallet {
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiReservableCurrency<T::AccountId>>::unreserve(asset_id, &who, value);
+            <Self as MultiReservableCurrency<T::AccountId>>::unreserve(
+                T::CurrencyIdConvert::convert(asset_id),
+                &who,
+                value,
+            );
             Ok(())
         }
 
@@ -353,7 +402,11 @@ pub mod pallet {
             who: T::AccountId,
             value: BalanceOf<T>,
         ) -> BalanceOf<T> {
-            <Self as MultiReservableCurrency<T::AccountId>>::slash_reserved(asset_id, &who, value)
+            <Self as MultiReservableCurrency<T::AccountId>>::slash_reserved(
+                T::CurrencyIdConvert::convert(asset_id),
+                &who,
+                value,
+            )
         }
 
         pub fn try_create(
@@ -366,8 +419,9 @@ pub mod pallet {
 
             ensure!(
                 !Self::is_exists(asset_id)
-                    && <T as pallet::Config>::MultiCurrency::total_issuance(asset_id)
-                        == BalanceOf::<T>::from(0u32),
+                    && <T as pallet::Config>::MultiCurrency::total_issuance(
+                        T::CurrencyIdConvert::convert(asset_id)
+                    ) == BalanceOf::<T>::from(0u32),
                 Error::<T>::AssetAlreadyExists
             );
 
@@ -382,7 +436,11 @@ pub mod pallet {
                 asset_id, amount
             );
 
-            <T as pallet::Config>::MultiCurrency::deposit(asset_id, &user, amount)?;
+            <T as pallet::Config>::MultiCurrency::deposit(
+                T::CurrencyIdConvert::convert(asset_id),
+                &user,
+                amount,
+            )?;
 
             AssetsInfo::<T>::insert(
                 asset_id,
@@ -403,7 +461,12 @@ pub mod pallet {
             to: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiCurrency<T::AccountId>>::transfer(asset_id, &from, &to, value)?;
+            <Self as MultiCurrency<T::AccountId>>::transfer(
+                T::CurrencyIdConvert::convert(asset_id),
+                &from,
+                &to,
+                value,
+            )?;
             Ok(())
         }
 
@@ -413,7 +476,11 @@ pub mod pallet {
             from: T::AccountId,
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
-            <Self as MultiCurrency<T::AccountId>>::withdraw(asset_id, &from, value)?;
+            <Self as MultiCurrency<T::AccountId>>::withdraw(
+                T::CurrencyIdConvert::convert(asset_id),
+                &from,
+                value,
+            )?;
             Ok(())
         }
 
@@ -425,7 +492,11 @@ pub mod pallet {
         ) -> result::Result<(), DispatchError> {
             let amount: BalanceOf<T> = value.saturated_into::<BalanceOf<T>>();
 
-            <Self as MultiCurrency<T::AccountId>>::withdraw(asset_id, &from, amount)?;
+            <Self as MultiCurrency<T::AccountId>>::withdraw(
+                T::CurrencyIdConvert::convert(asset_id),
+                &from,
+                amount,
+            )?;
             Ok(())
         }
 
@@ -439,7 +510,11 @@ pub mod pallet {
             ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
             // 产生 Token
-            <Self as MultiCurrency<T::AccountId>>::deposit(asset_id, &dest, value)?;
+            <Self as MultiCurrency<T::AccountId>>::deposit(
+                T::CurrencyIdConvert::convert(asset_id),
+                &dest,
+                value,
+            )?;
 
             Ok(().into())
         }
@@ -454,7 +529,12 @@ pub mod pallet {
             // 确认组织是否存在
             ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
-            T::MultiCurrency::extend_lock(lock_id, asset_id, &who, amount)
+            T::MultiCurrency::extend_lock(
+                lock_id,
+                T::CurrencyIdConvert::convert(asset_id),
+                &who,
+                amount,
+            )
         }
 
         // 解除资产锁定
@@ -466,7 +546,7 @@ pub mod pallet {
             // 确认组织是否存在
             ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
-            T::MultiCurrency::remove_lock(lock_id, asset_id, &who)
+            T::MultiCurrency::remove_lock(lock_id, T::CurrencyIdConvert::convert(asset_id), &who)
         }
 
         /// 判断资产是否存在

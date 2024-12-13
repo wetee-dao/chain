@@ -774,7 +774,7 @@ pub mod pallet {
             // 判断获取的投票数是否足够
             if state.tally.yes.saturating_add(state.tally.no)
                 >= Percent::from_percent(period.min_support)
-                    * wetee_assets::Pallet::<T>::total_issuance(dao_id)
+                    * wetee_assets::Pallet::<T>::get_total_issuance(dao_id)
             {
                 if state.tally.yes >= state.tally.no {
                     approved = true;

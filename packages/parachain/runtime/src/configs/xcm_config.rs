@@ -8,6 +8,8 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::EnsureRoot;
+use orml_traits::location::AbsoluteReserveProvider;
+use orml_xcm_support::{IsNativeConcrete, MultiNativeAsset};
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain_primitives::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
@@ -15,12 +17,16 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom,
     DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FixedWeightBounds,
-    FrameTransactionalProcessor, FungibleAdapter, IsConcrete, NativeCurrency, ParentIsPreset,
+    FrameTransactionalProcessor, FungibleAdapter, IsConcrete, NativeAsset, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     TrailingSetTopicAsId, UsingComponents, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::XcmExecutor;
+
+use crate::teleport_adapter::MultiTeleportCurrencyAdapter;
+use crate::Tokens;
+use wetee_primitives::converter::{CurrencyId, CurrencyIdConvert};
 
 parameter_types! {
     pub const RelayLocation: Location = Location::parent();
@@ -44,16 +50,26 @@ pub type LocationToAccountId = (
 );
 
 /// Means for transacting assets on this chain.
-pub type LocalAssetTransactor = FungibleAdapter<
-    // Use this currency:
-    Balances,
-    // Use this currency when it is a fungible asset matching the given location or name:
-    IsConcrete<RelayLocation>,
-    // Do a simple punn to convert an AccountId32 Location into a native chain account ID:
-    LocationToAccountId,
-    // Our chain's account ID type (we can't get away without mentioning it explicitly):
+// pub type LocalAssetTransactor = FungibleAdapter<
+//     // Use this currency:
+//     Balances,
+//     // Use this currency when it is a fungible asset matching the given location or name:
+//     IsConcrete<RelayLocation>,
+//     // Do a simple punn to convert an AccountId32 Location into a native chain account ID:
+//     LocationToAccountId,
+//     // Our chain's account ID type (we can't get away without mentioning it explicitly):
+//     AccountId,
+//     // We don't track any teleports.
+//     (),
+// >;
+pub type LocalAssetTransactor = MultiTeleportCurrencyAdapter<
+    Tokens,
+    (),
+    IsNativeConcrete<CurrencyId, CurrencyIdConvert>,
     AccountId,
-    // We don't track any teleports.
+    LocationToAccountId,
+    CurrencyId,
+    CurrencyIdConvert,
     (),
 >;
 
@@ -127,8 +143,12 @@ impl xcm_executor::Config for XcmConfig {
     // How to withdraw and deposit an asset.
     type AssetTransactor = LocalAssetTransactor;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = NativeCurrency;
-    type IsTeleporter = (); // Teleporting is disabled.
+
+    // type IsReserve = NativeAsset;
+    // type IsTeleporter = (); // Teleporting is disabled.
+    type IsReserve = MultiNativeAsset<AbsoluteReserveProvider>;
+    type IsTeleporter = NativeAsset;
+
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;

@@ -356,7 +356,7 @@ pub mod pallet {
             // check deposit
             // 检查抵押金额是否足够
             let fee_unit = Self::get_fee(id)?;
-            let deposit = wetee_assets::Pallet::<T>::free_balance(0, &who.clone());
+            let deposit = wetee_assets::Pallet::<T>::get_free_balance(0, who.clone());
             ensure!(deposit >= fee_unit, Error::<T>::NotEnoughBalance);
 
             Self::deposit_event(Event::<T>::AppCreated {
@@ -652,7 +652,7 @@ pub mod pallet {
             to: T::AccountId,
         ) -> result::Result<u8, DispatchError> {
             let account = <AppIdAccounts<T>>::get(wid.id).ok_or(Error::<T>::AppNotExist)?;
-            let app_total = wetee_assets::Pallet::<T>::free_balance(0, &account);
+            let app_total = wetee_assets::Pallet::<T>::get_free_balance(0, account.clone());
             log::warn!(
                 "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ app_total {:?}",
                 app_total

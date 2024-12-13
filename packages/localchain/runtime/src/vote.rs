@@ -23,7 +23,7 @@ impl PledgeTrait<Balance, AccountId, WeAssetId, BlockNumber, DispatchError> for 
     ) -> Result<(Balance, BlockNumber), DispatchError> {
         let amount = {
             #[cfg(not(feature = "runtime-benchmarks"))]
-            Asset::reserve(*dao_id, who.clone(), amount)?;
+            Asset::try_reserve(*dao_id, who.clone(), amount)?;
             if vote_model == 1 {
                 // 1 account = 1 vote
                 1
@@ -42,7 +42,7 @@ impl PledgeTrait<Balance, AccountId, WeAssetId, BlockNumber, DispatchError> for 
         amount: Balance,
     ) -> Result<(), DispatchError> {
         #[cfg(not(feature = "runtime-benchmarks"))]
-        Asset::unreserve(*dao_id, who.clone(), amount)?;
+        Asset::try_unreserve(*dao_id, who.clone(), amount)?;
         Ok(())
     }
 }

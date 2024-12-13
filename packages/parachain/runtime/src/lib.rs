@@ -47,6 +47,9 @@ mod wetee;
 pub use wetee::*;
 mod contracts;
 pub use contracts::*;
+mod cross;
+// pub use cross::*;
+pub mod teleport_adapter;
 
 pub use wetee_app::Call as AppCall;
 pub use wetee_assets::Call as AssetsCall;
@@ -323,7 +326,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_timestamp, Timestamp]
-        [pallet_message_queue, WeTEEMessageQueue]
+        [pallet_message_queue, MessageQueue]
         [pallet_sudo, Sudo]
         [pallet_collator_selection, CollatorSelection]
         [cumulus_pallet_parachain_system, ParachainSystem]
