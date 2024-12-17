@@ -19,7 +19,7 @@ parity-scale-codec = {workspace = true, default-features = false, features = [
 scale-info = {workspace = true, default-features = false, features = [
   "derive",
 ]}
-serde = {workspace = true, optional = true}
+serde = {workspace = true, features = ["derive"]}
 sp-core = {workspace = true}
 sp-io = {workspace = true}
 sp-runtime = {workspace = true}
@@ -60,5 +60,6 @@ std = [
   "wetee-dao/std",
   "wetee-sudo/std",
   "orml-utilities/std",
+  "serde/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

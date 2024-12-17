@@ -11,7 +11,10 @@ use frame_support::{
 pub use pallet::*;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
-use wetee_primitives::{types::WeAssetId, WTE};
+use wetee_primitives::{
+    types::{WeAssetId, NATIVE_ASSET_ID},
+    WTE,
+};
 
 use orml_traits::MultiCurrency;
 use sp_std::result;
@@ -215,7 +218,7 @@ pub mod pallet {
 
                     // 奖励出块奖励
                     let _ = wetee_assets::Pallet::<T>::try_deposit(
-                        wetee_assets::NATIVE_ASSET_ID,
+                        NATIVE_ASSET_ID,
                         block_author.clone(),
                         amount,
                     );
@@ -261,11 +264,8 @@ pub mod pallet {
                 }
 
                 // 奖励质押
-                let _ = wetee_assets::Pallet::<T>::try_deposit(
-                    wetee_assets::NATIVE_ASSET_ID,
-                    user.clone(),
-                    reward,
-                );
+                let _ =
+                    wetee_assets::Pallet::<T>::try_deposit(NATIVE_ASSET_ID, user.clone(), reward);
 
                 // 存储用户质押数据，用于下一个周期的奖励
                 let to_staking = ToStakings::<T>::iter_prefix(user.clone()).collect::<Vec<_>>();

@@ -26,7 +26,7 @@ use xcm_executor::XcmExecutor;
 
 use crate::teleport_adapter::MultiTeleportCurrencyAdapter;
 use crate::Tokens;
-use wetee_primitives::converter::{CurrencyId, CurrencyIdConvert};
+use wetee_utils::converter::{CurrencyId, CurrencyIdConvert};
 
 parameter_types! {
     pub const RelayLocation: Location = Location::parent();
@@ -65,11 +65,11 @@ pub type LocationToAccountId = (
 pub type LocalAssetTransactor = MultiTeleportCurrencyAdapter<
     Tokens,
     (),
-    IsNativeConcrete<CurrencyId, CurrencyIdConvert>,
+    IsNativeConcrete<CurrencyId, CurrencyIdConvert<Runtime>>,
     AccountId,
     LocationToAccountId,
     CurrencyId,
-    CurrencyIdConvert,
+    CurrencyIdConvert<Runtime>,
     (),
 >;
 

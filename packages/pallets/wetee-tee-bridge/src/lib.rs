@@ -11,7 +11,7 @@ use sp_std::result;
 use wetee_primitives::{
     handle_dispatch_error,
     traits::WorkExt,
-    types::{ApiMeta, InkArg, WorkId},
+    types::{ApiMeta, InkArg, WorkId, NATIVE_ASSET_ID},
 };
 
 use wetee_dao::{self};
@@ -243,7 +243,7 @@ pub mod pallet {
             // 销毁手续费
             // TODO 帐户余额检测
             wetee_assets::Pallet::<T>::burn_with_number(
-                wetee_assets::NATIVE_ASSET_ID,
+                NATIVE_ASSET_ID,
                 owner_account,
                 gas.into(),
             )?;
@@ -323,7 +323,7 @@ pub mod pallet {
             // 销毁手续费
             // TODO 帐户余额检测
             wetee_assets::Pallet::<T>::burn_with_number(
-                wetee_assets::NATIVE_ASSET_ID,
+                NATIVE_ASSET_ID,
                 owner_account,
                 gas.into(),
             )?;

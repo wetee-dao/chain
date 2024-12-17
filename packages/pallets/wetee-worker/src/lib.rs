@@ -9,7 +9,7 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::{traits::WorkExt,types::{ClusterId, Ip, ComCr, MintId,Cr, TeeAppId, WorkId, WorkType,ClusterLevel,TEEVersion,P2PAddr}};
+use wetee_primitives::{traits::WorkExt,types::{NATIVE_ASSET_ID,ClusterId, Ip, ComCr, MintId,Cr, TeeAppId, WorkId, WorkType,ClusterLevel,TEEVersion,P2PAddr}};
 
 #[cfg(test)]
 mod mock;
@@ -719,7 +719,7 @@ pub mod pallet {
             let mint_account = Self::get_mint_account(work_id.clone(), cluster_id);
             ensure!(
                 wetee_assets::Pallet::<T>::get_free_balance(
-                    wetee_assets::NATIVE_ASSET_ID,
+                    NATIVE_ASSET_ID,
                     mint_account.clone()
                 ) >= amount,
                 Error::<T>::InsufficientBalance
@@ -791,7 +791,7 @@ pub mod pallet {
             while let Some(value) = iter.next() {
                 Deposits::<T>::remove(cluster_id, value.0);
                 wetee_assets::Pallet::<T>::try_unreserve(
-                    wetee_assets::NATIVE_ASSET_ID,
+                    NATIVE_ASSET_ID,
                     who.clone(),
                     value.1.deposit,
                 )

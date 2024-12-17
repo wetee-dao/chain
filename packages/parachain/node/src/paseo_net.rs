@@ -56,9 +56,6 @@ fn paseo_genesis(
     id: ParaId,
 ) -> serde_json::Value {
     serde_json::json!({
-        // "balances": {
-        //     "balances": endowed_accounts.iter().cloned().map(|k| (k, 100*UNIT)).collect::<Vec<_>>(),
-        // },
         "parachainInfo": {
             "parachainId": id,
         },

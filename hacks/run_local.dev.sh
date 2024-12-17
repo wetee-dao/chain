@@ -10,4 +10,5 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
 cd "$DIR/zombienet"
 
-zombienet spawn -m --provider kubernetes ./config.toml -d ./data
+rm -rf ./data
+nohup zombienet spawn -m --provider kubernetes ./config.toml -d ./data &

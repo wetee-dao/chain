@@ -17,6 +17,7 @@ pub type CallId = u32;
 
 /// 资源ID
 pub type WeAssetId = u64;
+pub const NATIVE_ASSET_ID: WeAssetId = 0;
 
 /// ProjectId
 /// 项目ID

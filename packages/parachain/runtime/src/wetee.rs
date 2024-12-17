@@ -6,10 +6,10 @@ use orml_traits::parameter_type_with_key;
 use sp_runtime::traits::Zero;
 use wetee_assets::{self as wetee_assets, ext::BasicCurrencyAdapter};
 use wetee_primitives::{
-    converter::{CurrencyId, CurrencyIdConvert},
     traits::{GovIsJoin, UHook},
-    types::{CallId, WeAssetId},
+    types::{CallId, WeAssetId, NATIVE_ASSET_ID},
 };
+use wetee_utils::converter::{CurrencyId, CurrencyIdConvert};
 
 /// WETEE Start
 type Amount = i128;
@@ -130,7 +130,10 @@ impl Contains<AccountId> for MockDustRemovalWhitelist {
 parameter_types! {
     pub const MaxLocks: u32 = 50;
     pub const MaxCreatableId: WeAssetId = 90000;
-    pub const NativeCurrencyId: CurrencyId = CurrencyId::NativeToken(wetee_assets::NATIVE_ASSET_ID);
+    pub const NativeCurrencyId: CurrencyId = CurrencyId {
+        para_id: 1,
+        currency_id: NATIVE_ASSET_ID,
+    };
 }
 
 impl wetee_assets::Config for Runtime {
@@ -140,7 +143,7 @@ impl wetee_assets::Config for Runtime {
     type MultiCurrency = Tokens;
     type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
     type GetNativeCurrencyId = NativeCurrencyId;
-    type CurrencyIdConvert = CurrencyIdConvert;
+    type CurrencyIdConvert = CurrencyIdConvert<Runtime>;
 }
 
 impl wetee_sudo::Config for Runtime {

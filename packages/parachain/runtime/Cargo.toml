@@ -87,7 +87,9 @@ parachains-common = {workspace = true, default-features = false}
 # Local Dependencies
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
+orml-xcm = {workspace = true}
 orml-xcm-support = {workspace = true}
+orml-xtokens = {workspace = true}
 pallet-contracts = {workspace = true}
 pallet-insecure-randomness-collective-flip = {workspace = true}
 pallet-utility = {workspace = true}
@@ -111,6 +113,7 @@ wetee-sudo = {path = "../../pallets/wetee-sudo", default-features = false}
 wetee-task = {path = "../../pallets/wetee-task", default-features = false}
 wetee-tee-bridge = {path = "../../pallets/wetee-tee-bridge", default-features = false}
 wetee-treasury = {path = "../../pallets/wetee-treasury", default-features = false}
+wetee-utils = {path = "../../utils", default-features = false}
 wetee-worker = {path = "../../pallets/wetee-worker", default-features = false}
 
 [features]
@@ -171,8 +174,11 @@ std = [
   "pallet-contracts/std",
   "orml-traits/std",
   "orml-tokens/std",
+  "orml-xtokens/std",
+  "orml-xcm/std",
   "wetee-message-queue/std",
   "wetee-primitives/std",
+  "wetee-utils/std",
   "wetee-dao/std",
   "wetee-fairlanch/std",
   "pallet-authorship/std",

@@ -34,8 +34,8 @@ use orml_traits::{
     NamedBasicReservableCurrency, NamedMultiReservableCurrency,
 };
 use parity_scale_codec::{Decode, Encode};
-use scale_info::prelude::vec::Vec;
-use scale_info::TypeInfo;
+use scale_info::{prelude::vec::Vec, TypeInfo};
+use serde::{Deserialize, Serialize};
 
 use sp_runtime::{
     traits::{Convert, StaticLookup},
@@ -45,7 +45,7 @@ use sp_std::{
     convert::{TryFrom, TryInto},
     result,
 };
-use wetee_primitives::types::WeAssetId;
+use wetee_primitives::types::{WeAssetId, NATIVE_ASSET_ID};
 
 pub mod ext;
 pub use pallet::*;
@@ -62,9 +62,9 @@ mod benchmarking;
 mod weights;
 pub use weights::WeightInfo;
 
-pub const NATIVE_ASSET_ID: WeAssetId = 0;
-
-#[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo)]
+#[derive(
+    Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo, Serialize, Deserialize,
+)]
 pub struct AssetMeta {
     /// project name
     /// token 名
@@ -73,7 +73,7 @@ pub struct AssetMeta {
     /// 通证符号
     pub symbol: Vec<u8>,
     /// The number of decimals this asset uses to represent one unit.
-    /// 资产小数点位数
+    /// 资产位数 defalut 12
     pub decimals: u8,
 }
 
@@ -106,6 +106,20 @@ pub mod pallet {
             <T as frame_system::Config>::AccountId,
         >>::ReserveIdentifier;
 
+    #[derive(frame_support::DefaultNoBound)]
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config> {
+        pub para_id: u32,
+        pub init_assets: Vec<(CurrencyIdOf<T>, AssetMeta)>,
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+        fn build(&self) {
+            ChainID::<T>::put(self.para_id);
+        }
+    }
+
     #[pallet::config]
     pub trait Config: frame_system::Config + wetee_dao::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -137,8 +151,9 @@ pub mod pallet {
         #[pallet::constant]
         type GetNativeCurrencyId: Get<CurrencyIdOf<Self>>;
 
-        /// Convert `T::CurrencyId` to `Location`.
-        type CurrencyIdConvert: Convert<WeAssetId, CurrencyIdOf<Self>>;
+        /// Convert `WeAssetId` to `T::CurrencyId`.
+        type CurrencyIdConvert: Convert<(u32, WeAssetId), CurrencyIdOf<Self>>
+            + Convert<CurrencyIdOf<Self>, WeAssetId>;
 
         /// Weight information for extrinsics in this module.
         type WeightInfo: WeightInfo;
@@ -196,9 +211,18 @@ pub mod pallet {
     }
 
     #[pallet::storage]
-    #[pallet::getter(fn asset_info)]
+    #[pallet::getter(fn chain_id)]
+    pub type ChainID<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn asset_infos)]
     pub type AssetsInfo<T: Config> =
-        StorageMap<_, Blake2_128Concat, WeAssetId, AssetInfo<T::AccountId, AssetMeta>>;
+        StorageMap<_, Blake2_128Concat, CurrencyIdOf<T>, AssetInfo<T::AccountId, AssetMeta>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn para_maps)]
+    pub type ParaMaps<T: Config> =
+        StorageDoubleMap<_, Identity, u32, Identity, [u8; 32], CurrencyIdOf<T>, OptionQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -251,8 +275,8 @@ pub mod pallet {
                 Error::<T>::MetadataErr
             );
 
-            let mut asset_info =
-                AssetsInfo::<T>::get(asset_id).ok_or(Error::<T>::AssetNotExists)?;
+            let mut asset_info = AssetsInfo::<T>::get(Self::get_local_asset(asset_id))
+                .ok_or(Error::<T>::AssetNotExists)?;
 
             ensure!(
                 asset_info.metadata != metadata,
@@ -268,7 +292,7 @@ pub mod pallet {
 
             asset_info.metadata = metadata.clone();
 
-            AssetsInfo::<T>::insert(asset_id, asset_info);
+            AssetsInfo::<T>::insert(Self::get_local_asset(asset_id), asset_info);
             Self::deposit_event(Event::SetMetadata(who, asset_id, metadata));
 
             Ok(().into())
@@ -287,7 +311,7 @@ pub mod pallet {
             let user = ensure_signed(origin)?;
 
             <Self as MultiCurrency<T::AccountId>>::withdraw(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &user,
                 amount,
             )?;
@@ -316,7 +340,7 @@ pub mod pallet {
             ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
             <Self as MultiCurrency<T::AccountId>>::transfer(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &from,
                 &to,
                 amount,
@@ -328,9 +352,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// 总发行量
         pub fn get_total_issuance(asset_id: WeAssetId) -> BalanceOf<T> {
-            <Self as MultiCurrency<T::AccountId>>::total_issuance(T::CurrencyIdConvert::convert(
-                asset_id,
-            ))
+            <Self as MultiCurrency<T::AccountId>>::total_issuance(Self::get_local_asset(asset_id))
         }
 
         /// 获取账户金额
@@ -339,7 +361,7 @@ pub mod pallet {
             who: T::AccountId,
         ) -> result::Result<BalanceOf<T>, DispatchError> {
             let balance = <Self as MultiCurrency<T::AccountId>>::total_balance(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &who,
             );
             Ok(balance)
@@ -348,7 +370,7 @@ pub mod pallet {
         // 获取可用金额
         pub fn get_free_balance(asset_id: WeAssetId, who: T::AccountId) -> BalanceOf<T> {
             let balance = <Self as MultiCurrency<T::AccountId>>::free_balance(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &who.clone(),
             );
             balance
@@ -361,7 +383,7 @@ pub mod pallet {
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
             <Self as MultiCurrency<T::AccountId>>::deposit(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &who,
                 value,
             )?;
@@ -375,7 +397,7 @@ pub mod pallet {
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
             <Self as MultiReservableCurrency<T::AccountId>>::reserve(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &who,
                 value,
             )?;
@@ -389,7 +411,7 @@ pub mod pallet {
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
             <Self as MultiReservableCurrency<T::AccountId>>::unreserve(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &who,
                 value,
             );
@@ -403,12 +425,13 @@ pub mod pallet {
             value: BalanceOf<T>,
         ) -> BalanceOf<T> {
             <Self as MultiReservableCurrency<T::AccountId>>::slash_reserved(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &who,
                 value,
             )
         }
 
+        // 创建代币
         pub fn try_create(
             user: T::AccountId,
             asset_id: WeAssetId,
@@ -419,9 +442,9 @@ pub mod pallet {
 
             ensure!(
                 !Self::is_exists(asset_id)
-                    && <T as pallet::Config>::MultiCurrency::total_issuance(
-                        T::CurrencyIdConvert::convert(asset_id)
-                    ) == BalanceOf::<T>::from(0u32),
+                    && <T as pallet::Config>::MultiCurrency::total_issuance(Self::get_local_asset(
+                        asset_id
+                    )) == BalanceOf::<T>::from(0u32),
                 Error::<T>::AssetAlreadyExists
             );
 
@@ -437,13 +460,13 @@ pub mod pallet {
             );
 
             <T as pallet::Config>::MultiCurrency::deposit(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &user,
                 amount,
             )?;
 
             AssetsInfo::<T>::insert(
-                asset_id,
+                Self::get_local_asset(asset_id),
                 AssetInfo {
                     owner: user.clone(),
                     metadata,
@@ -462,7 +485,7 @@ pub mod pallet {
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
             <Self as MultiCurrency<T::AccountId>>::transfer(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &from,
                 &to,
                 value,
@@ -477,7 +500,7 @@ pub mod pallet {
             value: BalanceOf<T>,
         ) -> result::Result<(), DispatchError> {
             <Self as MultiCurrency<T::AccountId>>::withdraw(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &from,
                 value,
             )?;
@@ -493,7 +516,7 @@ pub mod pallet {
             let amount: BalanceOf<T> = value.saturated_into::<BalanceOf<T>>();
 
             <Self as MultiCurrency<T::AccountId>>::withdraw(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &from,
                 amount,
             )?;
@@ -511,7 +534,7 @@ pub mod pallet {
 
             // 产生 Token
             <Self as MultiCurrency<T::AccountId>>::deposit(
-                T::CurrencyIdConvert::convert(asset_id),
+                Self::get_local_asset(asset_id),
                 &dest,
                 value,
             )?;
@@ -529,12 +552,7 @@ pub mod pallet {
             // 确认组织是否存在
             ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
-            T::MultiCurrency::extend_lock(
-                lock_id,
-                T::CurrencyIdConvert::convert(asset_id),
-                &who,
-                amount,
-            )
+            T::MultiCurrency::extend_lock(lock_id, Self::get_local_asset(asset_id), &who, amount)
         }
 
         // 解除资产锁定
@@ -546,7 +564,7 @@ pub mod pallet {
             // 确认组织是否存在
             ensure!(Self::is_exists(asset_id), Error::<T>::AssetNotExists);
 
-            T::MultiCurrency::remove_lock(lock_id, T::CurrencyIdConvert::convert(asset_id), &who)
+            T::MultiCurrency::remove_lock(lock_id, Self::get_local_asset(asset_id), &who)
         }
 
         /// 判断资产是否存在
@@ -554,7 +572,7 @@ pub mod pallet {
             if asset_id == NATIVE_ASSET_ID {
                 return true;
             }
-            if AssetsInfo::<T>::get(asset_id).is_some() {
+            if AssetsInfo::<T>::get(Self::get_local_asset(asset_id)).is_some() {
                 return true;
             }
             false
@@ -566,6 +584,32 @@ pub mod pallet {
                 return true;
             }
             false
+        }
+
+        /// 获取跨链资产ID
+        pub fn para_asset_id(para_id: u32, name: [u8; 32]) -> Option<WeAssetId> {
+            let id = ParaMaps::<T>::get(para_id, name);
+            match id {
+                Some(cid) => Some(T::CurrencyIdConvert::convert(cid)),
+                None => None,
+            }
+        }
+
+        pub fn get_local_asset(asset_id: WeAssetId) -> CurrencyIdOf<T> {
+            T::CurrencyIdConvert::convert((1, asset_id))
+        }
+
+        /// 获取跨链资产ID
+        pub fn para_asset_name(para_id: u32, id: WeAssetId) -> Option<Vec<u8>> {
+            let id = AssetsInfo::<T>::get(T::CurrencyIdConvert::convert((para_id, id)));
+            match id {
+                Some(info) => {
+                    let mut name: Vec<u8> = info.metadata.name.clone();
+                    name.resize(32, 0);
+                    Some(name)
+                }
+                None => None,
+            }
         }
     }
 }

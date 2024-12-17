@@ -208,8 +208,13 @@ parameter_types! {
 }
 
 pub struct CurrencyIdConvert;
-impl Convert<WeAssetId, CurrencyId> for CurrencyIdConvert {
-    fn convert(id: WeAssetId) -> CurrencyId {
+impl Convert<(u32, WeAssetId), CurrencyId> for CurrencyIdConvert {
+    fn convert(id: (u32, WeAssetId)) -> CurrencyId {
+        return id.1;
+    }
+}
+impl Convert<CurrencyId, WeAssetId> for CurrencyIdConvert {
+    fn convert(id: CurrencyId) -> WeAssetId {
         return id;
     }
 }

@@ -11,12 +11,6 @@ version = "0.1.0"
 exclude = ["native-nostd-hasher"]
 
 members = [
-  # local node
-  "packages/localchain/node",
-  "packages/localchain/runtime", #
-  # parachain node
-  "packages/parachain/node",
-  "packages/parachain/runtime", #
   # pallets
   "packages/pallets/message-queue",
   "packages/pallets/wetee-cross",
@@ -44,6 +38,13 @@ members = [
   # "tools/subkey",
   # "tools/chain-spec-builder",
   "packages/primitives",
+  "packages/utils", # 
+  # parachain node
+  "packages/parachain/node",
+  "packages/parachain/runtime", #
+  # local node
+  "packages/localchain/node",
+  "packages/localchain/runtime", #
 ]
 
 resolver = "2"

@@ -96,6 +96,7 @@ wetee-sudo = {path = "../../pallets/wetee-sudo", default-features = false}
 wetee-task = {path = "../../pallets/wetee-task", default-features = false}
 wetee-tee-bridge = {path = "../../pallets/wetee-tee-bridge", default-features = false}
 wetee-treasury = {path = "../../pallets/wetee-treasury", default-features = false}
+wetee-utils = {path = "../../utils", default-features = false}
 wetee-worker = {path = "../../pallets/wetee-worker", default-features = false}
 
 [build-dependencies]
@@ -143,6 +144,7 @@ std = [
   "orml-tokens/std",
   "wetee-message-queue/std",
   "wetee-primitives/std",
+  "wetee-utils/std",
   "wetee-dao/std",
   "wetee-fairlanch/std",
   "wetee-sudo/std",

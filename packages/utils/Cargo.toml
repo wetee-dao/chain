@@ -2,7 +2,7 @@
 authors = ["WeTEE DAO"]
 edition = "2021"
 license = "Apache-2.0"
-name = "wetee-primitives"
+name = "wetee-utils"
 version = "1.0.0"
 
 [dependencies]
@@ -21,6 +21,9 @@ sp-std = {workspace = true}
 
 xcm = {workspace = true}
 
+wetee-assets = {path = "../pallets/wetee-assets", default-features = false}
+wetee-primitives = {path = "../primitives", default-features = false}
+
 [features]
 default = ["std"]
 runtime-benchmarks = []
@@ -32,4 +35,6 @@ std = [
   "sp-std/std",
   "xcm/std",
   "serde/std",
+  "wetee-primitives/std",
+  "wetee-assets/std",
 ]
