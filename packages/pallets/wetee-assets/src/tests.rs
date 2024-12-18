@@ -1,8 +1,8 @@
 #![allow(unused_imports)]
 #![cfg(test)]
 
-use crate as wetee_assets;
 use crate::mock::*;
+use crate::{self as wetee_assets, AssetMeta};
 use frame_support::{assert_noop, assert_ok, debug};
 use wetee_primitives::types::WeAssetId;
 
@@ -81,6 +81,22 @@ pub fn test_asset_burn() {
         println!("\nalice_dao token {:?}", alice_dao,);
 
         assert_eq!(alice_dao, 98);
+    })
+}
+
+#[test]
+pub fn test_set_parachain_asset() {
+    new_test_run().execute_with(|| {
+        let proposal = RuntimeCall::WeteeAsset(wetee_assets::Call::set_parachain_asset {
+            para_id: 0,
+            metadata: AssetMeta {
+                name: "TestA".as_bytes().to_vec(),
+                symbol: "TA".as_bytes().to_vec(),
+                decimals: 10,
+            },
+        });
+
+        Sudo::sudo(RuntimeOrigin::signed(ALICE), Box::new(proposal)).unwrap();
     })
 }
 

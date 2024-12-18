@@ -144,7 +144,7 @@ pub mod pallet {
             sender: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
-            ensure_signed_or_root(origin)?;
+            ensure_root(origin)?;
 
             let nid = <NextNodeId<T>>::get();
 
@@ -168,7 +168,7 @@ pub mod pallet {
             signer: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
-            ensure_signed_or_root(origin)?;
+            ensure_root(origin)?;
 
             // 更新代码hash
             <CodeSignature<T>>::set(signature.clone());

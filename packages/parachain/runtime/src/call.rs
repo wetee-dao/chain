@@ -24,7 +24,7 @@ fn call2id(call: RuntimeCall) -> Result<u32, ()> {
         RuntimeCall::Asset(func) => match func {
             wetee_assets::Call::create_asset { .. } => Ok(201 as CallId),
             // wetee_assets::Call::set_existenial_deposit { .. } => Ok(202 as CallId),
-            wetee_assets::Call::set_metadata { .. } => Ok(203 as CallId),
+            // wetee_assets::Call::set_metadata { .. } => Ok(203 as CallId),
             wetee_assets::Call::burn { .. } => Ok(204 as CallId),
             wetee_assets::Call::transfer { .. } => Ok(205 as CallId),
             // wetee_assets::Call::join { .. } => Ok(206 as CallId),

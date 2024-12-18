@@ -3,15 +3,11 @@ timeout = 1000
 
 [relaychain]
 chain = "rococo-local"
-default_image = "docker.io/parity/polkadot:latest"
+default_image = "parity/polkadot:v1.16.2"
 
 [[relaychain.nodes]]
 name = "alice"
 rpc_port = 31944
-validator = true
-
-[[relaychain.nodes]]
-name = "bob"
 validator = true
 
 [[relaychain.nodes]]
@@ -23,6 +19,6 @@ id = 4545
 
 [parachains.collator]
 command = "/parachain-node"
-image = "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:dev.2024-12-14-20_23"
+image = "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:paseo.2024-12-18-14_00"
 name = "wetee-dev"
 rpc_port = 31945

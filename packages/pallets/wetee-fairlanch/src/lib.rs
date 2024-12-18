@@ -482,7 +482,7 @@ pub mod pallet {
             reward_rate: u8,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
-            ensure_signed_or_root(origin)?;
+            ensure_root(origin)?;
 
             // 确保 asset 已经创建
             ensure!(
@@ -505,7 +505,7 @@ pub mod pallet {
             asset_pool: u128,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
-            ensure_signed_or_root(origin)?;
+            ensure_root(origin)?;
 
             // 确保 vtoken asset 已经创建
             ensure!(
@@ -534,7 +534,7 @@ pub mod pallet {
             asset_pool: u128,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
-            ensure_signed_or_root(origin)?;
+            ensure_root(origin)?;
 
             let (casset_id, (_, _)) =
                 Vtoken2token::<T>::get(vasset_id).ok_or(Error::<T>::Vtoken404)?;
@@ -553,7 +553,7 @@ pub mod pallet {
             asset_id: WeAssetId,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
-            ensure_signed_or_root(origin)?;
+            ensure_root(origin)?;
 
             // 确保 asset 已经创建
             ensure!(

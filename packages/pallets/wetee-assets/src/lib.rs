@@ -109,14 +109,35 @@ pub mod pallet {
     #[derive(frame_support::DefaultNoBound)]
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
+        pub _config: sp_std::marker::PhantomData<T>,
         pub para_id: u32,
-        pub init_assets: Vec<(CurrencyIdOf<T>, AssetMeta)>,
+        pub init_assets: Vec<(u32, AssetMeta)>,
     }
 
     #[pallet::genesis_build]
     impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             ChainID::<T>::put(self.para_id);
+
+            let _ = Pallet::<T>::set_parachain_asset(
+                frame_system::RawOrigin::Root.into(),
+                0,
+                AssetMeta {
+                    name: "DOT".as_bytes().to_vec(),
+                    symbol: "DOT".as_bytes().to_vec(),
+                    decimals: 12,
+                },
+            )
+            .unwrap();
+
+            self.init_assets.iter().for_each(|(para_id, meta)| {
+                let _ = Pallet::<T>::set_parachain_asset(
+                    frame_system::RawOrigin::Root.into(),
+                    para_id.clone(),
+                    meta.clone(),
+                )
+                .unwrap();
+            });
         }
     }
 
@@ -179,7 +200,6 @@ pub mod pallet {
         DepositTooLow,
         DepositNotZero,
         DepositRateError,
-        BadWeOrigin,
         /// Deposit result is not expected
         DepositFailed,
     }
@@ -220,6 +240,10 @@ pub mod pallet {
         StorageMap<_, Blake2_128Concat, CurrencyIdOf<T>, AssetInfo<T::AccountId, AssetMeta>>;
 
     #[pallet::storage]
+    #[pallet::getter(fn symbols)]
+    pub type Symbols<T: Config> = StorageMap<_, Identity, [u8; 32], CurrencyIdOf<T>, OptionQuery>;
+
+    #[pallet::storage]
     #[pallet::getter(fn para_maps)]
     pub type ParaMaps<T: Config> =
         StorageDoubleMap<_, Identity, u32, Identity, [u8; 32], CurrencyIdOf<T>, OptionQuery>;
@@ -244,28 +268,6 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // 确认用户是否是组织创建者
             let who = ensure_signed(origin)?;
-            let asset_id = wetee_dao::NextDaoId::<T>::get();
-
-            // 记录下一个 DAO id
-            let next_id = asset_id.checked_add(1).ok_or(Error::<T>::AssetIdOverflow)?;
-            wetee_dao::NextDaoId::<T>::put(next_id);
-
-            // 创建资产
-            Self::try_create(who.clone(), asset_id, metadata, init_amount)?;
-
-            Ok(().into())
-        }
-
-        /// You should have created the asset first.
-        /// 设置资产元数据
-        #[pallet::call_index(004)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata())]
-        pub fn set_metadata(
-            origin: OriginFor<T>,
-            asset_id: WeAssetId,
-            metadata: AssetMeta,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
 
             ensure!(
                 metadata.name.len() > 2
@@ -275,28 +277,59 @@ pub mod pallet {
                 Error::<T>::MetadataErr
             );
 
-            let mut asset_info = AssetsInfo::<T>::get(Self::get_local_asset(asset_id))
-                .ok_or(Error::<T>::AssetNotExists)?;
+            let asset_id = wetee_dao::NextDaoId::<T>::get();
 
-            ensure!(
-                asset_info.metadata != metadata,
-                Error::<T>::MetadataNotChange
-            );
-            ensure!(
-                asset_info.metadata.decimals == metadata.decimals,
-                Error::<T>::ShouldNotChangeDecimals
-            );
+            // 记录下一个 DAO id
+            let next_id = asset_id.checked_add(1).ok_or(Error::<T>::AssetIdOverflow)?;
+            wetee_dao::NextDaoId::<T>::put(next_id);
 
-            // 确认用户是否是创建者
-            ensure!(who == asset_info.owner, Error::<T>::ShouldNotChangeDecimals);
-
-            asset_info.metadata = metadata.clone();
-
-            AssetsInfo::<T>::insert(Self::get_local_asset(asset_id), asset_info);
-            Self::deposit_event(Event::SetMetadata(who, asset_id, metadata));
+            let chain_id = Self::chain_id();
+            // 创建资产
+            Self::try_create(who.clone(), chain_id, asset_id, metadata, init_amount)?;
 
             Ok(().into())
         }
+
+        // /// You should have created the asset first.
+        // /// 设置资产元数据
+        // #[pallet::call_index(004)]
+        // #[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata())]
+        // pub fn set_metadata(
+        //     origin: OriginFor<T>,
+        //     asset_id: WeAssetId,
+        //     metadata: AssetMeta,
+        // ) -> DispatchResultWithPostInfo {
+        //     let who = ensure_signed(origin)?;
+
+        //     ensure!(
+        //         metadata.name.len() > 2 && metadata.symbol.len() > 1,
+        //         Error::<T>::MetadataErr
+        //     );
+
+        //     let mut asset_info = AssetsInfo::<T>::get(Self::get_local_asset(asset_id))
+        //         .ok_or(Error::<T>::AssetNotExists)?;
+
+        //     ensure!(
+        //         asset_info.metadata != metadata,
+        //         Error::<T>::MetadataNotChange
+        //     );
+
+        //     // 确保 decimal 不变
+        //     ensure!(
+        //         asset_info.metadata.decimals == metadata.decimals,
+        //         Error::<T>::ShouldNotChangeDecimals
+        //     );
+
+        //     // 确认用户是否是创建者
+        //     ensure!(who == asset_info.owner, Error::<T>::ShouldNotChangeDecimals);
+
+        //     asset_info.metadata = metadata.clone();
+
+        //     AssetsInfo::<T>::insert(Self::get_local_asset(asset_id), asset_info);
+        //     Self::deposit_event(Event::SetMetadata(who, asset_id, metadata));
+
+        //     Ok(().into())
+        // }
 
         /// Users destroy their own assets.
         /// 销毁资产
@@ -345,6 +378,65 @@ pub mod pallet {
                 &to,
                 amount,
             )?;
+            Ok(().into())
+        }
+
+        #[pallet::call_index(007)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        pub fn set_parachain_asset(
+            origin: OriginFor<T>,
+            para_id: u32,
+            metadata: AssetMeta,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_root(origin.clone())?;
+
+            let who = wetee_dao::Pallet::<T>::asset_root();
+            ensure!(
+                metadata.name.len() > 2
+                    && metadata.symbol.len() > 1
+                    && metadata.decimals > 0u8
+                    && metadata.decimals < 19,
+                Error::<T>::MetadataErr
+            );
+
+            // 确保 symbol 不重复
+            let token_symbol = Self::vec_u8_32(metadata.symbol.clone());
+            ensure!(
+                !ParaMaps::<T>::contains_key(para_id, token_symbol),
+                Error::<T>::AssetAlreadyExists
+            );
+
+            // 确认用户是否是组织创建者
+            let asset_id = wetee_dao::NextDaoId::<T>::get();
+
+            // 记录下一个 DAO id
+            let next_id = asset_id.checked_add(1).ok_or(Error::<T>::AssetIdOverflow)?;
+            wetee_dao::NextDaoId::<T>::put(next_id);
+
+            // 创建资产
+            Self::try_create(
+                who.clone(),
+                para_id,
+                asset_id,
+                metadata.clone(),
+                0u32.into(),
+            )?;
+
+            let currency_id = T::CurrencyIdConvert::convert((para_id, asset_id));
+            ParaMaps::<T>::insert(para_id, token_symbol, currency_id);
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(008)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        pub fn set_chain_id(origin: OriginFor<T>, para_id: u32) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_root(origin.clone())?;
+
+            ChainID::<T>::put(para_id);
+
             Ok(().into())
         }
     }
@@ -434,17 +526,21 @@ pub mod pallet {
         // 创建代币
         pub fn try_create(
             user: T::AccountId,
+            para_id: u32,
             asset_id: WeAssetId,
             metadata: AssetMeta,
             amount: BalanceOf<T>,
         ) -> DispatchResult {
-            // Self::do_create(user, asset_id, metadata, amount)
+            let symbol = Self::vec_u8_32(metadata.symbol.clone());
+            if Symbols::<T>::contains_key(symbol) {
+                return Ok(());
+            }
 
             ensure!(
                 !Self::is_exists(asset_id)
-                    && <T as pallet::Config>::MultiCurrency::total_issuance(Self::get_local_asset(
-                        asset_id
-                    )) == BalanceOf::<T>::from(0u32),
+                    && <T as pallet::Config>::MultiCurrency::total_issuance(
+                        T::CurrencyIdConvert::convert((para_id, asset_id))
+                    ) == BalanceOf::<T>::from(0u32),
                 Error::<T>::AssetAlreadyExists
             );
 
@@ -587,29 +683,42 @@ pub mod pallet {
         }
 
         /// 获取跨链资产ID
-        pub fn para_asset_id(para_id: u32, name: [u8; 32]) -> Option<WeAssetId> {
-            let id = ParaMaps::<T>::get(para_id, name);
+        pub fn para_asset_id(para_id: u32, symbol: [u8; 32]) -> Option<WeAssetId> {
+            let id = ParaMaps::<T>::get(para_id, symbol);
             match id {
                 Some(cid) => Some(T::CurrencyIdConvert::convert(cid)),
                 None => None,
             }
         }
 
+        /// 获取本地资产ID
         pub fn get_local_asset(asset_id: WeAssetId) -> CurrencyIdOf<T> {
-            T::CurrencyIdConvert::convert((1, asset_id))
+            let chain_id = Self::chain_id();
+            T::CurrencyIdConvert::convert((chain_id, asset_id))
         }
 
         /// 获取跨链资产ID
-        pub fn para_asset_name(para_id: u32, id: WeAssetId) -> Option<Vec<u8>> {
+        pub fn para_asset_symbol(para_id: u32, id: WeAssetId) -> Option<Vec<u8>> {
             let id = AssetsInfo::<T>::get(T::CurrencyIdConvert::convert((para_id, id)));
             match id {
                 Some(info) => {
-                    let mut name: Vec<u8> = info.metadata.name.clone();
-                    name.resize(32, 0);
-                    Some(name)
+                    let mut symbol: Vec<u8> = info.metadata.symbol.clone();
+                    symbol.resize(32, 0);
+                    Some(symbol)
                 }
                 None => None,
             }
+        }
+
+        /// vec to [u8;32]
+        pub fn vec_u8_32(s: Vec<u8>) -> [u8; 32] {
+            let mut string: Vec<u8> = s.clone();
+            string.resize(32, 0);
+
+            let mut data = [0u8; 32];
+            data[..string.len()].copy_from_slice(&string[..]);
+
+            data
         }
     }
 }

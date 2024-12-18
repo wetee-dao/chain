@@ -19,27 +19,25 @@ impl orml_xcm::Config for Runtime {
 pub struct AccountIdToLocation;
 impl Convert<AccountId, Location> for AccountIdToLocation {
     fn convert(account: AccountId) -> Location {
-        [Junction::AccountId32 {
-            network: None,
-            id: account.into(),
-        }]
-        .into()
+        Location::new(
+            0,
+            [AccountId32 {
+                network: None,
+                id: account.into(),
+            }],
+        )
     }
 }
 
 parameter_types! {
     pub SelfLocation: Location = Location::here();
     pub const MaxAssetsForTransfer: usize = 3;
-    pub const BaseXcmWeight: Weight = Weight::from_parts(100_000_000, 100_000_000);
+    pub const BaseXcmWeight: Weight = Weight::from_parts(1000_000_000u64, 0);
 }
 
 parameter_type_with_key! {
-    pub ParachainMinFee: |location: Location| -> Option<u128> {
-        #[allow(clippy::match_ref_pats)] // false positive
-        match (location.parents, location.first_interior()) {
-            (1, Some(Parachain(3))) => Some(40),
-            _ => None,
-        }
+    pub ParachainMinFee: |_location: Location| -> Option<u128> {
+        Some(u128::MAX)
     };
 }
 
@@ -52,7 +50,7 @@ impl orml_xtokens::Config for Runtime {
     type UniversalLocation = UniversalLocation;
     type SelfLocation = SelfLocation;
     #[cfg(feature = "runtime-benchmarks")]
-    type XcmExecutor = bifrost_primitives::MockXcmExecutor;
+    type XcmExecutor = primitives::MockXcmExecutor;
     #[cfg(not(feature = "runtime-benchmarks"))]
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;

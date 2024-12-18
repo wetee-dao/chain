@@ -918,7 +918,7 @@ pub mod pallet {
             boots: Vec<P2PAddr<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
-            ensure_signed_or_root(origin)?;
+            ensure_root(origin)?;
 
             ensure!(boots.len() <= 16, Error::<T>::BootPeersTooLong);
             
@@ -935,7 +935,7 @@ pub mod pallet {
             stage: u32,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
-            ensure_signed_or_root(origin)?;
+            ensure_root(origin)?;
 
             Stage::<T>::put(stage);
             Ok(().into())
@@ -951,7 +951,7 @@ pub mod pallet {
             signer: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
-            ensure_signed_or_root(origin)?;
+            ensure_root(origin)?;
 
             // 更新代码hash
             <CodeSignature<T>>::set(signature.clone());

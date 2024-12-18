@@ -29,7 +29,7 @@ use wetee_primitives::types::WeAssetId;
     Deserialize,
 )]
 pub struct CurrencyId {
-    // para id relay==0 local==1 other parachain
+    // para id relay==0  other parachain
     pub para_id: u32,
     pub currency_id: WeAssetId,
 }
@@ -43,25 +43,10 @@ impl<Runtime: wetee_assets::Config> Convert<CurrencyId, Option<Location>>
         match id.para_id {
             // relay chain
             0 => Some(Parent.into()),
-            // local chain
-            1 => {
-                let chain_id = wetee_assets::Pallet::<Runtime>::chain_id();
-                let name: Vec<u8> =
-                    wetee_assets::Pallet::<Runtime>::para_asset_name(chain_id, id.currency_id)
-                        .unwrap();
-                Some(
-                    (
-                        Parent,
-                        Parachain(id.para_id),
-                        Junction::from(BoundedVec::try_from(name).unwrap()),
-                    )
-                        .into(),
-                )
-            }
             // other parachain
             _ => {
                 let name: Vec<u8> =
-                    wetee_assets::Pallet::<Runtime>::para_asset_name(id.para_id, id.currency_id)
+                    wetee_assets::Pallet::<Runtime>::para_asset_symbol(id.para_id, id.currency_id)
                         .unwrap();
                 Some(
                     (
@@ -81,9 +66,23 @@ impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
 {
     fn convert(l: Location) -> Option<CurrencyId> {
         if l == Location::parent() {
+            let token_symbol = b"DOT".to_vec();
+            let mut data = [0u8; 32];
+            data[..token_symbol.len()].copy_from_slice(&token_symbol[..]);
+
+            let asset_id = wetee_assets::Pallet::<Runtime>::para_asset_id(0, data);
+            log::info!(
+                "relay ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++{:?}",
+                asset_id
+            );
+
+            if asset_id.is_none() {
+                return None;
+            }
+
             return Some(CurrencyId {
                 para_id: 0,
-                currency_id: 1,
+                currency_id: asset_id.unwrap(),
             });
         }
 

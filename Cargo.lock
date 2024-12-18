@@ -17646,6 +17646,7 @@ dependencies = [
  "orml-traits",
  "orml-utilities",
  "pallet-balances 28.0.0",
+ "pallet-sudo",
  "parity-scale-codec",
  "scale-info",
  "serde",

@@ -129,9 +129,9 @@ impl Contains<AccountId> for MockDustRemovalWhitelist {
 
 parameter_types! {
     pub const MaxLocks: u32 = 50;
-    pub const MaxCreatableId: WeAssetId = 90000;
-    pub const NativeCurrencyId: CurrencyId = CurrencyId {
-        para_id: 1,
+    pub const MaxCreatableId: WeAssetId = 900000000;
+    pub NativeCurrencyId: CurrencyId = CurrencyId {
+        para_id: ParachainInfo::parachain_id().into(),
         currency_id: NATIVE_ASSET_ID,
     };
 }

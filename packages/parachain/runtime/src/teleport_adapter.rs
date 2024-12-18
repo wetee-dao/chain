@@ -100,6 +100,11 @@ impl<
     fn check_in(_origin: &Location, _what: &Asset, _context: &XcmContext) {}
 
     fn deposit_asset(asset: &Asset, location: &Location, _context: Option<&XcmContext>) -> Result {
+        log::info!(
+            "deposit_asset ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++{:?}",
+            asset
+        );
+
         match (
             AccountIdConvert::convert_location(location),
             CurrencyIdConvert::convert(asset.clone()),

@@ -25,6 +25,7 @@ construct_runtime!(
     pub enum Test{
         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
         Tokens: orml_tokens::{Pallet, Call, Config<T>, Storage, Event<T>},
 
         WETEE: wetee_dao::{ Pallet, Call, Event<T>, Storage },
@@ -113,6 +114,12 @@ impl UHook<AccountId, WeAssetId> for CreatedHook {
     }
 }
 
+impl pallet_sudo::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type WeightInfo = ();
+}
+
 impl wetee_dao::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
@@ -194,6 +201,10 @@ pub(crate) fn new_test_run() -> sp_io::TestExternalities {
     }
     .assimilate_storage(&mut t)
     .unwrap();
+
+    pallet_sudo::GenesisConfig::<Test> { key: Some(ALICE) }
+        .assimilate_storage(&mut t)
+        .unwrap();
 
     let mut ext = sp_io::TestExternalities::new(t);
     ext.execute_with(|| {

@@ -826,6 +826,11 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        /// 获取 asset_root 帐户
+        pub fn asset_root() -> T::AccountId {
+            T::PalletId::get().into_sub_account_truncating("asset_root")
+        }
+
         /// 获取DAO账户
         pub fn dao_account(dao_id: WeAssetId) -> T::AccountId {
             T::PalletId::get().into_sub_account_truncating(dao_id)

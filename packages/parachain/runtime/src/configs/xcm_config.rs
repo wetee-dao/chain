@@ -15,9 +15,9 @@ use polkadot_parachain_primitives::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom,
-    DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FixedWeightBounds,
-    FrameTransactionalProcessor, FungibleAdapter, IsConcrete, NativeAsset, ParentIsPreset,
+    AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom,
+    AllowTopLevelPaidExecutionFrom, DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin,
+    FixedWeightBounds, FrameTransactionalProcessor, NativeAsset, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     TrailingSetTopicAsId, UsingComponents, WithComputedOrigin, WithUniqueTopic,
@@ -101,40 +101,34 @@ parameter_types! {
     pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
-pub struct ParentOrParentsExecutivePlurality;
-impl Contains<Location> for ParentOrParentsExecutivePlurality {
-    fn contains(location: &Location) -> bool {
-        matches!(
-            location.unpack(),
-            (1, [])
-                | (
-                    1,
-                    [Plurality {
-                        id: BodyId::Executive,
-                        ..
-                    }]
-                )
-        )
-    }
-}
+// pub struct ParentOrParentsExecutivePlurality;
+// impl Contains<Location> for ParentOrParentsExecutivePlurality {
+//     fn contains(location: &Location) -> bool {
+//         matches!(
+//             location.unpack(),
+//             (1, [])
+//                 | (
+//                     1,
+//                     [Plurality {
+//                         id: BodyId::Executive,
+//                         ..
+//                     }]
+//                 )
+//         )
+//     }
+// }
 
-pub type Barrier = TrailingSetTopicAsId<
-    DenyThenTry<
-        DenyReserveTransferToRelayChain,
+pub type Barrier = TrailingSetTopicAsId<(
+    TakeWeightCredit,
+    WithComputedOrigin<
         (
-            TakeWeightCredit,
-            WithComputedOrigin<
-                (
-                    AllowTopLevelPaidExecutionFrom<Everything>,
-                    AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-                    // ^^^ Parent and its exec plurality get free execution
-                ),
-                UniversalLocation,
-                ConstU32<8>,
-            >,
+            AllowTopLevelPaidExecutionFrom<Everything>,
+            AllowSubscriptionsFrom<Everything>,
         ),
+        UniversalLocation,
+        ConstU32<8>,
     >,
->;
+)>;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
