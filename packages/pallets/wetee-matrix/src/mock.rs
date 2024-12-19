@@ -1,9 +1,5 @@
 use crate as wetee_dao;
-use frame_support::{
-    derive_impl, parameter_types,
-    traits::{ConstU32, Contains},
-    PalletId,
-};
+use frame_support::{derive_impl, parameter_types, traits::Contains, PalletId};
 use sp_runtime::BuildStorage;
 use sp_std::result::Result;
 use wetee_primitives::{

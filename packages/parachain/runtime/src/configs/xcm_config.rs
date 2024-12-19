@@ -4,7 +4,7 @@ use crate::{
 };
 use frame_support::{
     parameter_types,
-    traits::{ConstU32, Contains, Everything, Nothing},
+    traits::{ConstU32, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -15,8 +15,7 @@ use polkadot_parachain_primitives::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin,
+    AccountId32Aliases, AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin,
     FixedWeightBounds, FrameTransactionalProcessor, NativeAsset, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
@@ -100,23 +99,6 @@ parameter_types! {
     pub const MaxInstructions: u32 = 100;
     pub const MaxAssetsIntoHolding: u32 = 64;
 }
-
-// pub struct ParentOrParentsExecutivePlurality;
-// impl Contains<Location> for ParentOrParentsExecutivePlurality {
-//     fn contains(location: &Location) -> bool {
-//         matches!(
-//             location.unpack(),
-//             (1, [])
-//                 | (
-//                     1,
-//                     [Plurality {
-//                         id: BodyId::Executive,
-//                         ..
-//                     }]
-//                 )
-//         )
-//     }
-// }
 
 pub type Barrier = TrailingSetTopicAsId<(
     TakeWeightCredit,
