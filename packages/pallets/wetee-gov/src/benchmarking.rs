@@ -2,7 +2,7 @@
 use super::*;
 use frame_benchmarking::v2::*;
 use wetee_primitives::{
-    traits::UHook,
+    traits::CrossCall,
     types::{WeAssetId, GuildId, ProjectId, TaskId},
 };
 use parity_scale_codec::{Decode, Encode};

@@ -14,7 +14,7 @@ use sp_runtime::{traits::Zero, BuildStorage};
 use sp_std::result::Result;
 use wetee_assets::ext::BasicCurrencyAdapter;
 use wetee_primitives::{
-    traits::UHook,
+    traits::CrossCall,
     types::{WeAssetId, WorkId},
 };
 
@@ -96,20 +96,24 @@ impl wetee_dao::Config for Test {
     type RuntimeCall = RuntimeCall;
     type CallId = u64;
     type PalletId = DaoPalletId;
-    type OrgHook = ();
+    type CrossCall = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }
 
 pub struct WorkerQueueHook;
-impl UHook<WorkId, AccountId> for WorkerQueueHook {
-    fn run_hook(id: WorkId, dao_id: WeAssetId) {}
+impl CrossCall<(WorkId, AccountId), ()> for WorkerQueueHook {
+    fn call(
+        (id, dao_id): (WorkId, AccountId),
+    ) -> sp_std::result::Result<(), sp_runtime::DispatchError> {
+        Ok(())
+    }
 }
 
 impl wetee_task::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    type UHook = WorkerQueueHook;
+    type CrossCall = WorkerQueueHook;
 }
 
 parameter_types! {

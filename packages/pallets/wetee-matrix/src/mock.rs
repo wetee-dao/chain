@@ -3,7 +3,7 @@ use frame_support::{derive_impl, parameter_types, traits::Contains, PalletId};
 use sp_runtime::BuildStorage;
 use sp_std::result::Result;
 use wetee_primitives::{
-    traits::UHook,
+    traits::CrossCall,
     types::{WeAssetId, WorkId},
 };
 
@@ -45,10 +45,13 @@ parameter_types! {
 }
 
 pub struct WorkerQueueHook;
-impl UHook<WorkId, u64> for WorkerQueueHook {
-    fn run_hook(_id: WorkId, _dao_id: WeAssetId) {}
+impl CrossCall<(WorkId, u64), ()> for WorkerQueueHook {
+    fn call(
+        (_id, _dao_id): (WorkId, u64),
+    ) -> sp_std::result::Result<(), sp_runtime::DispatchError> {
+        Ok(())
+    }
 }
-
 impl wetee_dao::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;

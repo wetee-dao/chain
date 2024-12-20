@@ -9,7 +9,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
-    traits::UHook,
+    traits::CrossCall,
     types::{
         Command, Container, Cr, Disk, EditType, Env, EnvHash, EnvInput, Service, TEEVersion,
         TeeAppId, WorkId, WorkType,
@@ -125,7 +125,7 @@ pub mod pallet {
 
         /// Do some things after creating dao, such as setting up a sudo account.
         /// 创建部署任务后回调
-        type UHook: UHook<WorkId, Self::AccountId>;
+        type CrossCall: CrossCall<(WorkId, Self::AccountId), ()>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -367,13 +367,13 @@ pub mod pallet {
 
             // run after create hook
             // 执行 App 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::UHook::run_hook(
+            <T as pallet::Config>::CrossCall::call((
                 WorkId {
                     wtype: WorkType::GPU,
                     id,
                 },
                 who,
-            );
+            ))?;
 
             Ok(().into())
         }
@@ -512,13 +512,13 @@ pub mod pallet {
 
                     // run after create hook
                     // 执行 App 创建后回调,部署任务添加到消息中间件
-                    <T as pallet::Config>::UHook::run_hook(
+                    <T as pallet::Config>::CrossCall::call((
                         WorkId {
                             wtype: WorkType::GPU,
                             id: app_id,
                         },
                         who,
-                    );
+                    ))?;
                 }
             }
 
@@ -555,13 +555,13 @@ pub mod pallet {
 
                 // run after create hook
                 // 执行 App 创建后回调,部署任务添加到消息中间件
-                <T as pallet::Config>::UHook::run_hook(
+                <T as pallet::Config>::CrossCall::call((
                     WorkId {
                         wtype: WorkType::GPU,
                         id: app_id,
                     },
                     who,
-                );
+                ))?;
             }
 
             <AppVersion<T>>::insert(app_id, <frame_system::Pallet<T>>::block_number());

@@ -36,7 +36,6 @@ use orml_traits::{
 use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use serde::{Deserialize, Serialize};
-
 use sp_runtime::{
     traits::{Convert, StaticLookup},
     RuntimeDebug,
@@ -45,6 +44,7 @@ use sp_std::{
     convert::{TryFrom, TryInto},
     result,
 };
+
 use wetee_primitives::types::{WeAssetId, NATIVE_ASSET_ID};
 
 pub mod ext;
@@ -241,12 +241,12 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn symbols)]
-    pub type Symbols<T: Config> = StorageMap<_, Identity, [u8; 32], CurrencyIdOf<T>, OptionQuery>;
+    pub type Symbols<T: Config> = StorageMap<_, Identity, Vec<u8>, CurrencyIdOf<T>, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn para_maps)]
     pub type ParaMaps<T: Config> =
-        StorageDoubleMap<_, Identity, u32, Identity, [u8; 32], CurrencyIdOf<T>, OptionQuery>;
+        StorageDoubleMap<_, Identity, u32, Identity, Vec<u8>, CurrencyIdOf<T>, OptionQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -401,9 +401,9 @@ pub mod pallet {
             );
 
             // 确保 symbol 不重复
-            let token_symbol = Self::vec_u8_32(metadata.symbol.clone());
+            let token_symbol = metadata.symbol.clone();
             ensure!(
-                !ParaMaps::<T>::contains_key(para_id, token_symbol),
+                !ParaMaps::<T>::contains_key(para_id, token_symbol.clone()),
                 Error::<T>::AssetAlreadyExists
             );
 
@@ -531,8 +531,7 @@ pub mod pallet {
             metadata: AssetMeta,
             amount: BalanceOf<T>,
         ) -> DispatchResult {
-            let symbol = Self::vec_u8_32(metadata.symbol.clone());
-            if Symbols::<T>::contains_key(symbol) {
+            if Symbols::<T>::contains_key(metadata.symbol.clone()) {
                 return Ok(());
             }
 
@@ -555,19 +554,19 @@ pub mod pallet {
                 asset_id, amount
             );
 
-            <T as pallet::Config>::MultiCurrency::deposit(
-                Self::get_local_asset(asset_id),
-                &user,
-                amount,
-            )?;
+            let cid = Self::get_local_asset(asset_id);
+            <T as pallet::Config>::MultiCurrency::deposit(cid.clone(), &user, amount)?;
 
             AssetsInfo::<T>::insert(
                 Self::get_local_asset(asset_id),
                 AssetInfo {
                     owner: user.clone(),
-                    metadata,
+                    metadata: metadata.clone(),
                 },
             );
+
+            Symbols::<T>::insert(metadata.symbol, cid.clone());
+
             Self::deposit_event(Event::CreateAsset(user, asset_id, amount));
 
             Ok(())
@@ -683,7 +682,7 @@ pub mod pallet {
         }
 
         /// 获取跨链资产ID
-        pub fn para_asset_id(para_id: u32, symbol: [u8; 32]) -> Option<WeAssetId> {
+        pub fn para_asset_id(para_id: u32, symbol: Vec<u8>) -> Option<WeAssetId> {
             let id = ParaMaps::<T>::get(para_id, symbol);
             match id {
                 Some(cid) => Some(T::CurrencyIdConvert::convert(cid)),
@@ -708,17 +707,6 @@ pub mod pallet {
                 }
                 None => None,
             }
-        }
-
-        /// vec to [u8;32]
-        pub fn vec_u8_32(s: Vec<u8>) -> [u8; 32] {
-            let mut string: Vec<u8> = s.clone();
-            string.resize(32, 0);
-
-            let mut data = [0u8; 32];
-            data[..string.len()].copy_from_slice(&string[..]);
-
-            data
         }
     }
 }

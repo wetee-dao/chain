@@ -13,7 +13,7 @@ use sp_runtime::traits::Convert;
 use sp_runtime::{traits::Zero, BuildStorage};
 use sp_std::result::Result;
 use wetee_assets::ext::BasicCurrencyAdapter;
-use wetee_primitives::{traits::UHook, types::WeAssetId};
+use wetee_primitives::types::WeAssetId;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;
@@ -88,11 +88,6 @@ impl pallet_balances::Config for Test {
     type RuntimeFreezeReason = ();
 }
 
-pub struct OrgHook;
-impl UHook<AccountId, WeAssetId> for OrgHook {
-    fn run_hook(id: AccountId, dao_id: WeAssetId) {}
-}
-
 impl wetee_dao::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
@@ -100,7 +95,7 @@ impl wetee_dao::Config for Test {
     type PalletId = DaoPalletId;
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
-    type OrgHook = OrgHook;
+    type CrossCall = ();
 }
 
 pub struct AuraAccountAdapter;

@@ -11,7 +11,7 @@
 
 // use wetee_assets::{self as wetee_assets, asset_adaper_in_pallet::BasicCurrencyAdapter};
 // use wetee_primitives::{
-//     traits::{GovIsJoin, PalletGet, UHook},
+//     traits::{GovIsJoin, PalletGet, CrossCall},
 //     types::{CallId, WeAssetId},
 // };
 
@@ -158,8 +158,8 @@
 // }
 
 // pub struct CreatedHook;
-// impl UHook<u64, WeAssetId> for CreatedHook {
-//     fn run_hook(acount_id: u64, dao_id: WeAssetId) {
+// impl CrossCall<(u64, WeAssetId),()>for CreatedHook {
+//     fn call((acount_id, dao_id): (AccountId, WeAssetId))  -> result::Result<(), sp_runtime::DispatchError> {
 //         // 以 WETEE 创建者设置为WETEE初始的 root 账户
 //         wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
 //     }
@@ -169,7 +169,7 @@
 //     type RuntimeEvent = RuntimeEvent;
 //     type RuntimeCall = RuntimeCall;
 //     type CallId = CallId;
-//     type OrgHook = CreatedHook;
+//     type CrossCall = CreatedHook;
 //     type WeightInfo = ();
 //     type MaxMembers = ConstU32<1000000>;
 //     type PalletId = DaoPalletId;

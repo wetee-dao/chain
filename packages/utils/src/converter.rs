@@ -11,7 +11,7 @@ use xcm::{
     v4::{AssetId, Location, Parent},
 };
 
-use wetee_primitives::types::WeAssetId;
+use wetee_primitives::{types::WeAssetId, u8_32_vec};
 
 #[derive(
     Encode,
@@ -67,10 +67,7 @@ impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
     fn convert(l: Location) -> Option<CurrencyId> {
         if l == Location::parent() {
             let token_symbol = b"DOT".to_vec();
-            let mut data = [0u8; 32];
-            data[..token_symbol.len()].copy_from_slice(&token_symbol[..]);
-
-            let asset_id = wetee_assets::Pallet::<Runtime>::para_asset_id(0, data);
+            let asset_id = wetee_assets::Pallet::<Runtime>::para_asset_id(0, token_symbol);
             log::info!(
                 "relay ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++{:?}",
                 asset_id
@@ -93,8 +90,9 @@ impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
         );
         match interior {
             [Parachain(para), GeneralKey { data, .. }] => {
+                let symbol = u8_32_vec(data.clone());
                 let asset_id =
-                    wetee_assets::Pallet::<Runtime>::para_asset_id(para.clone(), data.clone());
+                    wetee_assets::Pallet::<Runtime>::para_asset_id(para.clone(), symbol.clone());
                 if asset_id.is_some() {
                     Some(CurrencyId {
                         para_id: para.clone(),
@@ -103,7 +101,7 @@ impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
                 } else {
                     log::error!(
                         "currency not found ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++{:?} {:?}",
-                        para,data
+                        para,symbol
                     );
                     None
                 }

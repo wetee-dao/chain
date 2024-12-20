@@ -76,3 +76,19 @@ pub fn handle_dispatch_error(error: DispatchError) -> String {
         }
     }
 }
+
+/// vec to [u8;32]
+pub fn vec_u8_32(s: Vec<u8>) -> [u8; 32] {
+    let mut string: Vec<u8> = s.clone();
+    string.resize(32, 0);
+
+    let mut data = [0u8; 32];
+    data[..string.len()].copy_from_slice(&string[..]);
+
+    data
+}
+
+/// [u8;32] to vec
+pub fn u8_32_vec(s: [u8; 32]) -> Vec<u8> {
+    return s.to_vec();
+}

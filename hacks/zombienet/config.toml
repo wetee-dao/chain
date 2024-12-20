@@ -19,6 +19,6 @@ id = 4545
 
 [parachains.collator]
 command = "/parachain-node"
-image = "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:paseo.2024-12-18-14_00"
+image = "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:paseo.2024-11-16-16_48"
 name = "wetee-dev"
 rpc_port = 31945

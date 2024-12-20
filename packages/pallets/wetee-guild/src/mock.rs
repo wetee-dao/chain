@@ -10,7 +10,7 @@ use wetee_gov::traits::PledgeTrait;
 
 use wetee_assets::{self as wetee_assets, ext::BasicCurrencyAdapter};
 use wetee_primitives::{
-    traits::{GovIsJoin, PalletGet, UHook},
+    traits::{CrossCall, GovIsJoin, PalletGet},
     types::{CallId, WeAssetId},
 };
 
@@ -151,10 +151,33 @@ parameter_types! {
 }
 
 pub struct CreatedHook;
-impl UHook<u64, WeAssetId> for CreatedHook {
-    fn run_hook(acount_id: u64, dao_id: WeAssetId) {
+impl CrossCall<(u64, WeAssetId), ()> for CreatedHook {
+    fn call(
+        (acount_id, dao_id): (u64, WeAssetId),
+    ) -> sp_std::result::Result<(), sp_runtime::DispatchError> {
         // 以 WETEE 创建者设置为WETEE初始的 root 账户
         wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
+
+        Ok(())
+    }
+}
+
+impl CrossCall<(u64, WeAssetId, Vec<u8>, Vec<u8>, u8, u128), ()> for CreatedHook {
+    fn call(
+        args: (u64, WeAssetId, Vec<u8>, Vec<u8>, u8, u128),
+    ) -> sp_std::result::Result<(), sp_runtime::DispatchError> {
+        let chain = wetee_assets::ChainID::<Test>::get();
+        wetee_assets::Pallet::<Test>::try_create(
+            args.0,
+            chain,
+            args.1,
+            wetee_assets::AssetMeta {
+                name: args.2,
+                symbol: args.3,
+                decimals: args.4,
+            },
+            args.5.try_into().unwrap(),
+        )
     }
 }
 
@@ -162,7 +185,7 @@ impl wetee_dao::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = CallId;
-    type OrgHook = CreatedHook;
+    type CrossCall = CreatedHook;
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
     type PalletId = DaoPalletId;

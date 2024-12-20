@@ -10,7 +10,7 @@ use wetee_gov::traits::PledgeTrait;
 
 use wetee_assets::{self as wetee_assets, ext::BasicCurrencyAdapter};
 use wetee_primitives::{
-    traits::{GovIsJoin, PalletGet, UHook},
+    traits::{GovIsJoin, PalletGet},
     types::{CallId, WeAssetId},
 };
 
@@ -150,19 +150,11 @@ parameter_types! {
     pub const DaoPalletId: PalletId = PalletId(*b"weteedao");
 }
 
-pub struct CreatedHook;
-impl UHook<u64, WeAssetId> for CreatedHook {
-    fn run_hook(acount_id: u64, dao_id: WeAssetId) {
-        // 以 WETEE 创建者设置为WETEE初始的 root 账户
-        wetee_sudo::Account::<Test>::insert(dao_id, acount_id);
-    }
-}
-
 impl wetee_dao::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = CallId;
-    type OrgHook = CreatedHook;
+    type CrossCall = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
     type PalletId = DaoPalletId;
@@ -174,7 +166,7 @@ impl TryFrom<RuntimeCall> for CallId {
         match call {
             // dao
             RuntimeCall::WETEEGuild(func) => match func {
-                wetee_guild::Call::guild_join { .. } => Ok(401 as CallId),
+                wetee_guild::Call::cross_transfer_from { .. } => Ok(401 as CallId),
                 _ => Err(()),
             },
             _ => Err(()),

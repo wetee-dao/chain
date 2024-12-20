@@ -16,11 +16,6 @@ pub fn create_dao() {
         vec![1; 4],
         vec![1; 4],
         vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
     )
     .unwrap();
     crate::Account::<Test>::insert(DAO_ID, ALICE)

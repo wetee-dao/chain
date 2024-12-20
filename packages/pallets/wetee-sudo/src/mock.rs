@@ -53,7 +53,7 @@ impl wetee_dao::Config for Test {
     type RuntimeCall = RuntimeCall;
     type CallId = u64;
     type PalletId = DaoPalletId;
-    type OrgHook = ();
+    type CrossCall = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }

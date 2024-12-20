@@ -13,11 +13,6 @@ pub fn create_dao() {
         vec![1; 4],
         vec![1; 4],
         vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
     )
     .unwrap();
 }
@@ -31,20 +26,10 @@ pub fn create_dao_should_work() {
             vec![1; 60],
             vec![1; 60],
             vec![1; 4],
-            vec![1; 4],
-            vec![1; 4],
-            vec![1; 4],
-            vec![1; 4],
-            vec![1; 4],
         )
         .is_err());
         assert_ok!(Pallet::<Test>::create_dao(
             RuntimeOrigin::signed(ALICE),
-            vec![1; 4],
-            vec![1; 4],
-            vec![1; 4],
-            vec![1; 4],
-            vec![1; 4],
             vec![1; 4],
             vec![1; 4],
             vec![1; 4],
@@ -97,5 +82,28 @@ pub fn get_dao_account_id() {
         assert!(Pallet::<Test>::try_get_dao_account_id(5000u64).is_err());
         create_dao();
         assert_ok!(Pallet::<Test>::try_get_dao_account_id(5000u64));
+    });
+}
+
+#[test]
+pub fn test_init_asset() {
+    new_test_run().execute_with(|| {
+        assert_ok!(Pallet::<Test>::create_dao(
+            RuntimeOrigin::signed(ALICE),
+            vec![1; 4],
+            vec![1; 4],
+            vec![1; 4],
+            vec![1; 4],
+        ));
+        assert!(Daos::<Test>::get(5000u64).is_some());
+
+        Pallet::<Test>::init_asset(
+            RuntimeOrigin::signed(Pallet::<Test>::dao_approve(5000, 0)),
+            5000u64,
+            "TA".as_bytes().to_vec(),
+            12,
+            100000,
+        )
+        .unwrap();
     });
 }

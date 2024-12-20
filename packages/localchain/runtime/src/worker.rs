@@ -1,19 +1,13 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::QueuePausedQuery;
-// pub use frame_support::weights::{
-//     constants::{
-//         BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-//     },
-//     IdentityFee, Weight,
-// };
 use frame_support::{
     traits::{ProcessMessage, ProcessMessageError, QueueFootprint},
     weights::WeightMeter,
 };
 use scale_info::TypeInfo;
-
+use sp_std::result::Result;
 use wetee_primitives::{
-    traits::{UHook, WorkExt},
+    traits::{CrossCall, WorkExt},
     types::{TEEVersion, WorkId, WorkType},
     vec2bytes,
 };
@@ -37,10 +31,12 @@ pub enum MessageOrigin {
 
 /// 任务队列变化处理器
 pub struct WorkerQueueHook;
-impl UHook<WorkId, AccountId> for WorkerQueueHook {
-    fn run_hook(id: WorkId, _: AccountId) {
+impl CrossCall<(WorkId, AccountId), ()> for WorkerQueueHook {
+    fn call((id, _): (WorkId, AccountId)) -> Result<(), sp_runtime::DispatchError> {
         // 添加消息到队列
         WeMessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::Work);
+
+        return Ok(());
     }
 }
 

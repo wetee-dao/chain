@@ -3,9 +3,10 @@ use crate::*;
 use frame_support::{traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
 use sp_runtime::traits::{Verify, Zero};
-use wetee_assets::{self as wetee_assets, ext::BasicCurrencyAdapter};
+use sp_std::result::Result;
+use wetee_assets::{ext::BasicCurrencyAdapter, AssetMeta};
 use wetee_primitives::{
-    traits::{GovIsJoin, UHook},
+    traits::{CrossCall, GovIsJoin},
     types::{CallId, WeAssetId, NATIVE_ASSET_ID},
 };
 use wetee_utils::converter::{CurrencyId, CurrencyIdConvert};
@@ -90,11 +91,30 @@ parameter_types! {
     pub const DaoPalletId: PalletId = PalletId(*b"weteedao");
 }
 
-pub struct CreatedHook;
-impl UHook<AccountId, WeAssetId> for CreatedHook {
-    fn run_hook(acount_id: AccountId, dao_id: WeAssetId) {
+pub struct DaoHook;
+impl CrossCall<(AccountId, WeAssetId), ()> for DaoHook {
+    fn call((acount_id, dao_id): (AccountId, WeAssetId)) -> Result<(), sp_runtime::DispatchError> {
         // 以 WETEE 创建者设置为WETEE初始的 root 账户
         wetee_sudo::Account::<Runtime>::insert(dao_id, acount_id);
+        Ok(())
+    }
+}
+impl CrossCall<(AccountId, WeAssetId, Vec<u8>, Vec<u8>, u8, u128), ()> for DaoHook {
+    fn call(
+        args: (AccountId, WeAssetId, Vec<u8>, Vec<u8>, u8, u128),
+    ) -> Result<(), sp_runtime::DispatchError> {
+        let chain = wetee_assets::ChainID::<Runtime>::get();
+        wetee_assets::Pallet::<Runtime>::try_create(
+            args.0,
+            chain,
+            args.1,
+            AssetMeta {
+                name: args.2,
+                symbol: args.3,
+                decimals: args.4,
+            },
+            args.5,
+        )
     }
 }
 
@@ -102,7 +122,7 @@ impl wetee_dao::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CallId = CallId;
-    type OrgHook = CreatedHook;
+    type CrossCall = DaoHook;
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
     type PalletId = DaoPalletId;
@@ -128,7 +148,7 @@ impl Contains<AccountId> for MockDustRemovalWhitelist {
 
 parameter_types! {
     pub const MaxLocks: u32 = 50;
-    pub const MaxCreatableId: WeAssetId = 90000;
+    pub const MaxCreatableId: WeAssetId = u64::MAX;
     pub const NativeCurrencyId: CurrencyId = CurrencyId {
         para_id: 1,
         currency_id: NATIVE_ASSET_ID,
@@ -178,19 +198,19 @@ impl wetee_treasury::Config for Runtime {
 impl wetee_app::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    type UHook = WorkerQueueHook;
+    type CrossCall = WorkerQueueHook;
 }
 
 impl wetee_task::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    type UHook = WorkerQueueHook;
+    type CrossCall = WorkerQueueHook;
 }
 
 impl wetee_gpu::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    type UHook = WorkerQueueHook;
+    type CrossCall = WorkerQueueHook;
 }
 
 impl wetee_worker::Config for Runtime {
@@ -224,8 +244,8 @@ impl wetee_tee_bridge::Config for Runtime {
 }
 
 // pub struct FairlanchHook;
-// impl UHook<AccountId, Fairlanch> for FairlanchHook {
-//     fn run_hook(id: WorkId, _: AccountId) {
+// impl CrossCall<AccountId, Fairlanch> for FairlanchHook {
+//     fn call(id: WorkId, _: AccountId) {
 //         // 添加消息到队列
 //         WeMessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::FairLaunch);
 //     }

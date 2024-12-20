@@ -15,11 +15,6 @@ pub fn create_asset() -> WeAssetId {
         vec![1; 4],
         vec![1; 4],
         vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
     )
     .unwrap();
 
@@ -99,27 +94,3 @@ pub fn test_set_parachain_asset() {
         Sudo::sudo(RuntimeOrigin::signed(ALICE), Box::new(proposal)).unwrap();
     })
 }
-
-// #[test]
-// pub fn test_asset_join() {
-//     new_test_run().execute_with(|| {
-//         let dao_id = create_asset();
-
-//         wetee_assets::Pallet::<Test>::join(RuntimeOrigin::signed(BOB), dao_id, 100, 100)
-//             .unwrap();
-
-//         let bob_dao = wetee_assets::Pallet::<Test>::get_balance(dao_id, BOB).unwrap();
-//         let bob = wetee_assets::Pallet::<Test>::get_balance(0, BOB).unwrap();
-
-//         let dao = wetee_dao::Pallet::<Test>::dao_account(dao_id);
-//         let dao_b = wetee_assets::Pallet::<Test>::get_balance(0, dao).unwrap();
-
-//         println!(
-//             "join_request >>>>>> bob_dao token {:?} ||| bob token {:?} ||| dao_b {:?}",
-//             bob_dao, bob, dao_b
-//         );
-//         assert_eq!(bob_dao, 100);
-//         assert_eq!(bob, 9900);
-//         assert_eq!(dao_b, 10100);
-//     })
-// }

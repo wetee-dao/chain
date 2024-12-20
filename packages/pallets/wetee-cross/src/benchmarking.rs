@@ -23,11 +23,6 @@ fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
         vec![1; 4],
         vec![1; 4],
         vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
     )
     .is_ok());
     (dao_id, second_id)
@@ -38,7 +33,7 @@ mod benchmarks {
     use super::*;
 
     #[benchmark]
-    fn guild_join() {
+    fn cross_transfer_from() {
         let (_dao_id, _second_id) = creat_dao::<T>();
         let bob = get_bob::<T>();
 

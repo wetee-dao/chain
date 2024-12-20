@@ -8,7 +8,7 @@ use scale_info::TypeInfo;
 use sp_runtime::{traits::BlockNumberProvider, RuntimeDebug};
 use sp_std::{prelude::*, result};
 use wetee_primitives::{
-    traits::UHook,
+    traits::CrossCall,
     types::{GuildId, ProjectId, TaskId, WeAssetId},
 };
 
@@ -62,16 +62,6 @@ pub struct OrgInfo<AccountId, BlockNumber> {
     //// meta data
     /// DAO 元数据 图片等内容
     pub meta_data: Vec<u8>,
-    /// im api
-    pub im_api: Vec<u8>,
-    /// org color
-    pub bg: Vec<u8>,
-    /// org logo
-    pub logo: Vec<u8>,
-    /// 组织大图
-    pub img: Vec<u8>,
-    /// 组织主页
-    pub home_url: Vec<u8>,
     /// State of the DAO
     /// DAO状态
     pub status: Status,
@@ -256,9 +246,10 @@ pub mod pallet {
         #[pallet::constant]
         type PalletId: Get<PalletId>;
 
-        /// Do some things after creating dao, such as setting up a sudo account.
-        /// 创建DAO之后的回调
-        type OrgHook: UHook<Self::AccountId, WeAssetId>;
+        /// Cross chain call
+        /// 跨链调用
+        type CrossCall: CrossCall<(Self::AccountId, WeAssetId), ()>
+            + CrossCall<(Self::AccountId, WeAssetId, Vec<u8>, Vec<u8>, u8, u128), ()>;
 
         /// max member number
         /// 组织最大的人数
@@ -481,11 +472,6 @@ pub mod pallet {
             desc: Vec<u8>,
             purpose: Vec<u8>,
             meta_data: Vec<u8>,
-            im_api: Vec<u8>,
-            bg: Vec<u8>,
-            logo: Vec<u8>,
-            img: Vec<u8>,
-            home_url: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             ensure!(name.len() <= 30, Error::<T>::NameTooLong);
             ensure!(desc.len() <= 50, Error::<T>::DescTooLong);
@@ -509,11 +495,6 @@ pub mod pallet {
                     status: Status::Active,
                     dao_account_id: Self::dao_account(dao_id),
                     meta_data,
-                    im_api,
-                    bg,
-                    logo,
-                    img,
-                    home_url,
                 },
             );
 
@@ -549,9 +530,35 @@ pub mod pallet {
             NextDaoId::<T>::put(next_id);
 
             // 执行 DAO 创建后回调
-            T::OrgHook::run_hook(creator.clone(), dao_id);
+            T::CrossCall::call((creator.clone(), dao_id))?;
 
             Self::deposit_event(Event::CreatedDao(creator, dao_id));
+            Ok(().into())
+        }
+
+        /// init asset for dao
+        /// 初始化 DAO 通证
+        #[pallet::call_index(009)]
+        #[pallet::weight(T::WeightInfo::create_dao())]
+        pub fn init_asset(
+            origin: OriginFor<T>,
+            dao_id: WeAssetId,
+            symbol: Vec<u8>,
+            decimals: u8,
+            init_token: u128,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            // 只有提案的方式能更新组织信息
+            let daogov = Pallet::<T>::ensrue_gov_approve_account(who.clone())?;
+            ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoGovOrigin);
+
+            // 获取组织
+            let dao = Daos::<T>::get(dao_id).ok_or(Error::<T>::DaoNotExists)?;
+
+            // 调用跨模块创建通证
+            T::CrossCall::call((who, dao_id, dao.name, symbol, decimals, init_token))?;
+
             Ok(().into())
         }
 
@@ -566,17 +573,12 @@ pub mod pallet {
             desc: Option<Vec<u8>>,
             purpose: Option<Vec<u8>>,
             meta_data: Option<Vec<u8>>,
-            im_api: Option<Vec<u8>>,
-            bg: Option<Vec<u8>>,
-            logo: Option<Vec<u8>>,
-            img: Option<Vec<u8>>,
-            home_url: Option<Vec<u8>>,
             status: Option<Status>,
         ) -> DispatchResultWithPostInfo {
-            let me = ensure_signed(origin)?;
+            let who = ensure_signed(origin)?;
 
             // 只有提案的方式能更新组织信息
-            let daogov = Pallet::<T>::ensrue_gov_approve_account(me)?;
+            let daogov = Pallet::<T>::ensrue_gov_approve_account(who)?;
             ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoGovOrigin);
 
             // 获取组织
@@ -593,21 +595,6 @@ pub mod pallet {
             }
             if let Some(meta_data) = meta_data {
                 dao.meta_data = meta_data;
-            }
-            if let Some(im_api) = im_api {
-                dao.im_api = im_api;
-            }
-            if let Some(bg) = bg {
-                dao.bg = bg;
-            }
-            if let Some(logo) = logo {
-                dao.logo = logo;
-            }
-            if let Some(img) = img {
-                dao.img = img;
-            }
-            if let Some(home_url) = home_url {
-                dao.home_url = home_url;
             }
             if let Some(status) = status {
                 dao.status = status;

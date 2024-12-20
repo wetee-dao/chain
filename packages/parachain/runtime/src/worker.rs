@@ -13,7 +13,7 @@ use frame_support::{
 use scale_info::TypeInfo;
 
 use wetee_primitives::{
-    traits::{UHook, WorkExt},
+    traits::{CrossCall, WorkExt},
     types::{TEEVersion, WorkId, WorkType},
     vec2bytes,
 };
@@ -35,10 +35,12 @@ pub enum MessageOrigin {
 
 /// 任务队列变化处理器
 pub struct WorkerQueueHook;
-impl UHook<WorkId, AccountId> for WorkerQueueHook {
-    fn run_hook(id: WorkId, _: AccountId) {
+impl CrossCall<(WorkId, AccountId), ()> for WorkerQueueHook {
+    fn call((id, _): (WorkId, AccountId)) -> Result<(), sp_runtime::DispatchError> {
         // 添加消息到队列
         WeMessageQueue::enqueue_message(vec2bytes(&id.encode()), MessageOrigin::Work);
+
+        return Ok(());
     }
 }
 

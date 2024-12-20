@@ -6,10 +6,6 @@ use frame_support::{
 };
 use sp_runtime::BuildStorage;
 use sp_std::result::Result;
-use wetee_primitives::{
-    traits::UHook,
-    types::{WeAssetId, WorkId},
-};
 
 // type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;
@@ -48,17 +44,12 @@ parameter_types! {
     pub const DaoPalletId: PalletId = PalletId(*b"weteedao");
 }
 
-pub struct WorkerQueueHook;
-impl UHook<WorkId, u64> for WorkerQueueHook {
-    fn run_hook(_id: WorkId, _dao_id: WeAssetId) {}
-}
-
 impl wetee_dao::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type PalletId = DaoPalletId;
     type CallId = u64;
-    type OrgHook = ();
+    type CrossCall = ();
     type WeightInfo = ();
     type MaxMembers = ConstU32<1000000>;
 }

@@ -55,7 +55,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(001)]
         #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::guild_join())]
-        pub fn guild_join(
+        pub fn cross_transfer_from(
             origin: OriginFor<T>,
             dao_id: WeAssetId,
             guild_id: u64,

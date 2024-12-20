@@ -9,7 +9,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_std::result;
 use wetee_primitives::{
-    traits::UHook,
+    traits::CrossCall,
     types::{
         ClusterLevel, Command, Cr, Disk, EditType, Env, EnvHash, EnvInput, Service, TEEVersion,
         TeeAppId, WorkId, WorkStatus,
@@ -126,7 +126,7 @@ pub mod pallet {
 
         /// Do some things after creating dao, such as setting up a sudo account.
         /// 创建部署任务后回调
-        type UHook: UHook<WorkId, Self::AccountId>;
+        type CrossCall: CrossCall<(WorkId, Self::AccountId), ()>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -347,15 +347,15 @@ pub mod pallet {
                 creator: who.clone(),
             });
 
-            // Run UHook hook
+            // Run CrossCall hook
             // 执行 Task 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::UHook::run_hook(
+            <T as pallet::Config>::CrossCall::call((
                 WorkId {
                     wtype: WorkType::TASK,
                     id,
                 },
                 who,
-            );
+            ))?;
 
             Ok(().into())
         }
@@ -390,15 +390,15 @@ pub mod pallet {
                 },
             )?;
 
-            // Run UHook hook
+            // Run CrossCall hook
             // 执行 Task 创建后回调,部署任务添加到消息中间件
-            <T as pallet::Config>::UHook::run_hook(
+            <T as pallet::Config>::CrossCall::call((
                 WorkId {
                     wtype: WorkType::TASK,
                     id,
                 },
                 who,
-            );
+            ))?;
 
             Ok(().into())
         }
