@@ -55,21 +55,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(001)]
         #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::guild_join())]
-        pub fn cross_transfer_from(
-            origin: OriginFor<T>,
-            dao_id: WeAssetId,
-            guild_id: u64,
-            who: T::AccountId,
-        ) -> DispatchResultWithPostInfo {
-            let me = ensure_signed(origin)?;
-            let daogov = wetee_dao::Pallet::<T>::ensrue_gov_approve_account(me.clone())?;
-
-            log::info!("call by {:?}", daogov.1.id);
-            ensure!(daogov.1.id == dao_id, Error::<T>::BadDaoOrigin);
-
-            wetee_dao::Pallet::<T>::try_add_guild_member(dao_id, guild_id, who.clone())?;
-
-            Self::deposit_event(Event::GuildJoined(dao_id, guild_id, who));
+        pub fn cross_transfer_from(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Ok(().into())
         }
     }

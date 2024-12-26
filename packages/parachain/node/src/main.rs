@@ -5,10 +5,10 @@
 mod chain_spec;
 mod cli;
 mod command;
-mod paseo_net;
 mod rpc;
 mod service;
-mod wetee_dev_net;
+mod spec_dev_net;
+mod spec_paseo_net;
 
 fn main() -> sc_cli::Result<()> {
     command::run()

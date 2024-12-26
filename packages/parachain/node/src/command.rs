@@ -14,9 +14,8 @@ use sc_service::config::{BasePath, PrometheusConfig};
 use crate::{
     chain_spec,
     cli::{Cli, RelayChainCli, Subcommand},
-    paseo_net,
     service::new_partial,
-    wetee_dev_net,
+    spec_dev_net, spec_paseo_net,
 };
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
@@ -24,8 +23,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {
         "dev" => Box::new(chain_spec::development_config()),
         "" | "local" => Box::new(chain_spec::local_testnet_config()),
-        "wetee-paseo" => Box::new(paseo_net::paseo_config()),
-        "wetee-dev" => Box::new(wetee_dev_net::wetee_dev_config()),
+        "wetee-paseo" => Box::new(spec_paseo_net::paseo_config()),
+        "wetee-dev" => Box::new(spec_dev_net::wetee_dev_config()),
         path => Box::new(chain_spec::ChainSpec::from_json_file(
             std::path::PathBuf::from(path),
         )?),

@@ -34,8 +34,10 @@ pub struct CurrencyId {
     pub currency_id: WeAssetId,
 }
 
+/// CurrencyIdConvert
 pub struct CurrencyIdConvert<Runtime>(PhantomData<Runtime>);
 
+/// Convert CurrencyId to Location
 impl<Runtime: wetee_assets::Config> Convert<CurrencyId, Option<Location>>
     for CurrencyIdConvert<Runtime>
 {
@@ -61,6 +63,7 @@ impl<Runtime: wetee_assets::Config> Convert<CurrencyId, Option<Location>>
     }
 }
 
+/// Convert Location to CurrencyId
 impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
     for CurrencyIdConvert<Runtime>
 {
@@ -111,6 +114,7 @@ impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
     }
 }
 
+/// Convert Asset to CurrencyId
 impl<Runtime: wetee_assets::Config> Convert<Asset, Option<CurrencyId>>
     for CurrencyIdConvert<Runtime>
 {
@@ -127,6 +131,7 @@ impl<Runtime: wetee_assets::Config> Convert<Asset, Option<CurrencyId>>
     }
 }
 
+/// Convert CurrencyId to (u32, WeAssetId)
 impl<Runtime: wetee_assets::Config> Convert<(u32, WeAssetId), CurrencyId>
     for CurrencyIdConvert<Runtime>
 {
@@ -138,6 +143,7 @@ impl<Runtime: wetee_assets::Config> Convert<(u32, WeAssetId), CurrencyId>
     }
 }
 
+/// Convert CurrencyId to WeAssetId
 impl<Runtime: wetee_assets::Config> Convert<CurrencyId, WeAssetId> for CurrencyIdConvert<Runtime> {
     fn convert(id: CurrencyId) -> WeAssetId {
         return id.currency_id;
