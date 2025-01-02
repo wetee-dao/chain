@@ -126,7 +126,6 @@ impl CrossCall<(AccountId, WeAssetId, Vec<u8>, Vec<u8>, u8, u128), ()> for Creat
         let chain = wetee_assets::ChainID::<Test>::get();
         wetee_assets::Pallet::<Test>::try_create(
             args.0,
-            chain,
             args.1,
             AssetMeta {
                 name: args.2,

@@ -166,10 +166,8 @@ impl CrossCall<(u64, WeAssetId, Vec<u8>, Vec<u8>, u8, u128), ()> for CreatedHook
     fn call(
         args: (u64, WeAssetId, Vec<u8>, Vec<u8>, u8, u128),
     ) -> sp_std::result::Result<(), sp_runtime::DispatchError> {
-        let chain = wetee_assets::ChainID::<Test>::get();
         wetee_assets::Pallet::<Test>::try_create(
             args.0,
-            chain,
             args.1,
             wetee_assets::AssetMeta {
                 name: args.2,

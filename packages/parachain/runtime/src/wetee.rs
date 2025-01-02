@@ -109,7 +109,6 @@ impl CrossCall<(AccountId, WeAssetId, Vec<u8>, Vec<u8>, u8, u128), ()> for DaoHo
 
         wetee_assets::Pallet::<Runtime>::try_create(
             args.0,
-            chain,
             args.1,
             AssetMeta {
                 name: args.2,
@@ -152,10 +151,7 @@ impl Contains<AccountId> for MockDustRemovalWhitelist {
 parameter_types! {
     pub const MaxLocks: u32 = 50;
     pub const MaxCreatableId: WeAssetId = 900000000;
-    pub NativeCurrencyId: CurrencyId = CurrencyId {
-        para_id: ParachainInfo::parachain_id().into(),
-        currency_id: NATIVE_ASSET_ID,
-    };
+    pub NativeCurrencyId: CurrencyId =  NATIVE_ASSET_ID;
 }
 
 impl wetee_assets::Config for Runtime {

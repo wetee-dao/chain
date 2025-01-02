@@ -173,7 +173,7 @@ pub mod pallet {
         type GetNativeCurrencyId: Get<CurrencyIdOf<Self>>;
 
         /// Convert `WeAssetId` to `T::CurrencyId`.
-        type CurrencyIdConvert: Convert<(u32, WeAssetId), CurrencyIdOf<Self>>
+        type CurrencyIdConvert: Convert<WeAssetId, CurrencyIdOf<Self>>
             + Convert<CurrencyIdOf<Self>, WeAssetId>;
 
         /// Weight information for extrinsics in this module.
@@ -236,17 +236,22 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn asset_infos)]
-    pub type AssetsInfo<T: Config> =
+    pub type AssetInfos<T: Config> =
         StorageMap<_, Blake2_128Concat, CurrencyIdOf<T>, AssetInfo<T::AccountId, AssetMeta>>;
 
     #[pallet::storage]
     #[pallet::getter(fn symbols)]
-    pub type Symbols<T: Config> = StorageMap<_, Identity, Vec<u8>, CurrencyIdOf<T>, OptionQuery>;
+    pub type AssetSymbols<T: Config> =
+        StorageMap<_, Identity, Vec<u8>, CurrencyIdOf<T>, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn para_maps)]
-    pub type ParaMaps<T: Config> =
+    pub type ParaAssetMaps<T: Config> =
         StorageDoubleMap<_, Identity, u32, Identity, Vec<u8>, CurrencyIdOf<T>, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn asset_para_ids)]
+    pub type AssetParaIds<T: Config> = StorageMap<_, Identity, CurrencyIdOf<T>, u32, OptionQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -283,9 +288,8 @@ pub mod pallet {
             let next_id = asset_id.checked_add(1).ok_or(Error::<T>::AssetIdOverflow)?;
             wetee_dao::NextDaoId::<T>::put(next_id);
 
-            let chain_id = Self::chain_id();
             // 创建资产
-            Self::try_create(who.clone(), chain_id, asset_id, metadata, init_amount)?;
+            Self::try_create(who.clone(), asset_id, metadata, init_amount)?;
 
             Ok(().into())
         }
@@ -306,7 +310,7 @@ pub mod pallet {
         //         Error::<T>::MetadataErr
         //     );
 
-        //     let mut asset_info = AssetsInfo::<T>::get(Self::get_local_asset(asset_id))
+        //     let mut asset_info = AssetInfos::<T>::get(Self::get_local_asset(asset_id))
         //         .ok_or(Error::<T>::AssetNotExists)?;
 
         //     ensure!(
@@ -325,7 +329,7 @@ pub mod pallet {
 
         //     asset_info.metadata = metadata.clone();
 
-        //     AssetsInfo::<T>::insert(Self::get_local_asset(asset_id), asset_info);
+        //     AssetInfos::<T>::insert(Self::get_local_asset(asset_id), asset_info);
         //     Self::deposit_event(Event::SetMetadata(who, asset_id, metadata));
 
         //     Ok(().into())
@@ -403,7 +407,7 @@ pub mod pallet {
             // 确保 symbol 不重复
             let token_symbol = metadata.symbol.clone();
             ensure!(
-                !ParaMaps::<T>::contains_key(para_id, token_symbol.clone()),
+                !ParaAssetMaps::<T>::contains_key(para_id, token_symbol.clone()),
                 Error::<T>::AssetAlreadyExists
             );
 
@@ -415,16 +419,11 @@ pub mod pallet {
             wetee_dao::NextDaoId::<T>::put(next_id);
 
             // 创建资产
-            Self::try_create(
-                who.clone(),
-                para_id,
-                asset_id,
-                metadata.clone(),
-                0u32.into(),
-            )?;
+            Self::try_create(who.clone(), asset_id, metadata.clone(), 0u32.into())?;
 
-            let currency_id = T::CurrencyIdConvert::convert((para_id, asset_id));
-            ParaMaps::<T>::insert(para_id, token_symbol, currency_id);
+            let currency_id = T::CurrencyIdConvert::convert(asset_id);
+            ParaAssetMaps::<T>::insert(para_id, token_symbol, currency_id);
+            AssetParaIds::<T>::insert(currency_id, para_id);
 
             Ok(().into())
         }
@@ -526,19 +525,18 @@ pub mod pallet {
         // 创建代币
         pub fn try_create(
             user: T::AccountId,
-            para_id: u32,
             asset_id: WeAssetId,
             metadata: AssetMeta,
             amount: BalanceOf<T>,
         ) -> DispatchResult {
-            if Symbols::<T>::contains_key(metadata.symbol.clone()) {
+            if AssetSymbols::<T>::contains_key(metadata.symbol.clone()) {
                 return Ok(());
             }
 
             ensure!(
                 !Self::is_exists(asset_id)
                     && <T as pallet::Config>::MultiCurrency::total_issuance(
-                        T::CurrencyIdConvert::convert((para_id, asset_id))
+                        T::CurrencyIdConvert::convert(asset_id)
                     ) == BalanceOf::<T>::from(0u32),
                 Error::<T>::AssetAlreadyExists
             );
@@ -557,7 +555,7 @@ pub mod pallet {
             let cid = Self::get_local_asset(asset_id);
             <T as pallet::Config>::MultiCurrency::deposit(cid.clone(), &user, amount)?;
 
-            AssetsInfo::<T>::insert(
+            AssetInfos::<T>::insert(
                 Self::get_local_asset(asset_id),
                 AssetInfo {
                     owner: user.clone(),
@@ -565,7 +563,7 @@ pub mod pallet {
                 },
             );
 
-            Symbols::<T>::insert(metadata.symbol, cid.clone());
+            AssetSymbols::<T>::insert(metadata.symbol, cid.clone());
 
             Self::deposit_event(Event::CreateAsset(user, asset_id, amount));
 
@@ -667,7 +665,7 @@ pub mod pallet {
             if asset_id == NATIVE_ASSET_ID {
                 return true;
             }
-            if AssetsInfo::<T>::get(Self::get_local_asset(asset_id)).is_some() {
+            if AssetInfos::<T>::get(Self::get_local_asset(asset_id)).is_some() {
                 return true;
             }
             false
@@ -683,22 +681,30 @@ pub mod pallet {
 
         /// 获取跨链资产ID
         pub fn para_asset_id(para_id: u32, symbol: Vec<u8>) -> Option<WeAssetId> {
-            let id = ParaMaps::<T>::get(para_id, symbol);
+            let id = ParaAssetMaps::<T>::get(para_id, symbol);
             match id {
                 Some(cid) => Some(T::CurrencyIdConvert::convert(cid)),
                 None => None,
             }
         }
 
+        /// 获取跨链资产ID
+        pub fn para_id(cid: WeAssetId) -> Option<u32> {
+            let id = AssetParaIds::<T>::get(Self::get_local_asset(cid));
+            match id {
+                Some(cid) => Some(cid),
+                None => None,
+            }
+        }
+
         /// 获取本地资产ID
         pub fn get_local_asset(asset_id: WeAssetId) -> CurrencyIdOf<T> {
-            let chain_id = Self::chain_id();
-            T::CurrencyIdConvert::convert((chain_id, asset_id))
+            T::CurrencyIdConvert::convert(asset_id)
         }
 
         /// 获取跨链资产ID
-        pub fn para_asset_symbol(para_id: u32, id: WeAssetId) -> Option<Vec<u8>> {
-            let id = AssetsInfo::<T>::get(T::CurrencyIdConvert::convert((para_id, id)));
+        pub fn para_asset_symbol(id: WeAssetId) -> Option<Vec<u8>> {
+            let id = AssetInfos::<T>::get(T::CurrencyIdConvert::convert(id));
             match id {
                 Some(info) => {
                     let mut symbol: Vec<u8> = info.metadata.symbol.clone();
