@@ -96,6 +96,7 @@ impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
                 let symbol = u8_32_vec(data.clone());
                 let asset_id =
                     wetee_assets::Pallet::<Runtime>::para_asset_id(para.clone(), symbol.clone());
+
                 if asset_id.is_some() {
                     Some(CurrencyId {
                         para_id: para.clone(),

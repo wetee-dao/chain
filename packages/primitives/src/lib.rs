@@ -10,14 +10,6 @@ use sp_runtime::DispatchError;
 pub mod traits;
 pub mod types;
 
-// pub fn de_string_to_bytes<'de, D>(de: D) -> Result<Vec<u8>, D::Error>
-// where
-//     D: Deserializer<'de>,
-// {
-//     let s: &str = Deserialize::deserialize(de)?;
-//     Ok(s.as_bytes().to_vec())
-// }
-
 // 1 WTE = 1_000_000_000_000
 pub const WTE: u128 = 1_000_000_000_000;
 
@@ -92,3 +84,11 @@ pub fn vec_u8_32(s: Vec<u8>) -> [u8; 32] {
 pub fn u8_32_vec(s: [u8; 32]) -> Vec<u8> {
     return s.to_vec();
 }
+
+// pub fn de_string_to_bytes<'de, D>(de: D) -> Result<Vec<u8>, D::Error>
+// where
+//     D: Deserializer<'de>,
+// {
+//     let s: &str = Deserialize::deserialize(de)?;
+//     Ok(s.as_bytes().to_vec())
+// }
