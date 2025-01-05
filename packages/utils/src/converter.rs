@@ -1,9 +1,5 @@
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
-use sp_runtime::{traits::Convert, BoundedVec, RuntimeDebug};
+use sp_runtime::{traits::Convert, BoundedVec};
 use sp_std::marker::PhantomData;
-use sp_std::vec::Vec;
 use xcm::{
     latest::Asset,
     prelude::{Fungible, GeneralKey, Parachain},
@@ -11,28 +7,7 @@ use xcm::{
     v4::{AssetId, Location, Parent},
 };
 
-use wetee_primitives::{types::WeAssetId, u8_32_vec};
-
-// #[derive(
-//     Encode,
-//     Decode,
-//     MaxEncodedLen,
-//     Eq,
-//     PartialEq,
-//     Copy,
-//     Clone,
-//     RuntimeDebug,
-//     PartialOrd,
-//     Ord,
-//     TypeInfo,
-//     Serialize,
-//     Deserialize,
-// )]
-// pub struct CurrencyId {
-//     // para id relay==0  other parachain
-//     pub para_id: u32,
-//     pub currency_id: WeAssetId,
-// }
+use wetee_primitives::{types::WeAssetId, u8_32_vec, values::PARENT};
 
 pub type CurrencyId = WeAssetId;
 
@@ -44,13 +19,22 @@ impl<Runtime: wetee_assets::Config> Convert<CurrencyId, Option<Location>>
     for CurrencyIdConvert<Runtime>
 {
     fn convert(id: CurrencyId) -> Option<Location> {
-        let name: Vec<u8> = wetee_assets::Pallet::<Runtime>::para_asset_symbol(id).unwrap();
+        let general_key = wetee_assets::Pallet::<Runtime>::para_asset_localtion(id);
+        if general_key.is_none() {
+            return None;
+        }
+
+        // if parent
+        if general_key.clone().unwrap() == PARENT.to_vec() {
+            return Some(Parent.into());
+        }
+
         let para_id = wetee_assets::Pallet::<Runtime>::para_id(id).unwrap();
         Some(
             (
                 Parent,
                 Parachain(para_id),
-                Junction::from(BoundedVec::try_from(name).unwrap()),
+                Junction::from(BoundedVec::try_from(general_key.unwrap()).unwrap()),
             )
                 .into(),
         )
@@ -63,8 +47,8 @@ impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
 {
     fn convert(l: Location) -> Option<CurrencyId> {
         if l == Location::parent() {
-            let token_symbol = b"DOT".to_vec();
-            let asset_id = wetee_assets::Pallet::<Runtime>::para_asset_id(0, token_symbol);
+            let general_key = PARENT.to_vec();
+            let asset_id = wetee_assets::Pallet::<Runtime>::para_asset_id(0, general_key);
             log::info!(
                 "relay ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++{:?}",
                 asset_id
@@ -83,8 +67,8 @@ impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
             parents,interior
         );
         match interior {
-            [Parachain(para), GeneralKey { data, .. }] => {
-                let symbol = u8_32_vec(data.clone());
+            [Parachain(para), GeneralKey { data, length }] => {
+                let symbol = u8_32_vec(data.clone(), length.clone());
                 let asset_id =
                     wetee_assets::Pallet::<Runtime>::para_asset_id(para.clone(), symbol.clone());
 

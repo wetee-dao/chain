@@ -17642,6 +17642,7 @@ dependencies = [
  "frame-benchmarking 28.0.0",
  "frame-support 28.0.0",
  "frame-system 28.0.0",
+ "hex-literal",
  "orml-tokens",
  "orml-traits",
  "orml-utilities",

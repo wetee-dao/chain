@@ -9,6 +9,7 @@ use sp_runtime::DispatchError;
 
 pub mod traits;
 pub mod types;
+pub mod values;
 
 // 1 WTE = 1_000_000_000_000
 pub const WTE: u128 = 1_000_000_000_000;
@@ -81,8 +82,11 @@ pub fn vec_u8_32(s: Vec<u8>) -> [u8; 32] {
 }
 
 /// [u8;32] to vec
-pub fn u8_32_vec(s: [u8; 32]) -> Vec<u8> {
-    return s.to_vec();
+pub fn u8_32_vec(s: [u8; 32], len: u8) -> Vec<u8> {
+    let mut v = s.to_vec();
+    v.truncate(len as usize);
+
+    v
 }
 
 // pub fn de_string_to_bytes<'de, D>(de: D) -> Result<Vec<u8>, D::Error>

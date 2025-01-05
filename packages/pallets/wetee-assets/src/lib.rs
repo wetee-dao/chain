@@ -45,7 +45,10 @@ use sp_std::{
     result,
 };
 
-use wetee_primitives::types::{WeAssetId, NATIVE_ASSET_ID};
+use wetee_primitives::{
+    types::{WeAssetId, NATIVE_ASSET_ID},
+    values::PARENT,
+};
 
 pub mod ext;
 pub use pallet::*;
@@ -111,7 +114,7 @@ pub mod pallet {
     pub struct GenesisConfig<T: Config> {
         pub _config: sp_std::marker::PhantomData<T>,
         pub para_id: u32,
-        pub init_assets: Vec<(u32, AssetMeta)>,
+        pub init_assets: Vec<(u32, Vec<u8>, AssetMeta)>,
     }
 
     #[pallet::genesis_build]
@@ -119,9 +122,10 @@ pub mod pallet {
         fn build(&self) {
             ChainID::<T>::put(self.para_id);
 
-            let _ = Pallet::<T>::set_parachain_asset(
+            let _ = Pallet::<T>::parachain_asset_register(
                 frame_system::RawOrigin::Root.into(),
                 0,
+                PARENT.to_vec(),
                 AssetMeta {
                     name: "DOT".as_bytes().to_vec(),
                     symbol: "DOT".as_bytes().to_vec(),
@@ -130,14 +134,17 @@ pub mod pallet {
             )
             .unwrap();
 
-            self.init_assets.iter().for_each(|(para_id, meta)| {
-                let _ = Pallet::<T>::set_parachain_asset(
-                    frame_system::RawOrigin::Root.into(),
-                    para_id.clone(),
-                    meta.clone(),
-                )
-                .unwrap();
-            });
+            self.init_assets
+                .iter()
+                .for_each(|(para_id, general_key, meta)| {
+                    let _ = Pallet::<T>::parachain_asset_register(
+                        frame_system::RawOrigin::Root.into(),
+                        para_id.clone(),
+                        general_key.clone(),
+                        meta.clone(),
+                    )
+                    .unwrap();
+                });
         }
     }
 
@@ -252,6 +259,14 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn asset_para_ids)]
     pub type AssetParaIds<T: Config> = StorageMap<_, Identity, CurrencyIdOf<T>, u32, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn location_symbols)]
+    pub type LocationToSymbols<T: Config> = StorageMap<_, Identity, Vec<u8>, Vec<u8>, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn symbol_locations)]
+    pub type SymbolToLocations<T: Config> = StorageMap<_, Identity, Vec<u8>, Vec<u8>, OptionQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -387,9 +402,10 @@ pub mod pallet {
 
         #[pallet::call_index(007)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
-        pub fn set_parachain_asset(
+        pub fn parachain_asset_register(
             origin: OriginFor<T>,
             para_id: u32,
+            general_key: Vec<u8>,
             metadata: AssetMeta,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
@@ -422,8 +438,11 @@ pub mod pallet {
             Self::try_create(who.clone(), asset_id, metadata.clone(), 0u32.into())?;
 
             let currency_id = T::CurrencyIdConvert::convert(asset_id);
-            ParaAssetMaps::<T>::insert(para_id, token_symbol, currency_id);
+            ParaAssetMaps::<T>::insert(para_id, token_symbol.clone(), currency_id);
             AssetParaIds::<T>::insert(currency_id, para_id);
+
+            SymbolToLocations::<T>::insert(token_symbol.clone(), general_key.clone());
+            LocationToSymbols::<T>::insert(general_key, token_symbol);
 
             Ok(().into())
         }
@@ -435,6 +454,31 @@ pub mod pallet {
             ensure_root(origin.clone())?;
 
             ChainID::<T>::put(para_id);
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(009)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        pub fn set_parachain_asset(
+            origin: OriginFor<T>,
+            asset_id: WeAssetId,
+            para_id: u32,
+            general_key: Vec<u8>,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_root(origin.clone())?;
+
+            // 获取资产信息
+            let currency_id = Self::get_local_asset(asset_id);
+            let asset_info = AssetInfos::<T>::get(currency_id).ok_or(Error::<T>::AssetNotExists)?;
+            let token_symbol = asset_info.metadata.symbol.clone();
+
+            ParaAssetMaps::<T>::insert(para_id, token_symbol.clone(), currency_id);
+            AssetParaIds::<T>::insert(currency_id, para_id);
+
+            SymbolToLocations::<T>::insert(token_symbol.clone(), general_key.clone());
+            LocationToSymbols::<T>::insert(general_key, token_symbol);
 
             Ok(().into())
         }
@@ -680,8 +724,12 @@ pub mod pallet {
         }
 
         /// 获取跨链资产ID
-        pub fn para_asset_id(para_id: u32, symbol: Vec<u8>) -> Option<WeAssetId> {
-            let id = ParaAssetMaps::<T>::get(para_id, symbol);
+        pub fn para_asset_id(para_id: u32, general_key: Vec<u8>) -> Option<WeAssetId> {
+            let symbol = SymbolToLocations::<T>::get(general_key);
+            if symbol.is_none() {
+                return None;
+            }
+            let id = ParaAssetMaps::<T>::get(para_id, symbol.unwrap());
             match id {
                 Some(cid) => Some(T::CurrencyIdConvert::convert(cid)),
                 None => None,
@@ -703,13 +751,12 @@ pub mod pallet {
         }
 
         /// 获取跨链资产ID
-        pub fn para_asset_symbol(id: WeAssetId) -> Option<Vec<u8>> {
+        pub fn para_asset_localtion(id: WeAssetId) -> Option<Vec<u8>> {
             let id = AssetInfos::<T>::get(T::CurrencyIdConvert::convert(id));
             match id {
                 Some(info) => {
-                    let mut symbol: Vec<u8> = info.metadata.symbol.clone();
-                    symbol.resize(32, 0);
-                    Some(symbol)
+                    let symbol: Vec<u8> = info.metadata.symbol.clone();
+                    SymbolToLocations::<T>::get(symbol)
                 }
                 None => None,
             }

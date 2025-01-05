@@ -1,9 +1,9 @@
 #![allow(unused_imports)]
 #![cfg(test)]
-
 use crate::mock::*;
 use crate::{self as wetee_assets, AssetMeta};
 use frame_support::{assert_noop, assert_ok, debug};
+use hex_literal::hex;
 use wetee_primitives::types::WeAssetId;
 
 pub fn create_asset() -> WeAssetId {
@@ -46,6 +46,19 @@ pub fn test_create_asset() {
 }
 
 #[test]
+pub fn test_vdot_mint() {
+    new_test_run().execute_with(|| {
+        let mut xx =
+            hex!("0900000000000000000000000000000000000000000000000000000000000000").to_vec();
+        xx.truncate(2);
+        println!("xxxxx {:?} \n", xx);
+
+        let xx2 = hex!("0804000000000000000000000000000000000000000000000000000000000000").to_vec();
+        println!("xxxxx2 {:?} \n", xx2);
+    })
+}
+
+#[test]
 pub fn test_asset_trans() {
     new_test_run().execute_with(|| {
         let dao_id = create_asset();
@@ -82,8 +95,9 @@ pub fn test_asset_burn() {
 #[test]
 pub fn test_set_parachain_asset() {
     new_test_run().execute_with(|| {
-        let proposal = RuntimeCall::WeteeAsset(wetee_assets::Call::set_parachain_asset {
+        let proposal = RuntimeCall::WeteeAsset(wetee_assets::Call::parachain_asset_register {
             para_id: 0,
+            general_key: "XX".as_bytes().to_vec(),
             metadata: AssetMeta {
                 name: "TestA".as_bytes().to_vec(),
                 symbol: "TA".as_bytes().to_vec(),

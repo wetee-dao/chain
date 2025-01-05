@@ -123,7 +123,6 @@ impl CrossCall<(AccountId, WeAssetId, Vec<u8>, Vec<u8>, u8, u128), ()> for Creat
     fn call(
         args: (AccountId, WeAssetId, Vec<u8>, Vec<u8>, u8, u128),
     ) -> result::Result<(), sp_runtime::DispatchError> {
-        let chain = wetee_assets::ChainID::<Test>::get();
         wetee_assets::Pallet::<Test>::try_create(
             args.0,
             args.1,

@@ -103,8 +103,6 @@ impl CrossCall<(AccountId, WeAssetId, Vec<u8>, Vec<u8>, u8, u128), ()> for DaoHo
     fn call(
         args: (AccountId, WeAssetId, Vec<u8>, Vec<u8>, u8, u128),
     ) -> Result<(), sp_runtime::DispatchError> {
-        let chain = wetee_assets::ChainID::<Runtime>::get();
-
         wetee_assets::ChainID::<Runtime>::get();
 
         wetee_assets::Pallet::<Runtime>::try_create(
