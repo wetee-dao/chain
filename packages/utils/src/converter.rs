@@ -50,7 +50,7 @@ impl<Runtime: wetee_assets::Config> Convert<Location, Option<CurrencyId>>
             let general_key = PARENT.to_vec();
             let asset_id = wetee_assets::Pallet::<Runtime>::para_asset_id(0, general_key);
             log::info!(
-                "relay ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++{:?}",
+                "relay ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++ {:?}",
                 asset_id
             );
 
@@ -104,7 +104,7 @@ impl<Runtime: wetee_assets::Config> Convert<Asset, Option<CurrencyId>>
     }
 }
 
-/// Convert CurrencyId to (u32, WeAssetId)
+/// Convert WeAssetId to CurrencyId
 impl<Runtime: wetee_assets::Config> Convert<WeAssetId, CurrencyId> for CurrencyIdConvert<Runtime> {
     fn convert(id: WeAssetId) -> CurrencyId {
         return id;

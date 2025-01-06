@@ -17643,6 +17643,7 @@ dependencies = [
  "frame-support 28.0.0",
  "frame-system 28.0.0",
  "hex-literal",
+ "log",
  "orml-tokens",
  "orml-traits",
  "orml-utilities",

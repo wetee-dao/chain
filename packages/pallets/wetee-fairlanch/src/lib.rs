@@ -340,7 +340,7 @@ pub mod pallet {
         //     Ok(().into())
         // }
 
-        // /// 取消 vtoken 质押
+        // /// 取消 token 质押
         // #[pallet::call_index(002)]
         // #[pallet::weight(<T as pallet::Config>::WeightInfo::xxxx())]
         // pub fn unstaking(
@@ -603,6 +603,31 @@ pub mod pallet {
             } else {
                 ToStakings::<T>::insert(who.clone(), asset_id, now_amount);
             }
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(010)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::v_staking_cancel())]
+        pub fn set_epoch(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_root(origin.clone())?;
+
+            let n = frame_system::Pallet::<T>::block_number();
+            let epoch_block = <T as pallet::Config>::EpochBlock::get();
+            // 获取当前周期编号(一个周期约等于1天，14400 是一天的区块数)
+            let new_epoch = (n.saturated_into::<u128>() / epoch_block as u128) + 1;
+            let mut block_reward = WTE.saturated_into::<BalanceOf<T>>();
+            let mut pre_block_reward = 0u32.saturated_into::<BalanceOf<T>>();
+
+            for i in 1..new_epoch + 1 {
+                block_reward = block_reward * 9995u32.into() / 10000u32.into();
+                if i == new_epoch - 1 {
+                    pre_block_reward = block_reward;
+                }
+            }
+
+            BlockReward::<T>::set((pre_block_reward, new_epoch, block_reward));
 
             Ok(().into())
         }

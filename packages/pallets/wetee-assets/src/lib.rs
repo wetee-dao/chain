@@ -45,10 +45,7 @@ use sp_std::{
     result,
 };
 
-use wetee_primitives::{
-    types::{WeAssetId, NATIVE_ASSET_ID},
-    values::PARENT,
-};
+use wetee_primitives::types::{WeAssetId, NATIVE_ASSET_ID};
 
 pub mod ext;
 pub use pallet::*;
@@ -121,26 +118,13 @@ pub mod pallet {
     impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             ChainID::<T>::put(self.para_id);
-
-            let _ = Pallet::<T>::parachain_asset_register(
-                frame_system::RawOrigin::Root.into(),
-                0,
-                PARENT.to_vec(),
-                AssetMeta {
-                    name: "DOT".as_bytes().to_vec(),
-                    symbol: "DOT".as_bytes().to_vec(),
-                    decimals: 12,
-                },
-            )
-            .unwrap();
-
             self.init_assets
                 .iter()
                 .for_each(|(para_id, general_key, meta)| {
                     let _ = Pallet::<T>::parachain_asset_register(
                         frame_system::RawOrigin::Root.into(),
                         para_id.clone(),
-                        general_key.clone(),
+                        BoundedVec::try_from(general_key.clone()).unwrap(),
                         meta.clone(),
                     )
                     .unwrap();
@@ -193,6 +177,7 @@ pub mod pallet {
         BalanceTooLow,
         AssetIdOverflow,
         AssetAlreadyExists,
+        ParaAssetAlreadyExists,
         AssetNotExists,
         MetadataNotChange,
         MetadataErr,
@@ -309,6 +294,33 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::call_index(010)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        pub fn delete_asset(
+            origin: OriginFor<T>,
+            asset_id: WeAssetId,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_root(origin.clone())?;
+
+            // 获取资产信息
+            let currency_id = Self::get_local_asset(asset_id);
+            // 确认是否是 ParaAsset,如果资产是 ParaAsset,则不允许删除
+            let asset = AssetParaIds::<T>::get(currency_id);
+            if asset.is_some() {
+                return Err(Error::<T>::ParaAssetAlreadyExists.into());
+            }
+
+            let asset_info = AssetInfos::<T>::get(currency_id).ok_or(Error::<T>::AssetNotExists)?;
+            let token_symbol = asset_info.metadata.symbol.clone();
+
+            // 删除资产信息
+            AssetInfos::<T>::remove(currency_id);
+            AssetSymbols::<T>::remove(token_symbol);
+
+            Ok(().into())
+        }
+
         // /// You should have created the asset first.
         // /// 设置资产元数据
         // #[pallet::call_index(004)]
@@ -405,7 +417,7 @@ pub mod pallet {
         pub fn parachain_asset_register(
             origin: OriginFor<T>,
             para_id: u32,
-            general_key: Vec<u8>,
+            general_key: BoundedVec<u8, ConstU32<32>>,
             metadata: AssetMeta,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
@@ -441,8 +453,9 @@ pub mod pallet {
             ParaAssetMaps::<T>::insert(para_id, token_symbol.clone(), currency_id);
             AssetParaIds::<T>::insert(currency_id, para_id);
 
-            SymbolToLocations::<T>::insert(token_symbol.clone(), general_key.clone());
-            LocationToSymbols::<T>::insert(general_key, token_symbol);
+            let key = general_key.to_vec();
+            SymbolToLocations::<T>::insert(token_symbol.clone(), key.clone());
+            LocationToSymbols::<T>::insert(key, token_symbol);
 
             Ok(().into())
         }
@@ -460,11 +473,10 @@ pub mod pallet {
 
         #[pallet::call_index(009)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
-        pub fn set_parachain_asset(
+        pub fn delete_parachain_for_asset(
             origin: OriginFor<T>,
             asset_id: WeAssetId,
             para_id: u32,
-            general_key: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_root(origin.clone())?;
@@ -474,11 +486,46 @@ pub mod pallet {
             let asset_info = AssetInfos::<T>::get(currency_id).ok_or(Error::<T>::AssetNotExists)?;
             let token_symbol = asset_info.metadata.symbol.clone();
 
+            ParaAssetMaps::<T>::remove(para_id, token_symbol.clone());
+            AssetParaIds::<T>::remove(currency_id);
+
+            let general_key = SymbolToLocations::<T>::get(token_symbol.clone());
+            if general_key.clone().is_some() {
+                SymbolToLocations::<T>::remove(token_symbol.clone());
+                LocationToSymbols::<T>::remove(general_key.unwrap());
+            }
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(011)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        pub fn set_parachain_for_asset(
+            origin: OriginFor<T>,
+            asset_id: WeAssetId,
+            para_id: u32,
+            general_key: BoundedVec<u8, ConstU32<32>>,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_root(origin.clone())?;
+
+            let currency_id = T::CurrencyIdConvert::convert(asset_id);
+
+            // 确认是否是 ParaAsset,如果资产是 ParaAsset,则不允许重新创建
+            let asset = AssetParaIds::<T>::get(currency_id);
+            if asset.is_some() {
+                return Err(Error::<T>::ParaAssetAlreadyExists.into());
+            }
+
+            let asset_info = AssetInfos::<T>::get(currency_id).ok_or(Error::<T>::AssetNotExists)?;
+            let token_symbol = asset_info.metadata.symbol.clone();
+
             ParaAssetMaps::<T>::insert(para_id, token_symbol.clone(), currency_id);
             AssetParaIds::<T>::insert(currency_id, para_id);
 
-            SymbolToLocations::<T>::insert(token_symbol.clone(), general_key.clone());
-            LocationToSymbols::<T>::insert(general_key, token_symbol);
+            let key = general_key.to_vec();
+            SymbolToLocations::<T>::insert(token_symbol.clone(), key.clone());
+            LocationToSymbols::<T>::insert(key, token_symbol);
 
             Ok(().into())
         }
@@ -725,10 +772,11 @@ pub mod pallet {
 
         /// 获取跨链资产ID
         pub fn para_asset_id(para_id: u32, general_key: Vec<u8>) -> Option<WeAssetId> {
-            let symbol = SymbolToLocations::<T>::get(general_key);
+            let symbol = LocationToSymbols::<T>::get(general_key.clone());
             if symbol.is_none() {
                 return None;
             }
+
             let id = ParaAssetMaps::<T>::get(para_id, symbol.unwrap());
             match id {
                 Some(cid) => Some(T::CurrencyIdConvert::convert(cid)),
@@ -750,7 +798,7 @@ pub mod pallet {
             T::CurrencyIdConvert::convert(asset_id)
         }
 
-        /// 获取跨链资产ID
+        /// 获取跨链资产ID localtion
         pub fn para_asset_localtion(id: WeAssetId) -> Option<Vec<u8>> {
             let id = AssetInfos::<T>::get(T::CurrencyIdConvert::convert(id));
             match id {

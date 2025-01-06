@@ -4,7 +4,9 @@ use crate::mock::*;
 use crate::{self as wetee_assets, AssetMeta};
 use frame_support::{assert_noop, assert_ok, debug};
 use hex_literal::hex;
+use sp_runtime::BoundedVec;
 use wetee_primitives::types::WeAssetId;
+use wetee_primitives::values::PARENT;
 
 pub fn create_asset() -> WeAssetId {
     let dao_id = wetee_dao::Pallet::<Test>::next_dao_id();
@@ -48,6 +50,10 @@ pub fn test_create_asset() {
 #[test]
 pub fn test_vdot_mint() {
     new_test_run().execute_with(|| {
+        for i in 1..10 {
+            println!("i {:?} \n", i);
+        }
+
         let mut xx =
             hex!("0900000000000000000000000000000000000000000000000000000000000000").to_vec();
         xx.truncate(2);
@@ -55,6 +61,10 @@ pub fn test_vdot_mint() {
 
         let xx2 = hex!("0804000000000000000000000000000000000000000000000000000000000000").to_vec();
         println!("xxxxx2 {:?} \n", xx2);
+
+        // PARENT
+        let xx3 = hex!("00").to_vec();
+        println!("xxxxx3 {:?} \n", xx3);
     })
 }
 
@@ -97,7 +107,7 @@ pub fn test_set_parachain_asset() {
     new_test_run().execute_with(|| {
         let proposal = RuntimeCall::WeteeAsset(wetee_assets::Call::parachain_asset_register {
             para_id: 0,
-            general_key: "XX".as_bytes().to_vec(),
+            general_key: BoundedVec::try_from("XX".as_bytes().to_vec()).unwrap(),
             metadata: AssetMeta {
                 name: "TestA".as_bytes().to_vec(),
                 symbol: "TA".as_bytes().to_vec(),
