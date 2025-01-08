@@ -3,6 +3,7 @@ use crate::*;
 use crate::configs::RuntimeBlockWeights;
 use frame_support::{traits::Contains, PalletId};
 use orml_traits::parameter_type_with_key;
+use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::Zero;
 use wetee_assets::{ext::BasicCurrencyAdapter, AssetMeta};
 use wetee_primitives::{
@@ -185,6 +186,7 @@ impl wetee_guild::Config for Runtime {
 
 parameter_types! {
     pub const MaxApprovals: u32 = 100;
+    pub GTreasuryAccount: AccountId = PalletId(*b"treasury").into_account_truncating();
 }
 
 impl wetee_treasury::Config for Runtime {

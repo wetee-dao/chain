@@ -87,6 +87,7 @@ parachains-common = {workspace = true, default-features = false}
 # Local Dependencies
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
+orml-unknown-tokens = {workspace = true}
 orml-xcm = {workspace = true}
 orml-xcm-support = {workspace = true}
 orml-xtokens = {workspace = true}
@@ -176,6 +177,7 @@ std = [
   "orml-tokens/std",
   "orml-xtokens/std",
   "orml-xcm/std",
+  "orml-unknown-tokens/std",
   "wetee-message-queue/std",
   "wetee-primitives/std",
   "wetee-utils/std",
@@ -251,4 +253,5 @@ try-runtime = [
   "parachain-info/try-runtime",
   "polkadot-runtime-common/try-runtime",
   "sp-runtime/try-runtime",
+  "orml-unknown-tokens/try-runtime",
 ]

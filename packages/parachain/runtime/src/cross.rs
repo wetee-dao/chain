@@ -62,3 +62,7 @@ impl orml_xtokens::Config for Runtime {
     type RateLimiter = ();
     type RateLimiterId = ();
 }
+
+impl orml_unknown_tokens::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+}

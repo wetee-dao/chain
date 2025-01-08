@@ -1,5 +1,9 @@
 use codec::FullCodec;
-use sp_runtime::traits::{Convert, MaybeSerializeDeserialize, SaturatedConversion};
+use frame_support::traits::Get;
+use sp_runtime::{
+    traits::{Convert, MaybeSerializeDeserialize, SaturatedConversion},
+    DispatchError,
+};
 use sp_std::{
     cmp::{Eq, PartialEq},
     fmt::Debug,
@@ -93,11 +97,9 @@ impl<
         DepositFailureHandler,
     >
 {
-    fn can_check_in(_origin: &Location, _what: &Asset, _context: &XcmContext) -> Result {
+    fn can_check_out(_origin: &Location, _what: &Asset, _context: &XcmContext) -> Result {
         Ok(())
     }
-
-    fn check_in(_origin: &Location, _what: &Asset, _context: &XcmContext) {}
 
     fn deposit_asset(asset: &Asset, location: &Location, _context: Option<&XcmContext>) -> Result {
         log::info!(
@@ -131,15 +133,87 @@ impl<
         UnknownAsset::withdraw(asset, location).or_else(|_| {
             let who = AccountIdConvert::convert_location(location)
                 .ok_or_else(|| XcmError::from(Error::AccountIdConversionFailed))?;
+
             let currency_id = CurrencyIdConvert::convert(asset.clone())
                 .ok_or_else(|| XcmError::from(Error::CurrencyIdConversionFailed))?;
+
             let amount: MultiCurrency::Balance = Match::matches_fungible(asset)
                 .ok_or_else(|| XcmError::from(Error::FailedToMatchFungible))?
                 .saturated_into();
+
             MultiCurrency::withdraw(currency_id, &who, amount)
                 .map_err(|e| XcmError::FailedToTransactAsset(e.into()))
         })?;
 
         Ok(asset.clone().into())
+    }
+
+    fn transfer_asset(
+        asset: &Asset,
+        from: &xcm::v4::Location,
+        to: &xcm::v4::Location,
+        _context: &xcm::v4::XcmContext,
+    ) -> result::Result<AssetsInHolding, XcmError> {
+        let from_account = AccountIdConvert::convert_location(from)
+            .ok_or(XcmError::from(Error::AccountIdConversionFailed))?;
+
+        let to_account = AccountIdConvert::convert_location(to)
+            .ok_or(XcmError::from(Error::AccountIdConversionFailed))?;
+
+        let currency_id = CurrencyIdConvert::convert(asset.clone())
+            .ok_or_else(|| XcmError::from(Error::CurrencyIdConversionFailed))?;
+
+        let amount: MultiCurrency::Balance = Match::matches_fungible(asset)
+            .ok_or_else(|| XcmError::from(Error::FailedToMatchFungible))?
+            .saturated_into();
+
+        MultiCurrency::transfer(currency_id, &from_account, &to_account, amount)
+            .map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+
+        Ok(asset.clone().into())
+    }
+}
+
+/// `OnDepositFail` impl, will deposit known currencies to an alternative
+/// account.
+pub struct DepositToAlternative<Alternative, MultiCurrency, CurrencyId, AccountId, Balance>(
+    PhantomData<(Alternative, MultiCurrency, CurrencyId, AccountId, Balance)>,
+);
+impl<
+        Alternative: Get<AccountId>,
+        MultiCurrency: orml_traits::MultiCurrency<AccountId, CurrencyId = CurrencyId, Balance = Balance>,
+        AccountId: sp_std::fmt::Debug + Clone,
+        CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug,
+        Balance,
+    > OnDepositFail<CurrencyId, AccountId, Balance>
+    for DepositToAlternative<Alternative, MultiCurrency, CurrencyId, AccountId, Balance>
+{
+    /// Called on deposit errors with a specific `currency_id`.
+    fn on_deposit_currency_fail(
+        _err: DispatchError,
+        currency_id: CurrencyId,
+        _who: &AccountId,
+        amount: Balance,
+    ) -> Result {
+        log::info!(
+            "on_deposit_currency_fail ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++ {:?}",
+            currency_id,
+        );
+
+        MultiCurrency::deposit(currency_id, &Alternative::get(), amount)
+            .map_err(|e| XcmError::FailedToTransactAsset(e.into()))
+    }
+
+    /// Called on unknown asset deposit errors.
+    fn on_deposit_unknown_asset_fail(
+        err: DispatchError,
+        _asset: &Asset,
+        _location: &Location,
+    ) -> Result {
+        log::info!(
+            "on_deposit_unknown_asset_fail ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++ {:?}",
+            err
+        );
+        Err(XcmError::FailedToTransactAsset(err.into()))
     }
 }

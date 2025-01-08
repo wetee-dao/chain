@@ -7460,6 +7460,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "orml-unknown-tokens"
+version = "0.13.0"
+dependencies = [
+ "frame-support 28.0.0",
+ "frame-system 28.0.0",
+ "hex-literal",
+ "orml-xcm-support",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core 28.0.0",
+ "sp-io 30.0.0",
+ "sp-runtime 31.0.1",
+ "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-v1.13.0)",
+ "staging-xcm 7.0.0",
+]
+
+[[package]]
 name = "orml-utilities"
 version = "0.13.0"
 dependencies = [
@@ -8986,6 +9004,7 @@ dependencies = [
  "log",
  "orml-tokens",
  "orml-traits",
+ "orml-unknown-tokens",
  "orml-xcm",
  "orml-xcm-support",
  "orml-xtokens",

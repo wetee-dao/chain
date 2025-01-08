@@ -1,6 +1,7 @@
 use crate::{
-    AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
-    Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+    AccountId, AllPalletsWithSystem, Balance, Balances, ParachainInfo, ParachainSystem,
+    PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, UnknownTokens, WeightToFee,
+    XcmpQueue,
 };
 use frame_support::{
     parameter_types,
@@ -23,7 +24,8 @@ use xcm_builder::{
 };
 use xcm_executor::XcmExecutor;
 
-use crate::teleport_adapter::MultiTeleportCurrencyAdapter;
+use crate::teleport_adapter::{DepositToAlternative, MultiTeleportCurrencyAdapter};
+use crate::wetee::GTreasuryAccount;
 use crate::Tokens;
 use wetee_utils::converter::{CurrencyId, CurrencyIdConvert};
 
@@ -49,27 +51,15 @@ pub type LocationToAccountId = (
 );
 
 /// Means for transacting assets on this chain.
-// pub type LocalAssetTransactor = FungibleAdapter<
-//     // Use this currency:
-//     Balances,
-//     // Use this currency when it is a fungible asset matching the given location or name:
-//     IsConcrete<RelayLocation>,
-//     // Do a simple punn to convert an AccountId32 Location into a native chain account ID:
-//     LocationToAccountId,
-//     // Our chain's account ID type (we can't get away without mentioning it explicitly):
-//     AccountId,
-//     // We don't track any teleports.
-//     (),
-// >;
 pub type LocalAssetTransactor = MultiTeleportCurrencyAdapter<
     Tokens,
-    (),
+    UnknownTokens,
     IsNativeConcrete<CurrencyId, CurrencyIdConvert<Runtime>>,
     AccountId,
     LocationToAccountId,
     CurrencyId,
     CurrencyIdConvert<Runtime>,
-    (),
+    DepositToAlternative<GTreasuryAccount, Tokens, CurrencyId, AccountId, Balance>,
 >;
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,

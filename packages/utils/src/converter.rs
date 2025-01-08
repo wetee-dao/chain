@@ -21,15 +21,25 @@ impl<Runtime: wetee_assets::Config> Convert<CurrencyId, Option<Location>>
     fn convert(id: CurrencyId) -> Option<Location> {
         let general_key = wetee_assets::Pallet::<Runtime>::para_asset_localtion(id);
         if general_key.is_none() {
+            log::info!(
+                "to relay general_key ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++ NONE"
+            );
             return None;
         }
 
         // if parent
         if general_key.clone().unwrap() == PARENT.to_vec() {
+            log::info!(
+                "to relay general_key ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++ PARENT"
+            );
             return Some(Parent.into());
         }
 
         let para_id = wetee_assets::Pallet::<Runtime>::para_id(id).unwrap();
+        log::info!(
+            "to para_id - general_key ---------------------------------------------------------------------++++++++++++++++++++++++++++++++++++++++++ {:?} {:?}",
+            para_id,general_key
+        );
         Some(
             (
                 Parent,
