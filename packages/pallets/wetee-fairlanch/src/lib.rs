@@ -69,8 +69,12 @@ pub mod pallet {
             // Economics::<T>::insert(2, 10);
 
             // 第一个块的奖励为 1 WTE
-            // 总量 28,800,000 WTE
-            BlockReward::<T>::set((0u32.into(), 1, WTE.saturated_into::<BalanceOf<T>>()));
+            // 总量 5_000_002 WTE
+            BlockReward::<T>::set((
+                0u32.into(),
+                1,
+                (WTE * 1_645_834 / 10_000_000).saturated_into::<BalanceOf<T>>(),
+            ));
         }
     }
 
@@ -617,11 +621,11 @@ pub mod pallet {
             let epoch_block = <T as pallet::Config>::EpochBlock::get();
             // 获取当前周期编号(一个周期约等于1天，14400 是一天的区块数)
             let new_epoch = (n.saturated_into::<u128>() / epoch_block as u128) + 1;
-            let mut block_reward = WTE.saturated_into::<BalanceOf<T>>();
+            let mut block_reward = (WTE * 1_645_834 / 10_000_000).saturated_into::<BalanceOf<T>>();
             let mut pre_block_reward = 0u32.saturated_into::<BalanceOf<T>>();
 
             for i in 1..new_epoch + 1 {
-                block_reward = block_reward * 9995u32.into() / 10000u32.into();
+                block_reward = block_reward * 999_526u32.into() / 1_000_000u32.into();
                 if i == new_epoch - 1 {
                     pre_block_reward = block_reward;
                 }
@@ -667,9 +671,9 @@ pub mod pallet {
                     new_epoch, n
                 );
 
-                // a=1，公比 r=0.9995 1460天时（4年），奖励为0.9995^1460=0.500474，即4年减半
-                // a=1 a+ar+ar^2...ar^n 结果无限趋近 2000
-                let new_epoch_reward = curr_reward * 9995u32.into() / 10000u32.into();
+                // a=1，公比 r=0.999526 1460天时（4年），奖励为0.999526^1460=0.500474，即4年减半
+                // a=1 a+ar+ar^2...ar^n 结果无限趋近 2109.638554
+                let new_epoch_reward = curr_reward * 999_526u32.into() / 1_000_000u32.into();
                 BlockReward::<T>::set((curr_reward, new_epoch, new_epoch_reward));
 
                 // 记录上一个周期质押总数，用于发放质押奖励
