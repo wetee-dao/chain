@@ -109,28 +109,47 @@ pub mod pallet {
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
+    /// 当前周期的区块奖励
     /// current block reward
     #[pallet::storage]
     #[pallet::getter(fn block_reward)]
     pub type BlockReward<T: Config> =
         StorageValue<_, (BalanceOf<T>, u128, BalanceOf<T>), ValueQuery>;
 
+    /// 用户质押金额
     /// Staking
     #[pallet::storage]
     #[pallet::getter(fn stakings)]
     pub type Stakings<T: Config> =
         StorageDoubleMap<_, Identity, T::AccountId, Identity, WeAssetId, BalanceOf<T>, OptionQuery>;
 
+    /// 下个周期进入质押的金额
     /// Asset next to staking
     #[pallet::storage]
     #[pallet::getter(fn to_stakings)]
     pub type ToStakings<T: Config> =
         StorageDoubleMap<_, Identity, T::AccountId, Identity, WeAssetId, BalanceOf<T>, OptionQuery>;
 
+    /// 下个周期进入质押的用户数
+    /// Asset next to staking total user
+    #[pallet::storage]
+    #[pallet::getter(fn to_staking_total)]
+    pub type ToStakingTotal<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+    /// 质押总金额
+    /// total staking token amount
     #[pallet::storage]
     #[pallet::getter(fn staking_total)]
     pub type StakingTotal<T: Config> = StorageMap<_, Identity, WeAssetId, BalanceOf<T>, ValueQuery>;
 
+    /// 质押限额
+    /// quota of asset staking
+    #[pallet::storage]
+    #[pallet::getter(fn staking_quota)]
+    pub type StakingQuota<T: Config> = StorageMap<_, Identity, WeAssetId, BalanceOf<T>, ValueQuery>;
+
+    /// 质押总金额缓存
+    /// cache of staking total
     #[pallet::storage]
     #[pallet::getter(fn staking_total_cache)]
     pub type StakingTotalCache<T: Config> =
@@ -185,19 +204,29 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         /// 重新质押错误
+        /// Re-staking Error
         ReSkakingError,
         /// 质押不存在
+        /// Staking Not Exists
         StakingNotExists,
+        /// vtoken 不存在
         /// Vtoken not exists
         VtokenNotExists,
         /// 金额数值错误
+        /// Amount Error
         Amount403,
         /// 资产id不匹配
+        /// AssetId Not Match
         AssetIdNotMatch,
         /// Vtoken 不存在
+        /// Vtoken Not Exists
         Vtoken404,
         /// 资产不存在
+        /// Asset Not Exists
         Asset404,
+        /// 超过质押限额
+        /// Quota Overflow
+        QuotaOverflow,
     }
 
     #[pallet::hooks]
@@ -387,11 +416,14 @@ pub mod pallet {
         // }
 
         /// 质押 vtoken
+        /// vtoken stake
         #[pallet::call_index(003)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::v_staking())]
         pub fn v_staking(
             origin: OriginFor<T>,
+            // vtoken asset id
             vasset_id: WeAssetId,
+            // vtoken amount
             vamount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -402,12 +434,16 @@ pub mod pallet {
             let mut amount = vamount * pool.saturated_into::<BalanceOf<T>>()
                 / vpool.saturated_into::<BalanceOf<T>>();
 
+            // 检查是否超过质押阈值
+            let quota = StakingQuota::<T>::get(asset_id);
+            let total = StakingTotal::<T>::get(asset_id);
+            if total + amount > quota {
+                return Err(Error::<T>::QuotaOverflow.into());
+            }
+
             // 转账 asset 到质押池
             let to = Self::staking_pool_account(vasset_id);
             wetee_assets::Pallet::<T>::try_transfer(vasset_id, who.clone(), to, vamount)?;
-
-            // 获取当前区块
-            let n = frame_system::Pallet::<T>::block_number();
 
             // 记录下个 epoch 的质押数据
             let to_staking = ToStakings::<T>::get(who.clone(), asset_id);
@@ -419,11 +455,28 @@ pub mod pallet {
             // 获取当前的质押数据
             let user_reward = UserNextReward::<T>::get(who.clone());
             if user_reward == 0u32.into() {
+                // 新的 epoch 每个区块处理 1000 个用户的质押需求
+                let t = ToStakingTotal::<T>::get();
+                let step = (t + 1) % 1000;
+                let mut index = (t + 1) / 1000;
+                if step > 0 {
+                    index = index + 1;
+                }
+
+                // 获取当前 epoch
                 let epoch_block = <T as pallet::Config>::EpochBlock::get();
-                let next_block = n + epoch_block.into();
+                let (_, curr_epoch, _) = BlockReward::<T>::get();
+
+                // 计算下一次奖励的 epoch
+                let next_block: BlockNumberFor<T> = (epoch_block as u64 * curr_epoch as u64
+                    + index as u64)
+                    .saturated_into::<BlockNumberFor<T>>();
+
                 // 触发下一次奖励
-                let _ = NextStakingRewards::<T>::insert(next_block, who.clone(), true);
+                let _ = NextStakingRewards::<T>::insert(next_block.clone(), who.clone(), true);
                 let _ = UserNextReward::<T>::insert(who.clone(), next_block);
+
+                ToStakingTotal::<T>::set(t + 1);
             }
 
             Ok(().into())
@@ -434,7 +487,9 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::v_unstaking())]
         pub fn v_unstaking(
             origin: OriginFor<T>,
+            // vtoken asset id
             vasset_id: WeAssetId,
+            // token amount
             amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -482,8 +537,12 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_economics())]
         pub fn set_economics(
             origin: OriginFor<T>,
+            // asset id
             asset_id: WeAssetId,
+            // economic reward rate
             reward_rate: u8,
+            // asset staking quota
+            quota: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_root(origin)?;
@@ -495,6 +554,7 @@ pub mod pallet {
             );
 
             let _ = Economics::<T>::set(asset_id, Some(reward_rate));
+            let _ = StakingQuota::<T>::set(asset_id, quota);
 
             Ok(().into())
         }
@@ -503,9 +563,13 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::register_vtoken())]
         pub fn register_vtoken(
             origin: OriginFor<T>,
+            // vtoken asset id
             vasset_id: WeAssetId,
+            // asset id
             asset_id: WeAssetId,
+            // vtoken pool
             vasset_pool: u128,
+            // asset pool
             asset_pool: u128,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
@@ -532,9 +596,13 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_vtoken_rate())]
         pub fn set_vtoken_rate(
             origin: OriginFor<T>,
+            // vtoken asset id
             vasset_id: WeAssetId,
+            // asset id
             asset_id: WeAssetId,
+            // vtoken pool
             vasset_pool: u128,
+            // asset pool
             asset_pool: u128,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
@@ -554,6 +622,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::delete_economics())]
         pub fn delete_economics(
             origin: OriginFor<T>,
+            // asset id
             asset_id: WeAssetId,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
@@ -574,7 +643,9 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::v_staking_cancel())]
         pub fn v_staking_cancel(
             origin: OriginFor<T>,
+            // vtoken asset id
             vasset_id: WeAssetId,
+            // vtoken asset amount
             vamount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -663,29 +734,30 @@ pub mod pallet {
             let new_epoch = (n.saturated_into::<u128>() / epoch_block as u128) + 1;
             let (pre_reward, curr_epoch, curr_reward) = BlockReward::<T>::get();
 
-            // 如果进入了新的周期
-            if new_epoch > curr_epoch {
-                #[cfg(test)]
-                println!(
-                    ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> into new_epoch => {:?} | blockNumber => {:?}",
-                    new_epoch, n
-                );
-
-                // a=1，公比 r=0.999526 1460天时（4年），奖励为0.999526^1460=0.500474，即4年减半
-                // a=1 a+ar+ar^2...ar^n 结果无限趋近 2109.638554
-                let new_epoch_reward = curr_reward * 999_526u32.into() / 1_000_000u32.into();
-                BlockReward::<T>::set((curr_reward, new_epoch, new_epoch_reward));
-
-                // 记录上一个周期质押总数，用于发放质押奖励
-                let totals = StakingTotal::<T>::iter().collect::<Vec<_>>();
-                for (asset_id, total) in totals {
-                    StakingTotalCache::<T>::set(curr_epoch, asset_id, total);
-                }
-
-                return (curr_reward, new_epoch, new_epoch_reward);
+            if new_epoch == curr_epoch {
+                return (pre_reward, curr_epoch, curr_reward);
             }
 
-            (pre_reward, curr_epoch, curr_reward)
+            // 进入了新的周期
+            #[cfg(test)]
+            println!(
+                ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> into new_epoch => {:?} | blockNumber => {:?}",
+                new_epoch, n
+            );
+
+            // a=1，公比 r=0.999526 1460天时（4年），奖励为0.999526^1460=0.500474，即4年减半
+            // a=1 a+ar+ar^2...ar^n 结果无限趋近 2109.638554
+            let new_epoch_reward = curr_reward * 999_526u32.into() / 1_000_000u32.into();
+            BlockReward::<T>::set((curr_reward, new_epoch, new_epoch_reward));
+            ToStakingTotal::<T>::set(0);
+
+            // 记录上一个周期质押总数，用于发放质押奖励
+            let totals = StakingTotal::<T>::iter().collect::<Vec<_>>();
+            for (asset_id, total) in totals {
+                StakingTotalCache::<T>::set(curr_epoch, asset_id, total);
+            }
+
+            (curr_reward, new_epoch, new_epoch_reward)
         }
 
         pub fn staking_hook(
