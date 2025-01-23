@@ -11,4 +11,5 @@ DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
 cd "$DIR/zombienet"
 
 rm -rf ./data
-nohup zombienet spawn -m --provider kubernetes ./config.toml -d ./data &
+rm ./nohup.out
+nohup zombienet-linux-x64 spawn -m --provider kubernetes ./config.toml -d ./data &

@@ -7,18 +7,23 @@ default_image = "parity/polkadot:v1.16.2"
 
 [[relaychain.nodes]]
 name = "alice"
-rpc_port = 31944
+rpc_port = 31946
 validator = true
 
 [[relaychain.nodes]]
 name = "bob"
 validator = true
 
+[[relaychain.nodes]]
+name = "charlie"
+validator = true
+
 [[parachains]]
 id = 4545
 
 [parachains.collator]
+args = ["--rpc-external"]
 command = "/parachain-node"
 image = "registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:paseo.2024-11-16-16_48"
 name = "wetee-dev"
-rpc_port = 31945
+rpc_port = 31947

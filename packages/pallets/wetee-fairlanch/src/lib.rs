@@ -455,28 +455,10 @@ pub mod pallet {
             // 获取当前的质押数据
             let user_reward = UserNextReward::<T>::get(who.clone());
             if user_reward == 0u32.into() {
-                // 新的 epoch 每个区块处理 1000 个用户的质押需求
-                let t = ToStakingTotal::<T>::get();
-                let step = (t + 1) % 1000;
-                let mut index = (t + 1) / 1000;
-                if step > 0 {
-                    index = index + 1;
-                }
-
-                // 获取当前 epoch
-                let epoch_block = <T as pallet::Config>::EpochBlock::get();
-                let (_, curr_epoch, _) = BlockReward::<T>::get();
-
-                // 计算下一次奖励的 epoch
-                let next_block: BlockNumberFor<T> = (epoch_block as u64 * curr_epoch as u64
-                    + index as u64)
-                    .saturated_into::<BlockNumberFor<T>>();
-
+                let next_block = Self::get_user_next_reward();
                 // 触发下一次奖励
                 let _ = NextStakingRewards::<T>::insert(next_block.clone(), who.clone(), true);
                 let _ = UserNextReward::<T>::insert(who.clone(), next_block);
-
-                ToStakingTotal::<T>::set(t + 1);
             }
 
             Ok(().into())
@@ -760,6 +742,31 @@ pub mod pallet {
             (curr_reward, new_epoch, new_epoch_reward)
         }
 
+        /// 获取下一次发放质押奖励的区块 每个区块处理 1000 个用户的质押需求
+        pub fn get_user_next_reward() -> BlockNumberFor<T> {
+            // 新的 epoch 每个区块处理 1000 个用户的质押需求
+            let t = ToStakingTotal::<T>::get();
+            let step = (t + 1) % 1000;
+            let mut index = (t + 1) / 1000;
+            if step > 0 {
+                index = index + 1;
+            }
+
+            // 获取当前 epoch
+            let epoch_block = <T as pallet::Config>::EpochBlock::get();
+            let (_, curr_epoch, _) = BlockReward::<T>::get();
+
+            // 计算下一次奖励的 epoch
+            let next_block: BlockNumberFor<T> = (epoch_block as u64 * curr_epoch as u64
+                + index as u64)
+                .saturated_into::<BlockNumberFor<T>>();
+
+            ToStakingTotal::<T>::set(t + 1);
+
+            next_block
+        }
+
+        /// 质押钩子
         pub fn staking_hook(
             asset_id: WeAssetId,
             func: StakeFunc,
