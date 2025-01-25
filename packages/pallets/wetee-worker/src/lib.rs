@@ -1211,11 +1211,11 @@ pub mod pallet {
                     );
                     // 过滤掉已经没有计算资源的集群
                     if level == score.0
-                        && cr.0.cpu - cr.1.cpu > app_cr.cpu
-                        && cr.0.mem - cr.1.mem > app_cr.mem
-                        && cr.0.cvm_cpu - cr.1.cvm_cpu > app_cr.cvm_cpu
-                        && cr.0.cvm_mem - cr.1.cvm_mem > app_cr.cvm_mem
-                        && cr.0.disk - cr.1.disk > app_cr.disk
+                        && cr.0.cpu - cr.1.cpu >= app_cr.cpu
+                        && cr.0.mem - cr.1.mem >= app_cr.mem
+                        && cr.0.cvm_cpu - cr.1.cvm_cpu >= app_cr.cvm_cpu
+                        && cr.0.cvm_mem - cr.1.cvm_mem >= app_cr.cvm_mem
+                        && cr.0.disk - cr.1.disk >= app_cr.disk
                     {
                         randoms.push(v);
                         scores.push(score);
