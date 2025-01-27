@@ -126,7 +126,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 167,
+    spec_version: 168,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -293,22 +293,22 @@ mod runtime {
     #[runtime::pallet_index(0)]
     pub type System = frame_system;
 
-    #[runtime::pallet_index(1)]
+    #[runtime::pallet_index(2)]
     pub type Timestamp = pallet_timestamp;
 
-    #[runtime::pallet_index(2)]
+    #[runtime::pallet_index(23)]
     pub type Aura = pallet_aura;
 
-    #[runtime::pallet_index(3)]
+    #[runtime::pallet_index(200)]
     pub type Grandpa = pallet_grandpa;
 
-    #[runtime::pallet_index(4)]
+    #[runtime::pallet_index(10)]
     pub type Balances = pallet_balances;
 
-    #[runtime::pallet_index(5)]
+    #[runtime::pallet_index(11)]
     pub type TransactionPayment = pallet_transaction_payment;
 
-    #[runtime::pallet_index(6)]
+    #[runtime::pallet_index(15)]
     pub type Sudo = pallet_sudo;
 
     // WETEE
@@ -345,7 +345,7 @@ mod runtime {
     #[runtime::pallet_index(116)]
     pub type Contracts = pallet_contracts;
     #[runtime::pallet_index(117)]
-    pub type Dsecret = wetee_dsecret;
+    pub type DSecret = wetee_dsecret;
     #[runtime::pallet_index(118)]
     pub type Bridge = wetee_tee_bridge;
     #[runtime::pallet_index(119)]
