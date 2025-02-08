@@ -9,7 +9,8 @@ use sp_std::result;
 
 use orml_traits::MultiCurrency;
 
-use wetee_primitives::{traits::WorkExt,types::{NATIVE_ASSET_ID,ClusterId, Ip, ComCr, MintId,Cr, TeeAppId, WorkId, WorkType,ClusterLevel,TEEVersion,P2PAddr}};
+use wetee_assets::AssetMeta;
+use wetee_primitives::{traits::WorkExt,types::{NATIVE_ASSET_ID, TEE_MINT_ASSET_ID, ClusterId, Ip, ComCr, MintId,Cr, TeeAppId, WorkId, WorkType, ClusterLevel, TEEVersion, WeAssetId}};
 
 #[cfg(test)]
 mod mock;
@@ -22,6 +23,7 @@ mod benchmarking;
 
 mod weights;
 mod types;
+pub mod migrations;
 use types::*;
 use weights::WeightInfo;
 
@@ -40,6 +42,7 @@ pub mod pallet {
         frame_system::Config
         + wetee_assets::Config
         + wetee_dao::Config
+        + wetee_fairlanch::Config
         + pallet_insecure_randomness_collective_flip::Config
     {
         /// pallet event
@@ -55,7 +58,7 @@ pub mod pallet {
         type WorkExt: WorkExt<Self::AccountId,BalanceOf<Self>>;
     }
 
-    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -91,11 +94,6 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn code_signer)]
     pub type CodeSigner<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
-
-    /// 侧链boot peers
-    #[pallet::storage]
-    #[pallet::getter(fn boot_peers)]
-    pub type BootPeers<T: Config> = StorageValue<_, BoundedVec<P2PAddr<T::AccountId>, ConstU32<16>>, ValueQuery>;
 
     /// 集群信息
     #[pallet::storage]
@@ -140,17 +138,29 @@ pub mod pallet {
     #[pallet::getter(fn deposit_price)]
     pub type DepositPrices<T: Config> = StorageMap<_, Identity, ClusterLevel, DepositPrice, OptionQuery>;
 
-    /// 抵押信息
+    /// 抵押 asset id
+    /// 抵押资产和USDT的价格换算比率 n/1_000_000
+    #[pallet::storage]
+    #[pallet::getter(fn deposit_ratios)]
+    pub type DepositRatios<T: Config> = StorageMap<
+        _,
+        Identity,
+        WeAssetId,
+        u32,
+        OptionQuery,
+    >;
+
+    /// 抵押Token
     /// deposit of computing resource
     #[pallet::storage]
-    #[pallet::getter(fn deposits)]
-    pub type Deposits<T: Config> = StorageDoubleMap<
+    #[pallet::getter(fn deposit_assets)]
+    pub type DepositedAssets<T: Config> = StorageDoubleMap<
         _,
         Identity,
         ClusterId,
         Identity,
         BlockNumberFor<T>,
-        Deposit<BalanceOf<T>>,
+        AssetDeposit<BalanceOf<T>>,
         OptionQuery,
     >;
 
@@ -272,7 +282,7 @@ pub mod pallet {
         /// 集群无法停止
         ClusterCanNotStopped,
         /// Too many apps 
-        /// 程序数量过多
+        /// 程序数量过多 
         TooManyApp,
         /// No cluster
         /// 没有集群
@@ -313,6 +323,9 @@ pub mod pallet {
         /// Level is not exists
         /// 等级不存在
         LevelNotExists,
+        /// deposit ratio is not exists
+        /// 抵押比例不存在
+        DepositRatioNotExists,
         /// No cluster found
         /// 没有找到集群
         NoClusterFound,
@@ -325,9 +338,6 @@ pub mod pallet {
         /// Work type not exists
         /// 工作类型不存在
         WorkTypeNotExists,
-        /// Boot peers too long
-        /// 启动节点过多
-        BootPeersTooLong,
         /// Tee report 404
         /// tee 报告缺失
         TeeReport404,
@@ -461,6 +471,7 @@ pub mod pallet {
             cvm_mem: u32,
             disk: u32,
             gpu: u32,
+            asset_id: WeAssetId,
             #[pallet::compact] deposit: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
@@ -474,25 +485,31 @@ pub mod pallet {
 
             let score = Scores::<T>::get(id).ok_or(Error::<T>::LevelNotExists)?;
             let price = Self::get_level_price(score.0, cpu, mem, disk,gpu)?;
+            let ratio = DepositRatios::<T>::get(asset_id).ok_or(Error::<T>::DepositRatioNotExists)?;
+            let usd = deposit*(ratio/1_000_000u32).into();
 
             // check deposit
             // 检查抵押金额是否足够
-            ensure!(deposit >= price, Error::<T>::InsufficientDeposit);
+            ensure!(usd >= price, Error::<T>::InsufficientDeposit);
+
+            let n = <frame_system::Pallet<T>>::block_number();
 
             // check duplicate
             // 检查是否已经抵押
             ensure!(
-                Deposits::<T>::get(id, <frame_system::Pallet<T>>::block_number()).is_none(),
+                DepositedAssets::<T>::get(id, n.clone()).is_none(),
                 Error::<T>::DuplicateDeposit
             );
 
             // add deposit
             // 添加抵押历史
-            Deposits::<T>::insert(
+            DepositedAssets::<T>::insert(
                 id,
-                <frame_system::Pallet<T>>::block_number(),
-                Deposit {
+                n.clone(),
+                AssetDeposit {
+                    asset_id,
                     deposit,
+                    usd,
                     cpu,
                     mem,
                     cvm_cpu,
@@ -522,9 +539,13 @@ pub mod pallet {
                 Ok(())
             })?;
 
+
+            // 更新挖矿数据
+            wetee_fairlanch::Pallet::<T>::staking_asset(creator.clone(), TEE_MINT_ASSET_ID, usd)?;
+
             // reserve assets
             // 质押保证金
-            wetee_assets::Pallet::<T>::try_reserve(0, creator, deposit)?;
+            wetee_assets::Pallet::<T>::try_reserve(asset_id, creator, deposit)?;
 
             Ok(().into())
         }
@@ -539,7 +560,7 @@ pub mod pallet {
             block_num: BlockNumberFor<T>,
         ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
-            let d = Deposits::<T>::get(id, block_num).ok_or(Error::<T>::ClusterNotExists)?;
+            let d = DepositedAssets::<T>::get(id, block_num).ok_or(Error::<T>::ClusterNotExists)?;
 
             let cid = K8sClusterAccounts::<T>::get(creator.clone()).ok_or(Error::<T>::ClusterNotExists)?;
             // check user
@@ -551,7 +572,7 @@ pub mod pallet {
 
             // add deposit
             // 添加抵押历史
-            Deposits::<T>::remove(id, block_num);
+            DepositedAssets::<T>::remove(id, block_num);
 
             // add cpu mem disk
             // 更新抵押数据
@@ -572,9 +593,13 @@ pub mod pallet {
                 Ok(())
             })?;
 
+
+            // 更新挖矿数据
+            wetee_fairlanch::Pallet::<T>::unstaking_asset(creator.clone(),TEE_MINT_ASSET_ID , d.usd)?;
+
             // release assets
             // 释放质押保证金
-            wetee_assets::Pallet::<T>::try_unreserve(0, creator, d.deposit)?;
+            wetee_assets::Pallet::<T>::try_unreserve(d.asset_id, creator, d.deposit)?;
 
             Ok(().into())
         }
@@ -784,14 +809,14 @@ pub mod pallet {
             let cr = Crs::<T>::get(cluster_id).unwrap();
             ensure!(cr.1.cpu == 0, Error::<T>::ClusterCanNotStopped);
 
-            let mut iter = Deposits::<T>::iter_prefix(cluster_id);
+            let mut iter = DepositedAssets::<T>::iter_prefix(cluster_id);
 
             // Release all mortgages
             // 解除所有的抵押
             while let Some(value) = iter.next() {
-                Deposits::<T>::remove(cluster_id, value.0);
+                DepositedAssets::<T>::remove(cluster_id, value.0);
                 wetee_assets::Pallet::<T>::try_unreserve(
-                    NATIVE_ASSET_ID,
+                    value.1.asset_id,
                     who.clone(),
                     value.1.deposit,
                 )
@@ -913,17 +938,20 @@ pub mod pallet {
         /// 设置引导节点
         #[pallet::call_index(011)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_boot_peers())]
-        pub fn set_boot_peers(
+        pub fn init_mint(
             origin: OriginFor<T>,
-            boots: Vec<P2PAddr<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_root(origin)?;
 
-            ensure!(boots.len() <= 16, Error::<T>::BootPeersTooLong);
-            
-            let bts = BoundedVec::try_from(boots).unwrap();
-            BootPeers::<T>::put(bts);
+            let root = wetee_dao::Pallet::<T>::asset_root();
+
+            // 创建资产
+            wetee_assets::Pallet::<T>::try_create(root, TEE_MINT_ASSET_ID, AssetMeta{
+                name: "TEE mint".as_bytes().to_vec(),
+                symbol: "wTEE".as_bytes().to_vec(),
+                decimals: 12,
+            }, 0u32.into())?;
 
             Ok(().into())
         }
@@ -1256,7 +1284,7 @@ pub mod pallet {
         /// 获取随机数
         fn get_random_number(seed: TeeAppId) -> u64 {
             let (random_seed, _) = <pallet_insecure_randomness_collective_flip::Pallet<T>>::random(
-                &(T::PalletId::get(), seed).encode(),
+                &(<T as wetee_dao::Config>::PalletId::get(), seed).encode(),
             );
             
             let random_number = <u64>::decode(&mut random_seed.as_ref())
@@ -1268,7 +1296,7 @@ pub mod pallet {
         /// Get minted app account
         /// 获取应用挖矿账户
         pub fn get_mint_account(work_id: WorkId, cid: ClusterId) -> T::AccountId {
-            T::PalletId::get().into_sub_account_truncating(MintId {
+            <T as wetee_dao::Config>::PalletId::get().into_sub_account_truncating(MintId {
                 id: work_id.id,
                 wtype: work_id.wtype,
                 cid,

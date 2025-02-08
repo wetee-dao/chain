@@ -2,7 +2,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
 
-use wetee_primitives::types::{ClusterId, ComCr, Ip, WorkId};
+use wetee_primitives::types::{ClusterId, ComCr, Ip, WeAssetId, WorkId};
 
 /// K8sCluster specific information
 /// 集群信息
@@ -37,6 +37,7 @@ pub struct K8sCluster<AccountId, BlockNumber> {
     pub status: u8,
 }
 
+/// 被废弃
 /// 质押数据
 /// deposit of computing resource
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -44,6 +45,35 @@ pub struct Deposit<Balance> {
     /// Deposit amount
     /// 质押金额
     pub deposit: Balance,
+    /// cpu
+    /// cpu
+    pub cpu: u32,
+    pub cvm_cpu: u32,
+    /// memory
+    /// memory
+    pub mem: u32,
+    pub cvm_mem: u32,
+    /// disk
+    /// disk
+    pub disk: u32,
+    /// gpu
+    /// gpu
+    pub gpu: u32,
+}
+
+/// 质押数据
+/// deposit of computing resource
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct AssetDeposit<Balance> {
+    /// Asset id
+    /// 资产id
+    pub asset_id: WeAssetId,
+    /// Deposit amount
+    /// 质押金额
+    pub deposit: Balance,
+    /// Deposit amount
+    /// 质押金额
+    pub usd: Balance,
     /// cpu
     /// cpu
     pub cpu: u32,

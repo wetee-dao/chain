@@ -2,7 +2,7 @@
 #![allow(clippy::type_complexity)]
 
 use frame_support::pallet_prelude::*;
-use frame_system::{ensure_signed, pallet_prelude::*};
+use frame_system::pallet_prelude::*;
 use sp_std::convert::TryInto;
 use wetee_dao::{self as dao};
 use wetee_primitives::types::WeAssetId;

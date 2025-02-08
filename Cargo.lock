@@ -18165,6 +18165,7 @@ dependencies = [
  "wetee-app",
  "wetee-assets",
  "wetee-dao",
+ "wetee-fairlanch",
  "wetee-primitives",
  "wetee-task",
 ]

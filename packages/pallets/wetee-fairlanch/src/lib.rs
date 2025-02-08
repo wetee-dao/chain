@@ -431,7 +431,7 @@ pub mod pallet {
             // 获取 vtoken 对应的 token
             let (asset_id, (pool, vpool)) =
                 Vtoken2token::<T>::get(vasset_id).ok_or(Error::<T>::VtokenNotExists)?;
-            let mut amount = vamount * pool.saturated_into::<BalanceOf<T>>()
+            let amount = vamount * pool.saturated_into::<BalanceOf<T>>()
                 / vpool.saturated_into::<BalanceOf<T>>();
 
             // 检查是否超过质押阈值
@@ -445,21 +445,7 @@ pub mod pallet {
             let to = Self::staking_pool_account(vasset_id);
             wetee_assets::Pallet::<T>::try_transfer(vasset_id, who.clone(), to, vamount)?;
 
-            // 记录下个 epoch 的质押数据
-            let to_staking = ToStakings::<T>::get(who.clone(), asset_id);
-            if to_staking.is_some() {
-                amount += to_staking.unwrap();
-            }
-            let _ = ToStakings::<T>::insert(&who, asset_id, amount);
-
-            // 获取当前的质押数据
-            let user_reward = UserNextReward::<T>::get(who.clone());
-            if user_reward == 0u32.into() {
-                let next_block = Self::get_user_next_reward();
-                // 触发下一次奖励
-                let _ = NextStakingRewards::<T>::insert(next_block.clone(), who.clone(), true);
-                let _ = UserNextReward::<T>::insert(who.clone(), next_block);
-            }
+            Self::staking_asset(who, asset_id, amount)?;
 
             Ok(().into())
         }
@@ -486,30 +472,7 @@ pub mod pallet {
             let from = Self::staking_pool_account(vasset_id);
             wetee_assets::Pallet::<T>::try_transfer(vasset_id, from, who.clone(), vamount)?;
 
-            // 获取当前的质押数据
-            let pre_staking =
-                Stakings::<T>::get(who.clone(), asset_id).ok_or(Error::<T>::StakingNotExists)?;
-
-            // 超过质押量的 unstaking 不允许
-            if pre_staking < amount {
-                return Err(Error::<T>::Amount403.into());
-            }
-
-            // 获取当前质押数据
-            let asset_staking = Stakings::<T>::get(who.clone(), asset_id).unwrap();
-
-            // 取现
-            let now_amount = asset_staking - amount;
-
-            // 如果某个币种的质押量已经为0，则删除该币种的质押数据
-            if now_amount == 0u32.into() {
-                Stakings::<T>::remove(who.clone(), asset_id);
-            } else {
-                Stakings::<T>::insert(who.clone(), asset_id, now_amount);
-            }
-
-            // 触发总质押数钩子
-            Self::staking_hook(asset_id, StakeFunc::UnStake, who, amount)?;
+            Self::unstaking_asset(who, asset_id, amount)?;
 
             Ok(().into())
         }
@@ -801,6 +764,64 @@ pub mod pallet {
 
             StakingTotal::<T>::insert(asset_id, total);
             Ok(())
+        }
+
+        pub fn unstaking_asset(
+            user: T::AccountId,
+            asset_id: WeAssetId,
+            amount: BalanceOf<T>,
+        ) -> result::Result<(), DispatchError> {
+            // 获取当前的质押数据
+            let pre_staking =
+                Stakings::<T>::get(user.clone(), asset_id).ok_or(Error::<T>::StakingNotExists)?;
+
+            // 超过质押量的 unstaking 不允许
+            if pre_staking < amount {
+                return Err(Error::<T>::Amount403.into());
+            }
+
+            // 获取当前质押数据
+            let asset_staking = Stakings::<T>::get(user.clone(), asset_id).unwrap();
+
+            // 取现
+            let now_amount = asset_staking - amount;
+
+            // 如果某个币种的质押量已经为0，则删除该币种的质押数据
+            if now_amount == 0u32.into() {
+                Stakings::<T>::remove(user.clone(), asset_id);
+            } else {
+                Stakings::<T>::insert(user.clone(), asset_id, now_amount);
+            }
+
+            // 触发总质押数钩子
+            Self::staking_hook(asset_id, StakeFunc::UnStake, user, amount)?;
+
+            Ok(())
+        }
+
+        pub fn staking_asset(
+            user: T::AccountId,
+            asset_id: WeAssetId,
+            amount: BalanceOf<T>,
+        ) -> result::Result<(), DispatchError> {
+            let mut camount = amount.clone();
+            // 记录下个 epoch 的质押数据
+            let to_staking = ToStakings::<T>::get(user.clone(), asset_id);
+            if to_staking.is_some() {
+                camount += to_staking.unwrap();
+            }
+            let _ = ToStakings::<T>::insert(&user, asset_id, camount);
+
+            // 获取当前的质押数据
+            let user_reward = UserNextReward::<T>::get(user.clone());
+            if user_reward == 0u32.into() {
+                let next_block = Self::get_user_next_reward();
+                // 触发下一次奖励
+                let _ = NextStakingRewards::<T>::insert(next_block.clone(), user.clone(), true);
+                let _ = UserNextReward::<T>::insert(user.clone(), next_block);
+            }
+
+            Ok(().into())
         }
     }
 }

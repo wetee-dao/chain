@@ -104,6 +104,12 @@ pub mod pallet {
     pub type NodePubServers<T: Config> =
         StorageMap<_, Identity, u64, P2PAddr<T::AccountId>, OptionQuery>;
 
+    /// 侧链boot peers
+    #[pallet::storage]
+    #[pallet::getter(fn boot_peers)]
+    pub type BootPeers<T: Config> =
+        StorageValue<_, BoundedVec<P2PAddr<T::AccountId>, ConstU32<16>>, ValueQuery>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -131,6 +137,9 @@ pub mod pallet {
         OffchainSigError,
         /// 签名数量不够
         OffchainSigNotEnough,
+        /// Boot peers too long
+        /// 启动节点过多
+        BootPeersTooLong,
     }
 
     #[pallet::call]
@@ -297,6 +306,25 @@ pub mod pallet {
             ensure!(who == node, Error::<T>::Call403);
 
             <NodePubServers<T>>::insert(id, server);
+            Ok(().into())
+        }
+
+        /// Set boot peers
+        /// 设置引导节点
+        #[pallet::call_index(011)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_node_pub_server())]
+        pub fn set_boot_peers(
+            origin: OriginFor<T>,
+            boots: Vec<P2PAddr<T::AccountId>>,
+        ) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_root(origin)?;
+
+            ensure!(boots.len() <= 16, Error::<T>::BootPeersTooLong);
+
+            let bts = BoundedVec::try_from(boots).unwrap();
+            BootPeers::<T>::put(bts);
+
             Ok(().into())
         }
     }

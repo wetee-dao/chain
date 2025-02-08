@@ -30,6 +30,7 @@ pallet-insecure-randomness-collective-flip = {workspace = true}
 wetee-app = {path = "../wetee-app", package = "wetee-app", default-features = false}
 wetee-assets = {path = "../wetee-assets", package = "wetee-assets", default-features = false}
 wetee-dao = {path = "../wetee-dao", package = "wetee-dao", default-features = false}
+wetee-fairlanch = {path = "../wetee-fairlanch", package = "wetee-fairlanch", default-features = false}
 wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
 wetee-task = {path = "../wetee-task", package = "wetee-task", default-features = false}
 
@@ -54,5 +55,6 @@ std = [
   "wetee-assets/std",
   "wetee-app/std",
   "wetee-task/std",
+  "wetee-fairlanch/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

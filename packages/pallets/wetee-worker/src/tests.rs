@@ -78,6 +78,7 @@ pub fn mortgage() {
         1000,
         1000,
         1,
+        NATIVE_ASSET_ID,
         1000000
     )
     .is_ok());
@@ -190,6 +191,7 @@ pub fn cluster_mortgage() {
             1000,
             1000,
             1,
+            NATIVE_ASSET_ID,
             100000
         )
         .is_ok());
@@ -210,6 +212,7 @@ pub fn cluster_mortgage_should_fail() {
             1,
             1,
             1,
+            NATIVE_ASSET_ID,
             100
         )
         .is_err());
@@ -230,6 +233,7 @@ pub fn cluster_mortgage_should_fail2() {
             1,
             1,
             1,
+            NATIVE_ASSET_ID,
             0
         )
         .is_err());
@@ -250,6 +254,7 @@ pub fn cluster_unmortgage() {
             1,
             1,
             1,
+            NATIVE_ASSET_ID,
             100
         )
         .is_ok());
@@ -275,6 +280,7 @@ pub fn cluster_unmortgage_should_fail() {
             1,
             1,
             1,
+            NATIVE_ASSET_ID,
             100
         )
         .is_ok());
@@ -298,6 +304,7 @@ pub fn cluster_unmortgage_should_fail2() {
             1,
             1,
             1,
+            NATIVE_ASSET_ID,
             100
         )
         .is_ok());
@@ -323,6 +330,7 @@ pub fn cluster_unmortgage_should_fail3() {
             1,
             1,
             1,
+            NATIVE_ASSET_ID,
             100
         )
         .is_ok());

@@ -45,6 +45,7 @@ frame_support::construct_runtime!(
         WeteeAsset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
         WETEE: wetee_dao::{ Pallet, Call, Event<T>, Storage },
         WeteeApp: wetee_app::{ Pallet, Call, Event<T>, Storage },
+        Fairlanch: wetee_fairlanch::{ Pallet, Call, Event<T>, Storage },
         WeteeWorker: wetee_worker::{ Pallet, Call, Event<T>, Storage },
     }
 );
@@ -175,6 +176,29 @@ impl wetee_worker::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type WorkExt = WorkExtIns;
+}
+
+pub struct AuraAccountAdapter;
+impl frame_support::traits::FindAuthor<AccountId> for AuraAccountAdapter {
+    fn find_author<'a, I>(digests: I) -> Option<AccountId>
+    where
+        I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
+    {
+        return Some(BOB);
+    }
+}
+
+parameter_types! {
+    pub const FairlanchPalletId: PalletId = PalletId(*b"fair0000");
+    pub const EpochBlock: u32 = 14400;
+}
+
+impl wetee_fairlanch::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+    type FindAuthor = AuraAccountAdapter;
+    type PalletId = FairlanchPalletId;
+    type EpochBlock = EpochBlock;
 }
 
 impl wetee_app::Config for Test {
