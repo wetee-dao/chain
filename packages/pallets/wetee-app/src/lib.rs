@@ -49,6 +49,8 @@ pub struct TeeApp<AccountId, BlockNumber> {
     /// name of the app.
     /// 程序名字
     pub name: Vec<u8>,
+    /// app template id
+    pub template_id: Option<u128>,
     /// img of the App.
     /// image 目标宗旨
     pub image: Vec<u8>,
@@ -269,6 +271,8 @@ pub mod pallet {
             origin: OriginFor<T>,
             // name of the App
             name: Vec<u8>,
+            // app template id
+            template_id: Option<u128>,
             // img of the App.
             image: Vec<u8>,
             // signer of the App.
@@ -307,7 +311,7 @@ pub mod pallet {
             let app = TeeApp {
                 id,
                 name,
-
+                template_id,
                 image,
                 port,
                 command,

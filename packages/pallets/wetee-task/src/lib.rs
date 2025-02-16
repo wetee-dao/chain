@@ -49,6 +49,8 @@ pub struct TeeTask<AccountId, BlockNumber> {
     /// name of the app.
     /// 程序名字
     pub name: Vec<u8>,
+    /// app template id
+    pub template_id: Option<u128>,
     /// img of the Task.
     /// image 目标宗旨
     pub image: Vec<u8>,
@@ -267,6 +269,9 @@ pub mod pallet {
         pub fn create(
             origin: OriginFor<T>,
             name: Vec<u8>,
+            // app template id
+            template_id: Option<u128>,
+            // image of the App.
             image: Vec<u8>,
             // signer of the App.
             signer: Vec<u8>,
@@ -292,6 +297,7 @@ pub mod pallet {
             let app = TeeTask {
                 id,
                 name,
+                template_id,
                 image,
                 meta,
                 port,

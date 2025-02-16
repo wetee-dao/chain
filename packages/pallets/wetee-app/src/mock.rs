@@ -104,7 +104,7 @@ impl wetee_dao::Config for Test {
 pub struct WorkerQueueHook;
 impl CrossCall<(WorkId, AccountId), ()> for WorkerQueueHook {
     fn call(
-        (id, dao_id): (WorkId, AccountId),
+        (id, user): (WorkId, AccountId),
     ) -> sp_std::result::Result<(), sp_runtime::DispatchError> {
         Ok(())
     }

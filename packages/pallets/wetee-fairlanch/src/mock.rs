@@ -36,9 +36,9 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
-
         Tokens: orml_tokens::{Pallet, Call, Config<T>, Storage, Event<T>},
-        DAO: wetee_dao::{ Pallet, Call, Event<T>, Storage },
+
+        Base: wetee_dao::{ Pallet, Call, Event<T>, Storage },
         Asset: wetee_assets::{ Pallet, Call, Event<T>, Storage },
         Fairlanch: wetee_fairlanch::{ Pallet, Call, Event<T>, Storage },
     }

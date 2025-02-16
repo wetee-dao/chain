@@ -1,7 +1,7 @@
 [package]
 authors = ["WeTEE DAO"]
 edition = "2021"
-name = "wetee-worker"
+name = "wetee-store"
 publish = false
 version = "1.0.0"
 
@@ -32,8 +32,6 @@ wetee-assets = {path = "../wetee-assets", package = "wetee-assets", default-feat
 wetee-dao = {path = "../wetee-dao", package = "wetee-dao", default-features = false}
 wetee-fairlanch = {path = "../wetee-fairlanch", package = "wetee-fairlanch", default-features = false}
 wetee-primitives = {path = "../../primitives", package = "wetee-primitives", default-features = false}
-wetee-store = {path = "../wetee-store", package = "wetee-store", default-features = false}
-wetee-task = {path = "../wetee-task", package = "wetee-task", default-features = false}
 
 [dev-dependencies]
 sp-core = {workspace = true}
@@ -55,8 +53,6 @@ std = [
   "wetee-dao/std",
   "wetee-assets/std",
   "wetee-app/std",
-  "wetee-task/std",
   "wetee-fairlanch/std",
-  "wetee-store/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

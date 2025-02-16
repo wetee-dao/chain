@@ -18,6 +18,7 @@ pub fn do_create() {
     Pallet::<Test>::create(
         OriginFor::<Test>::signed(ALICE),
         vec![0, 0, 0, 0, 0, 0, 0, 0],
+        None,
         vec![0, 0, 0, 0, 0, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -52,6 +53,7 @@ pub fn create() {
         assert!(Pallet::<Test>::create(
             OriginFor::<Test>::signed(ALICE),
             vec![0, 0, 0, 0, 0, 0, 0, 0],
+            None,
             vec![0, 0, 0, 0, 0, 0, 0, 0],
             vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

@@ -2,10 +2,7 @@ use crate as wetee_dao;
 use frame_support::{derive_impl, parameter_types, traits::Contains, PalletId};
 use sp_runtime::BuildStorage;
 use sp_std::result::Result;
-use wetee_primitives::{
-    traits::CrossCall,
-    types::{WeAssetId, WorkId},
-};
+use wetee_primitives::{traits::CrossCall, types::WorkId};
 
 // type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;

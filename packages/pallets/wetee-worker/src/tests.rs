@@ -46,6 +46,7 @@ pub fn create_work() {
     wetee_app::Pallet::<Test>::create(
         OriginFor::<Test>::signed(ALICE),
         "test".as_bytes().to_vec(),
+        None,
         "test".as_bytes().to_vec(),
         vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

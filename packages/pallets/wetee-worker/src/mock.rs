@@ -46,7 +46,8 @@ frame_support::construct_runtime!(
         WETEE: wetee_dao::{ Pallet, Call, Event<T>, Storage },
         WeteeApp: wetee_app::{ Pallet, Call, Event<T>, Storage },
         Fairlanch: wetee_fairlanch::{ Pallet, Call, Event<T>, Storage },
-        WeteeWorker: wetee_worker::{ Pallet, Call, Event<T>, Storage },
+        Store: wetee_store::{ Pallet, Call, Event<T>, Storage },
+        Worker: wetee_worker::{ Pallet, Call, Event<T>, Storage },
     }
 );
 
@@ -178,6 +179,10 @@ impl wetee_worker::Config for Test {
     type WorkExt = WorkExtIns;
 }
 
+impl wetee_store::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+}
 pub struct AuraAccountAdapter;
 impl frame_support::traits::FindAuthor<AccountId> for AuraAccountAdapter {
     fn find_author<'a, I>(digests: I) -> Option<AccountId>

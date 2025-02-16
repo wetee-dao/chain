@@ -43,6 +43,7 @@ pub mod pallet {
         + wetee_assets::Config
         + wetee_dao::Config
         + wetee_fairlanch::Config
+        + wetee_store::Config
         + pallet_insecure_randomness_collective_flip::Config
     {
         /// pallet event
@@ -64,13 +65,6 @@ pub mod pallet {
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
-
-    /// 用户对应集群的信息
-    /// user's K8sCluster information
-    #[pallet::storage]
-    #[pallet::getter(fn k8s_cluster_accounts)]
-    pub type K8sClusterAccounts<T: Config> =
-        StorageMap<_, Identity, T::AccountId, ClusterId, OptionQuery>;
 
     #[pallet::type_value]
     pub fn DefaultForm1() -> ClusterId {
@@ -94,6 +88,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn code_signer)]
     pub type CodeSigner<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
+
+    /// 用户对应集群的信息
+    /// user's K8sCluster information
+    #[pallet::storage]
+    #[pallet::getter(fn k8s_cluster_accounts)]
+    pub type K8sClusterAccounts<T: Config> =
+        StorageMap<_, Identity, T::AccountId, ClusterId, OptionQuery>;
 
     /// 集群信息
     #[pallet::storage]
@@ -708,8 +709,12 @@ pub mod pallet {
                     owner_account.clone(),
                     tee_version
                 )?;
+
                 return Ok(().into());
             }
+            
+            // wetee_store::Pallet::<T>::add_token_to_app()
+            
             WorkContractState::<T>::insert(
                 work_id.clone(),
                 contract_cluster_id,
