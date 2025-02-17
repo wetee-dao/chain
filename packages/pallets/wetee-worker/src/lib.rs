@@ -453,7 +453,7 @@ pub mod pallet {
             // 初始化评级
             // initialize score
             Scores::<T>::insert(cid, (level, 5));
-            <NextClusterId<T>>::mutate(|id| *id += 1);
+            <NextClusterId<T>>::mutate(|id| *id = *id + 1);
 
             Self::deposit_event(Event::ClusterCreated { creator });
             Ok(().into())
@@ -662,7 +662,7 @@ pub mod pallet {
             let state = WorkContractState::<T>::get(work_id.clone(), contract_cluster_id).ok_or(Error::<T>::WorkNotExists)?;
 
             // 查询 work info
-            let (owner_account,cr,_,work_status,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,cr,_,work_status,tee_version,_template_id) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             
             // check status
             // 检查work的状态,如果未开始状态，则报错
@@ -866,7 +866,7 @@ pub mod pallet {
                 return Err(Error::<T>::ClusterNotExists.into());
             }
 
-            let (owner_account,_,_,status,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,_,_,status,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
             ensure!(status != 0, Error::<T>::WorkNotStarted);
 
@@ -891,7 +891,7 @@ pub mod pallet {
                 return Err(Error::<T>::ClusterNotExists.into());
             }
 
-            let (owner_account,_,_,status,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,_,_,status,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
             ensure!(status != 0, Error::<T>::WorkNotStarted);
 
@@ -909,7 +909,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let (owner_account,cr,_,status,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,cr,_,status,tee_version,template_id) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
 
             if status == 0 {
@@ -929,6 +929,10 @@ pub mod pallet {
                 tee_version
             )?;
 
+            // 添加 app 的挖矿凭证
+            if template_id.is_some(){
+                wetee_store::Pallet::<T>::minus_token_to_app(template_id.unwrap())?;
+            }
 
             Self::deposit_event(Event::WorkStoped {
                 user: owner_account,
@@ -1007,7 +1011,7 @@ pub mod pallet {
             work_id: WorkId,
             match_id: Option<TeeAppId>,
         ) -> result::Result<bool, DispatchError> {
-            let (account,cr,level,status,tee_version) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (account,cr,level,status,tee_version,template_id) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             let disk_all = cr.disk.iter().map(|d| d.size).fold(0, |acc, size| acc + size);
             let mut cpu = 0;
             let mut mem = 0;
@@ -1094,6 +1098,11 @@ pub mod pallet {
                 // 设置工作的状态
                 <T as pallet::Config>::WorkExt::set_work_status(work_id.clone(), 1)?;
 
+                // 添加 app 的挖矿凭证
+                if template_id.is_some(){
+                    wetee_store::Pallet::<T>::add_token_to_app(template_id.unwrap())?;
+                }
+
                 // Runing event
                 // 运行事件
                 Self::deposit_event(Event::WorkAssigned {
@@ -1128,7 +1137,7 @@ pub mod pallet {
             // }
 
             // 查询 work info
-            let (owner_account,_,_,work_status,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
+            let (owner_account,_,_,work_status,_,_) = <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
             
             // check status
             // 检查work的状态,如果未开始状态，则报错

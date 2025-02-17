@@ -352,6 +352,8 @@ mod runtime {
     pub type Matrix = wetee_matrix;
     #[runtime::pallet_index(120)]
     pub type Fairlanch = wetee_fairlanch;
+    #[runtime::pallet_index(124)]
+    pub type Store = wetee_store;
     // WETEE end
 }
 

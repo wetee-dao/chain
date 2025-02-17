@@ -98,7 +98,14 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
     fn work_info(
         work: WorkId,
     ) -> core::result::Result<
-        (AccountId, wetee_primitives::types::Cr, u8, u8, TEEVersion),
+        (
+            AccountId,
+            wetee_primitives::types::Cr,
+            u8,
+            u8,
+            TEEVersion,
+            Option<u128>,
+        ),
         sp_runtime::DispatchError,
     > {
         match work.wtype {
@@ -107,12 +114,14 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
                 let app = wetee_app::TEEApps::<Runtime>::get(account.clone(), work.clone().id)
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
+
                 return Ok((
                     account,
                     app.cr.clone(),
                     app.level,
                     app.status,
                     app.tee_version,
+                    app.template_id,
                 ));
             }
             WorkType::TASK => {
@@ -120,12 +129,14 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
                 let task = wetee_task::TEETasks::<Runtime>::get(account.clone(), work.clone().id)
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
+
                 return Ok((
                     account,
                     task.cr.clone(),
                     task.level,
                     task.status,
                     task.tee_version,
+                    task.template_id,
                 ));
             }
             WorkType::GPU => {
@@ -133,12 +144,14 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
                 let app = wetee_gpu::GPUApps::<Runtime>::get(account.clone(), work.clone().id)
                     .ok_or(wetee_worker::Error::<Runtime>::AppNotExists)?;
+
                 return Ok((
                     account,
                     app.cr.clone(),
                     app.level,
                     app.status,
                     app.tee_version,
+                    app.template_id,
                 ));
             }
         }

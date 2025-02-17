@@ -270,4 +270,8 @@ impl wetee_fairlanch::Config for Runtime {
     type EpochBlock = EpochBlock;
 }
 
+impl wetee_store::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+}
 // WETEE END

@@ -57,7 +57,17 @@ impl<RuntimeCall: Clone> PalletGet<RuntimeCall> for () {
 pub trait WorkExt<AccountId, Balance> {
     fn work_info(
         work: WorkId,
-    ) -> Result<(AccountId, Cr, ClusterLevel, WorkStatus, TEEVersion), DispatchError>;
+    ) -> Result<
+        (
+            AccountId,
+            Cr,
+            ClusterLevel,
+            WorkStatus,
+            TEEVersion,
+            Option<u128>,
+        ),
+        DispatchError,
+    >;
     fn set_work_status(w: WorkId, status: u8) -> Result<bool, DispatchError>;
     fn calculate_fee(work: WorkId) -> Result<Balance, DispatchError>;
     fn pay_run_fee(work: WorkId, to: AccountId, fee: Balance) -> Result<u8, DispatchError>;

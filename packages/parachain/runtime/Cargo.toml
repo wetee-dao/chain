@@ -110,6 +110,7 @@ wetee-matrix = {path = "../../pallets/wetee-matrix", default-features = false}
 wetee-primitives = {path = "../../primitives", default-features = false}
 wetee-project = {path = "../../pallets/wetee-project", default-features = false}
 wetee-runtime-api = {path = "../../pallets/wetee-rpc/runtime-api", default-features = false, optional = true}
+wetee-store = {path = "../../pallets/wetee-store", default-features = false}
 wetee-sudo = {path = "../../pallets/wetee-sudo", default-features = false}
 wetee-task = {path = "../../pallets/wetee-task", default-features = false}
 wetee-tee-bridge = {path = "../../pallets/wetee-tee-bridge", default-features = false}
@@ -198,6 +199,7 @@ std = [
   "wetee-tee-bridge/std",
   "wetee-cross/std",
   "wetee-runtime-api/std",
+  "wetee-store/std",
 ]
 
 runtime-benchmarks = [
@@ -229,6 +231,7 @@ runtime-benchmarks = [
   "wetee-treasury/runtime-benchmarks",
   "wetee-gov/runtime-benchmarks",
   "wetee-gpu/runtime-benchmarks",
+  "wetee-store/runtime-benchmarks",
 ]
 
 try-runtime = [

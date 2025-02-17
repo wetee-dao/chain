@@ -65,7 +65,7 @@ pub mod pallet {
             Economics::<T>::insert(0, 10);
             // 1 => tee mint reward, initial value 10%
             Economics::<T>::insert(1, 25);
-            // 3 => app mint reward, initial value 10%
+            // 2 => app mint reward, initial value 10%
             // Economics::<T>::insert(2, 10);
 
             // 第一个块的奖励为 1 WTE

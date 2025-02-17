@@ -121,7 +121,14 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
     fn work_info(
         work: WorkId,
     ) -> core::result::Result<
-        (AccountId, wetee_primitives::types::Cr, u8, u8, TEEVersion),
+        (
+            AccountId,
+            wetee_primitives::types::Cr,
+            u8,
+            u8,
+            TEEVersion,
+            Option<u128>,
+        ),
         sp_runtime::DispatchError,
     > {
         let account = wetee_app::AppIdAccounts::<Test>::get(work.id)
@@ -134,6 +141,7 @@ impl WorkExt<AccountId, Balance> for WorkExtIns {
             app.level,
             app.status,
             app.tee_version,
+            app.template_id,
         ))
     }
 

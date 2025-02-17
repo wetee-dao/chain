@@ -233,7 +233,7 @@ pub mod pallet {
             );
 
             // get work account
-            let (owner_account, _, _, _, _) =
+            let (owner_account, _, _, _, _, _) =
                 <T as pallet::Config>::WorkExt::work_info(call.work_id.clone())?;
 
             // get fee
@@ -313,7 +313,7 @@ pub mod pallet {
             );
 
             // get work account
-            let (owner_account, _, _, _, _) =
+            let (owner_account, _, _, _, _, _) =
                 <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
 
             // get fee
@@ -356,7 +356,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             // check work owner
-            let (owner_account, _, _, _, _) =
+            let (owner_account, _, _, _, _, _) =
                 <T as pallet::Config>::WorkExt::work_info(work_id.clone())?;
 
             ensure!(owner_account == who, Error::<T>::NotAllowed403);
@@ -380,7 +380,7 @@ pub mod pallet {
             let call = TEECalls::<T>::get(cluster_id, call_id).unwrap();
 
             // check work owner
-            let (owner_account, _, _, _, _) =
+            let (owner_account, _, _, _, _, _) =
                 <T as pallet::Config>::WorkExt::work_info(call.work_id.clone())?;
 
             ensure!(owner_account == who, Error::<T>::NotAllowed403);

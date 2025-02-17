@@ -196,7 +196,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("WeTEE"),
     impl_name: create_runtime_str!("WeTEE"),
     authoring_version: 1,
-    spec_version: 41,
+    spec_version: 43,
     impl_version: 0,
     apis: apis::RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -318,6 +318,7 @@ construct_runtime!(
         Bridge: wetee_tee_bridge = 118,
         Matrix:  wetee_matrix = 119,
         Fairlanch: wetee_fairlanch = 120,
+        Store: wetee_store = 124,
 
         OrmlXcm: orml_xcm = 121,
         XTokens: orml_xtokens = 122,

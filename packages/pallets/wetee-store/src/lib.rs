@@ -6,12 +6,12 @@ use frame_system::pallet_prelude::*;
 use sp_std::convert::TryInto;
 
 use orml_traits::MultiCurrency;
+use scale_info::prelude::vec::Vec;
+use sp_std::result;
 
 use wetee_assets::AssetMeta;
 use wetee_dao::{self as dao};
 use wetee_primitives::types::{WeAssetId, APP_MINT_ASSET_ID};
-
-use sp_std::result;
 
 #[cfg(test)]
 mod mock;
@@ -155,7 +155,7 @@ pub mod pallet {
             NextAppId::<T>::put(app_id + 1);
 
             // 生成质押资产
-            Self::add_token_to_app(who, app_id)?;
+            Self::add_token(who, app_id)?;
 
             Ok(().into())
         }
@@ -236,22 +236,28 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         // 添加运行资产到应用
-        pub fn add_token_to_app(
-            who: T::AccountId,
-            app_id: u128,
-        ) -> result::Result<bool, DispatchError> {
+        pub fn add_token_to_app(app_id: u128) -> result::Result<bool, DispatchError> {
+            let who = AccountOfApp::<T>::get(app_id).ok_or(Error::<T>::App404)?;
+            Self::add_token(who, app_id)
+        }
+
+        // 添加运行资产到应用
+        pub fn minus_token_to_app(app_id: u128) -> result::Result<bool, DispatchError> {
+            let who = AccountOfApp::<T>::get(app_id).ok_or(Error::<T>::App404)?;
+            Self::minus_token(who, app_id)
+        }
+
+        // 添加运行资产到应用
+        pub fn add_token(who: T::AccountId, app_id: u128) -> result::Result<bool, DispatchError> {
             wetee_fairlanch::Pallet::<T>::staking_asset(who, APP_MINT_ASSET_ID, 1u32.into())?;
-            <AppStakings<T>>::mutate(app_id, |t| *t += 1u32.into());
+            <AppStakings<T>>::mutate(&app_id, |t| *t += 1u32.into());
             Ok(true)
         }
 
         // 添加运行资产到应用
-        pub fn minus_token_to_app(
-            who: T::AccountId,
-            app_id: u128,
-        ) -> result::Result<bool, DispatchError> {
+        pub fn minus_token(who: T::AccountId, app_id: u128) -> result::Result<bool, DispatchError> {
             wetee_fairlanch::Pallet::<T>::staking_minus(who, APP_MINT_ASSET_ID, 1u32.into())?;
-            <AppStakings<T>>::mutate(app_id, |t| *t -= 1u32.into());
+            <AppStakings<T>>::mutate(&app_id, |t| *t -= 1u32.into());
             Ok(true)
         }
     }
