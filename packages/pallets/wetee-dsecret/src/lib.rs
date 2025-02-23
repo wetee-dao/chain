@@ -312,7 +312,7 @@ pub mod pallet {
         /// Set boot peers
         /// 设置引导节点
         #[pallet::call_index(011)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_node_pub_server())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_boot_peers())]
         pub fn set_boot_peers(
             origin: OriginFor<T>,
             boots: Vec<P2PAddr<T::AccountId>>,

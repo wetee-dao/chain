@@ -426,10 +426,11 @@ mod benches {
         [wetee_app, App]
         [wetee_gpu, Gpu]
         [wetee_task, Task]
-        [wetee_dsecret, Dsecret]
+        [wetee_dsecret, DSecret]
         [wetee_tee_bridge, Bridge]
         [wetee_worker, Worker]
         [wetee_fairlanch, Fairlanch]
+        [wetee_store, Store]
     );
 }
 

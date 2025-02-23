@@ -24,14 +24,9 @@ fn creat_dao<T: Config>(init:bool) -> (WeAssetId, WeAssetId) {
 	wetee_dao::Pallet::<T>::create_dao(
 		RawOrigin::Signed(alice.clone()).into(),
 		vec![1; 4],
-		vec![1; 4],
-		vec![1; 4],
-		vec![1; 4],
-		vec![1; 4],
-		vec![1; 4],
-		vec![1; 4],
-		vec![1; 4],
-		vec![1; 4],
+    vec![1; 4],
+    vec![1; 4],
+    vec![1; 4],
   ).unwrap();
 
   let value: BalanceOf<T> = 10000u32.into();

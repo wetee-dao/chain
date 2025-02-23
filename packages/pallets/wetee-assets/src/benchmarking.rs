@@ -16,11 +16,6 @@ fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
         vec![1; 4],
         vec![1; 4],
         vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
     )
     .is_ok());
     (dao_id, second_id)
@@ -55,7 +50,7 @@ mod benchmarks {
     }
 
     // #[benchmark]
-    // fn set_existenial_deposit() {
+    // fn set_metadata() {
     //     let caller = whitelisted_caller();
     //     let caller1 = whitelisted_caller();
     //     let (_dao_id, _second_id) = creat_dao::<T>();
@@ -64,57 +59,39 @@ mod benchmarks {
 
     //     Asset::<T>::create_asset(
     //         RawOrigin::Signed(caller).into(),
-    //         5000,
     //         AssetMeta {
     //             name: "TestA".as_bytes().to_vec(),
     //             symbol: "TA".as_bytes().to_vec(),
     //             decimals: 10,
     //         },
-    //         amount,
     //         init_dao_asset,
     //     );
 
     //     #[block]
-	// 	{
-
-    //         Asset::<T>::set_existenial_deposit(
+    //     {
+    //         Asset::<T>::set_metadata(
     //             RawOrigin::Signed(caller1).into(),
     //             5000,
-    //             amount,
+    //             AssetMeta {
+    //                 name: "TestA".as_bytes().to_vec(),
+    //                 symbol: "TA".as_bytes().to_vec(),
+    //                 decimals: 10,
+    //             },
     //         );
-    //     }
+    //     }   
     // }
 
     #[benchmark]
-    fn set_metadata() {
+    fn delete_asset(){
         let caller = whitelisted_caller();
-        let caller1 = whitelisted_caller();
-        let (_dao_id, _second_id) = creat_dao::<T>();
-        let amount: BalanceOf<T> = 10u32.into();
-        let init_dao_asset: BalanceOf<T> = 9u32.into();
-
-        Asset::<T>::create_asset(
-            RawOrigin::Signed(caller).into(),
-            AssetMeta {
-                name: "TestA".as_bytes().to_vec(),
-                symbol: "TA".as_bytes().to_vec(),
-                decimals: 10,
-            },
-            init_dao_asset,
-        );
 
         #[block]
         {
-            Asset::<T>::set_metadata(
-                RawOrigin::Signed(caller1).into(),
+            Asset::<T>::delete_asset(
+                RawOrigin::Signed(caller).into(),
                 5000,
-                AssetMeta {
-                    name: "TestA".as_bytes().to_vec(),
-                    symbol: "TA".as_bytes().to_vec(),
-                    decimals: 10,
-                },
             );
-        }   
+        }
     }
     
     #[benchmark]
@@ -174,6 +151,63 @@ mod benchmarks {
                 dist_lookup,
                 5000,
                 t,
+            );
+        }
+    }
+
+    #[benchmark]
+    fn parachain_asset_register(){
+        let caller = whitelisted_caller();
+        #[block]
+		{
+            Asset::<T>::parachain_asset_register(
+                RawOrigin::Signed(caller).into(),
+                10,
+                BoundedVec::try_from("XX".as_bytes().to_vec()).unwrap(),
+                AssetMeta {
+                    name: "TestA".as_bytes().to_vec(),
+                    symbol: "TA".as_bytes().to_vec(),
+                    decimals: 10,
+                },
+            );
+        }
+    }
+
+    #[benchmark]
+    fn set_chain_id(){
+        let caller = whitelisted_caller();
+        #[block]
+		{
+            Asset::<T>::set_chain_id(
+                RawOrigin::Signed(caller).into(),
+                10,
+            );
+        }
+    }
+
+    #[benchmark]
+    fn delete_parachain_for_asset(){
+        let caller = whitelisted_caller();
+        #[block]
+		{
+            Asset::<T>::delete_parachain_for_asset(
+                RawOrigin::Signed(caller).into(),
+                10,
+                10,
+            );
+        }
+    }
+
+    #[benchmark]
+    fn set_parachain_for_asset(){
+        let caller = whitelisted_caller();
+        #[block]
+		{
+            Asset::<T>::set_parachain_for_asset(
+                RawOrigin::Signed(caller).into(),
+                10,
+                10,
+                BoundedVec::try_from("XX".as_bytes().to_vec()).unwrap(),
             );
         }
     }

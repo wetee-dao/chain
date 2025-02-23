@@ -114,7 +114,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(001)]
-        #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::guild_join())]
+        #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::register_app())]
         pub fn register_app(
             origin: OriginFor<T>,
             // name of the K8sCluster.
@@ -164,7 +164,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(002)]
-        #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::guild_join())]
+        #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::unregister_app())]
         pub fn unregister_app(origin: OriginFor<T>, app_id: u128) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -181,7 +181,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(003)]
-        #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::guild_join())]
+        #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::add_app_version())]
         pub fn add_app_version(
             origin: OriginFor<T>,
             app_id: u128,
@@ -203,7 +203,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(050)]
-        #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::guild_join())]
+        #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::review_app())]
         pub fn review_app(
             _origin: OriginFor<T>,
             _app_id: u128,
@@ -215,7 +215,7 @@ pub mod pallet {
         /// Set boot peers
         /// 设置引导节点
         #[pallet::call_index(051)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::guild_join())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::init_mint())]
         pub fn init_mint(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_root(origin)?;

@@ -3,6 +3,7 @@ use crate::{Ip, Pallet};
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
 use scale_info::prelude::vec;
+use wetee_primitives::types::P2PAddr;
 
 #[benchmarks( where <T as wetee_dao::Config>::RuntimeCall: From<frame_system::Call<T>>)]
 mod benchmarks {
@@ -39,6 +40,7 @@ mod benchmarks {
         {
             let _ = Pallet::<T>::cluster_mortgage(
                 RawOrigin::Root.into(),
+                1,
                 1,
                 1,
                 1,
@@ -110,28 +112,6 @@ mod benchmarks {
         #[block]
         {
             let _ = Pallet::<T>::report_close(RawOrigin::Root.into(), 1, WorkId::default());
-        }
-    }
-
-    #[benchmark]
-    fn set_boot_peers() {
-        #[block]
-        {
-            let _ = Pallet::<T>::set_boot_peers(
-                RawOrigin::Root.into(),
-                vec![
-                    P2PAddr {
-                        ip: Ip::default(),
-                        port: 1,
-                        id: account("a", 1, 1),
-                    },
-                    P2PAddr {
-                        ip: Ip::default(),
-                        port: 1,
-                        id: account("a", 1, 1),
-                    },
-                ],
-            );
         }
     }
 

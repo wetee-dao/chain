@@ -295,7 +295,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(010)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::delete_asset())]
         pub fn delete_asset(
             origin: OriginFor<T>,
             asset_id: WeAssetId,
@@ -413,7 +413,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(007)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::parachain_asset_register())]
         pub fn parachain_asset_register(
             origin: OriginFor<T>,
             para_id: u32,
@@ -461,7 +461,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(008)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_chain_id())]
         pub fn set_chain_id(origin: OriginFor<T>, para_id: u32) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_root(origin.clone())?;
@@ -472,7 +472,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(009)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::delete_parachain_for_asset())]
         pub fn delete_parachain_for_asset(
             origin: OriginFor<T>,
             asset_id: WeAssetId,
@@ -499,7 +499,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(011)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_parachain_for_asset())]
         pub fn set_parachain_for_asset(
             origin: OriginFor<T>,
             asset_id: WeAssetId,

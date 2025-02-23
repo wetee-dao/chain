@@ -19,11 +19,6 @@ fn creat_dao<T: Config>() -> (WeAssetId, WeAssetId) {
         vec![1; 4],
         vec![1; 4],
         vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
-        vec![1; 4],
     )
     .is_ok());
     (dao_id, second_id)

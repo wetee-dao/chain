@@ -630,7 +630,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(010)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::v_staking_cancel())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_epoch())]
         pub fn set_epoch(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_root(origin.clone())?;

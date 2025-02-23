@@ -84,7 +84,14 @@ cargo build --features runtime-benchmarks --release -p wetee-node
 #     --output packages/pallets/wetee-worker/src/weights.rs \
 #     --template ./hacks/frame-weight-template.hbs
 
+# tee-fairlanch
+# ./target/release/wetee-node benchmark pallet --chain dev \
+#     --pallet wetee-fairlanch --extrinsic '*' --steps 20 --repeat 10 \
+#     --output packages/pallets/wetee-fairlanch/src/weights.rs \
+#     --template ./hacks/frame-weight-template.hbs
+
+# wetee-store
 ./target/release/wetee-node benchmark pallet --chain dev \
-    --pallet wetee-fairlanch --extrinsic '*' --steps 20 --repeat 10 \
-    --output packages/pallets/wetee-fairlanch/src/weights.rs \
+    --pallet wetee-store --extrinsic '*' --steps 20 --repeat 10 \
+    --output packages/pallets/wetee-store/src/weights.rs \
     --template ./hacks/frame-weight-template.hbs

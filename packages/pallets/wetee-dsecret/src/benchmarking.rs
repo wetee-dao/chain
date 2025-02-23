@@ -81,4 +81,26 @@ mod benchmarks {
             );
         }
     }
+
+    #[benchmark]
+    fn set_boot_peers() {
+        #[block]
+        {
+            let _ = Pallet::<T>::set_boot_peers(
+                RawOrigin::Root.into(),
+                vec![
+                    P2PAddr {
+                        ip: Ip::default(),
+                        port: 1,
+                        id: account("a", 1, 1),
+                    },
+                    P2PAddr {
+                        ip: Ip::default(),
+                        port: 1,
+                        id: account("a", 1, 1),
+                    },
+                ],
+            );
+        }
+    }
 }
