@@ -1,6 +1,7 @@
 use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
+use wetee_primitives::types::Service;
 
 /// app template
 /// 应用模版
@@ -15,15 +16,15 @@ pub struct AppTemplate<AccountId, BlockNumber> {
     /// The block that creates the K8sCluster
     /// App创建的区块
     pub start_block: BlockNumber,
-    /// Stop time
-    /// 停止时间
-    pub stop_block: Option<BlockNumber>,
     /// terminal time
     /// 终止时间
     pub terminal_block: Option<BlockNumber>,
     /// name of the K8sCluster.
     /// 集群名字
     pub name: Vec<u8>,
+    /// 元数据
+    /// meta data
+    pub meta: Vec<u8>,
     /// app type
     /// 程序运行的类型
     pub ty: AppType,
@@ -44,7 +45,7 @@ pub struct Image {
     pub i: Vec<u8>,
     /// 容器端口
     /// port
-    pub p: Vec<Port>,
+    pub p: Vec<Service>,
     /// 环境变量
     /// env
     pub e: Vec<Env>,
@@ -53,18 +54,10 @@ pub struct Image {
     pub v: Vec<Volume>,
     /// 容器命令
     /// pre command
-    pub pc: Vec<u8>,
+    pub pc: Option<Vec<u8>>,
     /// 容器命令
     /// command
-    pub c: Vec<u8>,
-}
-
-/// 容器端口
-/// port
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct Port {
-    pub k: Vec<u8>,
-    pub v: u16,
+    pub c: Option<Vec<u8>>,
 }
 
 /// 环境变量

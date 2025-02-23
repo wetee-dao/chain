@@ -76,7 +76,7 @@ pub mod pallet {
     /// 应用版本
     #[pallet::storage]
     #[pallet::getter(fn app_versions)]
-    pub type AppVerions<T: Config> = StorageDoubleMap<
+    pub type AppVersions<T: Config> = StorageDoubleMap<
         _,
         Identity,
         u128,
@@ -120,6 +120,9 @@ pub mod pallet {
             // name of the K8sCluster.
             // 集群名字
             name: Vec<u8>,
+            // 元数据
+            // meta data
+            meta: Vec<u8>,
             // app type
             // 程序运行的类型
             ty: AppType,
@@ -139,16 +142,16 @@ pub mod pallet {
                 id: app_id,
                 account: who.clone(),
                 start_block: n.clone(),
-                stop_block: None,
                 terminal_block: None,
                 name,
+                meta,
                 ty,
                 run,
                 status: 1,
             };
 
             Apps::<T>::insert(app_id, app);
-            AppVerions::<T>::insert(app_id, 1, (images, n));
+            AppVersions::<T>::insert(app_id, 1, (images, n));
             AccountOfApp::<T>::insert(app_id, who.clone());
             AccountApps::<T>::insert(who.clone(), app_id, ());
 
@@ -171,6 +174,7 @@ pub mod pallet {
             // 停止应用
             // stop app
             app.status = 3;
+            app.terminal_block = Some(frame_system::Pallet::<T>::block_number());
             Apps::<T>::insert(app_id, app);
 
             Ok(().into())
@@ -189,7 +193,7 @@ pub mod pallet {
             let app = Apps::<T>::get(app_id).ok_or(Error::<T>::App404)?;
             ensure!(app.account == who, Error::<T>::App403);
 
-            AppVerions::<T>::insert(
+            AppVersions::<T>::insert(
                 app_id,
                 version,
                 (images, frame_system::Pallet::<T>::block_number()),

@@ -437,7 +437,7 @@ pub mod pallet {
             // 检查是否超过质押阈值
             let quota = StakingQuota::<T>::get(asset_id);
             let total = StakingTotal::<T>::get(asset_id);
-            if total + amount > quota {
+            if total + amount > quota && quota > 0u32.into() {
                 return Err(Error::<T>::QuotaOverflow.into());
             }
 

@@ -105,6 +105,8 @@ pub enum Service {
     /// UDP
     Udp(u16),
     /// TCP
+    Http(u16),
+    /// TCP
     Https(u16),
     /// Project Tcp
     ProjectTcp(u16),
@@ -114,7 +116,7 @@ pub enum Service {
 
 impl Default for Service {
     fn default() -> Self {
-        Service::Tcp(80) // 默认为TCP协议，端口为0
+        Service::Http(80) // 默认为TCP协议，端口为0
     }
 }
 
