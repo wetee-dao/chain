@@ -1,7 +1,7 @@
 use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
-use wetee_primitives::types::Service;
+use wetee_primitives::types::{Command, Disk, Service, TEEVersion};
 
 /// app template
 /// 应用模版
@@ -30,7 +30,7 @@ pub struct AppTemplate<AccountId, BlockNumber> {
     pub ty: AppType,
     /// runtime type
     /// TEE 运行类型
-    pub run: RuntimeType,
+    pub run: TEEVersion,
     /// State of the App
     /// K8sCluster 状态
     pub status: u8,
@@ -49,15 +49,17 @@ pub struct Image {
     /// 环境变量
     /// env
     pub e: Vec<Env>,
-    /// 磁盘
-    /// disk
-    pub v: Vec<Volume>,
-    /// 容器命令
-    /// pre command
-    pub pc: Option<Vec<u8>>,
     /// 容器命令
     /// command
-    pub c: Option<Vec<u8>>,
+    pub c: Command,
+    // cpu
+    pub cpu: u32,
+    // memory
+    pub memory: u32,
+    // disk
+    pub disk: Vec<Disk>,
+    // gpu number
+    pub gpu: u32,
 }
 
 /// 环境变量
@@ -85,14 +87,4 @@ pub enum AppType {
     Task,
     /// Ai
     Ai,
-}
-
-/// Runtime type
-/// TEE 运行类型
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub enum RuntimeType {
-    /// SGX
-    SGX,
-    /// CVM
-    CVM,
 }

@@ -11,7 +11,7 @@ use sp_std::result;
 
 use wetee_assets::AssetMeta;
 use wetee_dao::{self as dao};
-use wetee_primitives::types::{WeAssetId, APP_MINT_ASSET_ID};
+use wetee_primitives::types::{TEEVersion, WeAssetId, APP_MINT_ASSET_ID};
 
 #[cfg(test)]
 mod mock;
@@ -75,8 +75,8 @@ pub mod pallet {
 
     /// 应用版本
     #[pallet::storage]
-    #[pallet::getter(fn app_versions)]
-    pub type AppVersions<T: Config> = StorageDoubleMap<
+    #[pallet::getter(fn version_lists)]
+    pub type VersionLists<T: Config> = StorageDoubleMap<
         _,
         Identity,
         u128,
@@ -131,7 +131,7 @@ pub mod pallet {
             images: Vec<Image>,
             // runtime type
             // TEE 运行类型
-            run: RuntimeType,
+            run: TEEVersion,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -151,7 +151,7 @@ pub mod pallet {
             };
 
             Apps::<T>::insert(app_id, app);
-            AppVersions::<T>::insert(app_id, 1, (images, n));
+            VersionLists::<T>::insert(app_id, 1, (images, n));
             AccountOfApp::<T>::insert(app_id, who.clone());
             AccountApps::<T>::insert(who.clone(), app_id, ());
 
@@ -193,7 +193,7 @@ pub mod pallet {
             let app = Apps::<T>::get(app_id).ok_or(Error::<T>::App404)?;
             ensure!(app.account == who, Error::<T>::App403);
 
-            AppVersions::<T>::insert(
+            VersionLists::<T>::insert(
                 app_id,
                 version,
                 (images, frame_system::Pallet::<T>::block_number()),
