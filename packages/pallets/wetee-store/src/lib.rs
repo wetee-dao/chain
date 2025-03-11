@@ -11,7 +11,7 @@ use sp_std::result;
 
 use wetee_assets::AssetMeta;
 use wetee_dao::{self as dao};
-use wetee_primitives::types::{TEEVersion, WeAssetId, APP_MINT_ASSET_ID};
+use wetee_primitives::types::{TEEVersion, WeAssetId, APP_MINT_ASSET_DECIMALS, APP_MINT_ASSET_ID};
 
 #[cfg(test)]
 mod mock;
@@ -32,6 +32,8 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+    use sp_runtime::SaturatedConversion;
+
     use super::*;
 
     pub(crate) type BalanceOf<T> = <<T as wetee_assets::Config>::MultiCurrency as MultiCurrency<
@@ -253,14 +255,22 @@ pub mod pallet {
 
         // 添加运行资产到应用
         pub fn add_token(who: T::AccountId, app_id: u128) -> result::Result<bool, DispatchError> {
-            wetee_fairlanch::Pallet::<T>::staking_asset(who, APP_MINT_ASSET_ID, 1u32.into())?;
+            wetee_fairlanch::Pallet::<T>::staking_asset(
+                who,
+                APP_MINT_ASSET_ID,
+                APP_MINT_ASSET_DECIMALS.saturated_into::<BalanceOf<T>>(),
+            )?;
             <AppStakings<T>>::mutate(&app_id, |t| *t += 1u32.into());
             Ok(true)
         }
 
         // 添加运行资产到应用
         pub fn minus_token(who: T::AccountId, app_id: u128) -> result::Result<bool, DispatchError> {
-            wetee_fairlanch::Pallet::<T>::staking_minus(who, APP_MINT_ASSET_ID, 1u32.into())?;
+            wetee_fairlanch::Pallet::<T>::staking_minus(
+                who,
+                APP_MINT_ASSET_ID,
+                APP_MINT_ASSET_DECIMALS.saturated_into::<BalanceOf<T>>(),
+            )?;
             <AppStakings<T>>::mutate(&app_id, |t| *t -= 1u32.into());
             Ok(true)
         }

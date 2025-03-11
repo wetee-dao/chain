@@ -15,7 +15,7 @@ use crate::{
     chain_spec,
     cli::{Cli, RelayChainCli, Subcommand},
     service::new_partial,
-    spec_dev_net, spec_paseo_net,
+    spec_dev_net, spec_paseo_net, spec_polkadot_net,
 };
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
@@ -25,6 +25,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
         "" | "local" => Box::new(chain_spec::local_testnet_config()),
         "wetee-paseo" => Box::new(spec_paseo_net::paseo_config()),
         "wetee-dev" => Box::new(spec_dev_net::wetee_dev_config()),
+        "wetee-polkadot" => Box::new(spec_polkadot_net::polkadot_config()),
         path => Box::new(chain_spec::ChainSpec::from_json_file(
             std::path::PathBuf::from(path),
         )?),
