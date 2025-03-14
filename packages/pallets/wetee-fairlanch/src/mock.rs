@@ -160,7 +160,7 @@ type CurrencyId = u64;
 parameter_types! {
     pub const MaxLocks: u32 = 50;
     pub const MaxCreatableId: WeAssetId = 90000;
-    pub const GetNativeCurrencyId: CurrencyId = 1;
+    pub const GetNativeCurrencyId: CurrencyId = 0;
 }
 
 pub struct CurrencyIdConvert;

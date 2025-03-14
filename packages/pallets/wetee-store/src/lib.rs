@@ -102,7 +102,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        GuildCreated(WeAssetId, u64, T::AccountId),
+        AppCreated(T::AccountId, u128),
         GuildJoined(WeAssetId, u64, T::AccountId),
     }
 
@@ -160,7 +160,9 @@ pub mod pallet {
             NextAppId::<T>::put(app_id + 1);
 
             // 生成质押资产
-            Self::add_token(who, app_id)?;
+            Self::add_token(who.clone(), app_id)?;
+
+            Self::deposit_event(Event::AppCreated(who, app_id));
 
             Ok(().into())
         }
@@ -255,23 +257,19 @@ pub mod pallet {
 
         // 添加运行资产到应用
         pub fn add_token(who: T::AccountId, app_id: u128) -> result::Result<bool, DispatchError> {
-            wetee_fairlanch::Pallet::<T>::staking_asset(
-                who,
-                APP_MINT_ASSET_ID,
-                APP_MINT_ASSET_DECIMALS.saturated_into::<BalanceOf<T>>(),
-            )?;
-            <AppStakings<T>>::mutate(&app_id, |t| *t += 1u32.into());
+            let asset = APP_MINT_ASSET_DECIMALS.saturated_into::<BalanceOf<T>>();
+            wetee_fairlanch::Pallet::<T>::staking_asset(who, APP_MINT_ASSET_ID, asset)?;
+
+            <AppStakings<T>>::mutate(&app_id, |t| *t += asset);
             Ok(true)
         }
 
         // 添加运行资产到应用
         pub fn minus_token(who: T::AccountId, app_id: u128) -> result::Result<bool, DispatchError> {
-            wetee_fairlanch::Pallet::<T>::staking_minus(
-                who,
-                APP_MINT_ASSET_ID,
-                APP_MINT_ASSET_DECIMALS.saturated_into::<BalanceOf<T>>(),
-            )?;
-            <AppStakings<T>>::mutate(&app_id, |t| *t -= 1u32.into());
+            let asset = APP_MINT_ASSET_DECIMALS.saturated_into::<BalanceOf<T>>();
+            wetee_fairlanch::Pallet::<T>::staking_minus(who.clone(), APP_MINT_ASSET_ID, asset)?;
+
+            <AppStakings<T>>::mutate(&app_id, |t| *t -= asset);
             Ok(true)
         }
     }

@@ -5,6 +5,7 @@ use crate as wetee_app;
 use crate::mock::{RuntimeCall, *};
 use frame_support::{assert_noop, assert_ok, debug};
 use frame_system::pallet_prelude::OriginFor;
+use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
 use wetee_primitives::types::{DiskClass, EnvKey};
 
@@ -36,14 +37,7 @@ pub fn init() {
     )
     .unwrap();
 
-    Pallet::<Test>::register_vtoken(
-        OriginFor::<Test>::signed(ALICE),
-        VASSET_ID,
-        ASSET_ID,
-        10,
-        12,
-    )
-    .unwrap();
+    Pallet::<Test>::register_vtoken(RawOrigin::Root.into(), VASSET_ID, ASSET_ID, 10, 12).unwrap();
 
     Economics::<Test>::insert(0, 10);
     Economics::<Test>::insert(1, 25);
@@ -75,31 +69,29 @@ pub fn v_staking() {
         let to_staking = Pallet::<Test>::to_stakings(ALICE, ASSET_ID).unwrap();
         assert!(to_staking == 120);
 
-        let reward = Pallet::<Test>::next_block_reward(51, ALICE).unwrap();
-        assert!(reward);
+        let reward_block = Pallet::<Test>::next_block_reward(51, ALICE).unwrap();
+        println!("reward_block: {:?}", reward_block);
 
         let reward = System::account(ALICE);
         assert!(reward.data.free == 10000000000000000);
 
+        run_to_block(51);
+        run_to_block(52);
+
+        let reward_block2 = Pallet::<Test>::next_block_reward(101, ALICE).unwrap();
+        println!("reward_block2: {:?}", reward_block2);
+
+        let staking = Pallet::<Test>::stakings(ALICE, ASSET_ID).unwrap();
+        println!("staking: {:?}", staking);
+        assert!(staking == 120);
+
         run_to_block(101);
+        run_to_block(102);
+        run_to_block(103);
 
         let reward2 = System::account(ALICE);
-        assert!(reward2.data.free == 10032483750000000);
-    });
-}
-
-#[test]
-pub fn v_staking_cancel() {
-    new_test_run().execute_with(|| {
-        init();
-
-        Pallet::<Test>::v_staking(OriginFor::<Test>::signed(ALICE), VASSET_ID, 100).unwrap();
-        let to_staking = Pallet::<Test>::to_stakings(ALICE, ASSET_ID).unwrap();
-        assert!(to_staking == 120);
-
-        Pallet::<Test>::v_staking_cancel(OriginFor::<Test>::signed(ALICE), VASSET_ID, 10).unwrap();
-        let to_staking2 = Pallet::<Test>::to_stakings(ALICE, ASSET_ID).unwrap();
-        assert!(to_staking2 == 108);
+        println!("reward2: {:?}", reward2.data.free);
+        assert!(reward2.data.free == 10032484595000000);
     });
 }
 

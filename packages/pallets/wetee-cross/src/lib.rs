@@ -15,6 +15,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
 mod weights;
@@ -40,8 +41,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        GuildCreated(WeAssetId, u64, T::AccountId),
-        GuildJoined(WeAssetId, u64, T::AccountId),
+        Created(WeAssetId, T::AccountId),
     }
 
     #[pallet::pallet]
@@ -55,7 +55,11 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(001)]
         #[pallet::weight(<weights::SubstrateWeight<T> as WeightInfo>::guild_join())]
-        pub fn cross_transfer_from(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn cross_transfer_from(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            Self::deposit_event(Event::<T>::Created(1, who.clone()));
+
             Ok(().into())
         }
     }
