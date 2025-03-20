@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wetee-polkadot
+spec:
+  selector:
+    matchLabels:
+      name: wetee-polkadot
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        name: wetee-polkadot
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - /parachain-node  --collator --name local --bootnodes /dns/polkadot.asyou.me/tcp/30333/p2p/12D3KooWMQf87QDg39L1tmtZPsjkQi1dunK2qBZS5oHPvVJhxePB   --rpc-external
+          --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all --chain /wetee-polkadot.json
+          --force-authoring --base-path  /chain-data -- --chain=polkadot --sync fast-unsafe
+          --blocks-pruning 256 --state-pruning 256
+        image: registry.cn-hangzhou.aliyuncs.com/wetee_dao/wetee-node:polkadot.2025-03-20-11_03
+        imagePullPolicy: Always
+        name: c1
+        ports:
+        - containerPort: 9944
+          name: polkadot-9944
+          protocol: TCP
+        - containerPort: 9933
+          name: polkadot-9933
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /chain-data
+          name: wetee-chain
+      - env:
+        - name: SAS_EXPRESS_KEEP_ALIVE_TIMEOUT
+          value: "6000"
+        image: registry.cn-hangzhou.aliyuncs.com/wetee_dao/substrate_sidecar:2025-02-19-14_25
+        imagePullPolicy: Always
+        name: sidecar
+        ports:
+        - containerPort: 8080
+          name: polkadot-8080
+          protocol: TCP
+      volumes:
+      - hostPath:
+          path: /home/wetee/Soft/main_chain
+          type: ""
+        name: wetee-chain

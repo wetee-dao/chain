@@ -331,7 +331,7 @@ pub mod pallet {
                 status: 0,
             };
 
-            <NextTeeId<T>>::mutate(|id| *id += 1);
+            <NextTeeId<T>>::mutate(|id: &mut TeeAppId| *id += 1);
             <TEEApps<T>>::insert(who.clone(), id, app);
             <AppIdAccounts<T>>::insert(id, who.clone());
             <AppVersion<T>>::insert(id, <frame_system::Pallet<T>>::block_number());

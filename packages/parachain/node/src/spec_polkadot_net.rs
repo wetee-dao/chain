@@ -9,7 +9,7 @@ use crate::chain_spec::*;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
-const PARACHAIN_ID: u32 = 3412;
+const PARACHAIN_ID: u32 = 3416;
 pub fn polkadot_config() -> ChainSpec {
     // Give your base currency a unit name and decimal places
     let mut properties = sc_chain_spec::Properties::new();
@@ -25,8 +25,8 @@ pub fn polkadot_config() -> ChainSpec {
             para_id: PARACHAIN_ID,
         },
     )
-    .with_name("WeTEE Testnet")
-    .with_id("wetee_testnet")
+    .with_name("WeTEE Polkadot")
+    .with_id("wetee_main")
     .with_chain_type(ChainType::Live)
     .with_genesis_config_patch(polkadot_genesis(
         // initial collators.

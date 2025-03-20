@@ -260,7 +260,7 @@ pub mod pallet {
             let asset = APP_MINT_ASSET_DECIMALS.saturated_into::<BalanceOf<T>>();
             wetee_fairlanch::Pallet::<T>::staking_asset(who, APP_MINT_ASSET_ID, asset)?;
 
-            <AppStakings<T>>::mutate(&app_id, |t| *t += asset);
+            <AppStakings<T>>::mutate(app_id, |t: &mut BalanceOf<T>| *t += asset);
             Ok(true)
         }
 
@@ -269,7 +269,7 @@ pub mod pallet {
             let asset = APP_MINT_ASSET_DECIMALS.saturated_into::<BalanceOf<T>>();
             wetee_fairlanch::Pallet::<T>::staking_minus(who.clone(), APP_MINT_ASSET_ID, asset)?;
 
-            <AppStakings<T>>::mutate(&app_id, |t| *t -= asset);
+            <AppStakings<T>>::mutate(app_id, |t: &mut BalanceOf<T>| *t -= asset);
             Ok(true)
         }
     }
