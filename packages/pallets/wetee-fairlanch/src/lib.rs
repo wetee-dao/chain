@@ -206,6 +206,9 @@ pub mod pallet {
             asset_id: WeAssetId,
             amount: BalanceOf<T>,
         },
+        /// new epoch event
+        /// 新的周期
+        NewEpoch { epoch: u128, reward: BalanceOf<T> },
     }
 
     #[pallet::error]
@@ -723,6 +726,11 @@ pub mod pallet {
             for (asset_id, total) in totals {
                 StakingTotalCache::<T>::set(curr_epoch, asset_id, total);
             }
+
+            Self::deposit_event(Event::NewEpoch {
+                epoch: new_epoch,
+                reward: new_epoch_reward,
+            });
 
             (curr_reward, new_epoch, new_epoch_reward)
         }

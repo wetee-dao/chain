@@ -26,7 +26,7 @@ pub fn polkadot_config() -> ChainSpec {
         },
     )
     .with_name("WeTEE Polkadot")
-    .with_id("wetee_main")
+    .with_id("wetee_polkadot")
     .with_chain_type(ChainType::Live)
     .with_genesis_config_patch(polkadot_genesis(
         // initial collators.

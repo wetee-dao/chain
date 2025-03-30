@@ -119,7 +119,7 @@ pub struct VoteInfo<DaoId, BlockNumber, Balance, Opinion, PropIndex> {
     /// 投票解锁阶段
     pub unlock_block: BlockNumber,
     /// The prop id corresponding to the vote.
-    /// 投票的全民公投
+    /// 投票的公投
     pub prop_index: PropIndex,
 }
 

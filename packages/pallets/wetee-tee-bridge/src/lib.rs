@@ -92,13 +92,13 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[pallet::type_value]
-    pub fn DefaultForm1() -> u128 {
+    pub fn DefaultNextID() -> u128 {
         1
     }
 
     #[pallet::storage]
     #[pallet::getter(fn next_id)]
-    pub type NextId<T: Config> = StorageValue<_, u128, ValueQuery, DefaultForm1>;
+    pub type NextId<T: Config> = StorageValue<_, u128, ValueQuery, DefaultNextID>;
 
     #[pallet::storage]
     #[pallet::getter(fn tee_calls)]

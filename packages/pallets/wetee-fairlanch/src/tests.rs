@@ -76,7 +76,6 @@ pub fn v_staking() {
         assert!(reward.data.free == 10000000000000000);
 
         run_to_block(51);
-        run_to_block(52);
 
         let reward_block2 = Pallet::<Test>::next_block_reward(101, ALICE).unwrap();
         println!("reward_block2: {:?}", reward_block2);
@@ -86,8 +85,6 @@ pub fn v_staking() {
         assert!(staking == 120);
 
         run_to_block(101);
-        run_to_block(102);
-        run_to_block(103);
 
         let reward2 = System::account(ALICE);
         println!("reward2: {:?}", reward2.data.free);
@@ -121,5 +118,17 @@ pub fn v_unstaking() {
 
         let staking2 = Pallet::<Test>::stakings(ALICE, ASSET_ID).unwrap();
         assert!(staking2 == 110);
+
+        Pallet::<Test>::v_staking(OriginFor::<Test>::signed(ALICE), VASSET_ID, 10).unwrap();
+        let to_staking2 = Pallet::<Test>::to_stakings(ALICE, ASSET_ID).unwrap();
+        assert!(to_staking2 == 12);
+
+        Pallet::<Test>::v_unstaking(OriginFor::<Test>::signed(ALICE), VASSET_ID, 20).unwrap();
+
+        let to_staking2 = Pallet::<Test>::to_stakings(ALICE, ASSET_ID);
+        assert!(to_staking2.is_none());
+
+        let balance2 = Tokens::free_balance(ASSET_ID, &ALICE);
+        assert!(balance2 == 102);
     });
 }
