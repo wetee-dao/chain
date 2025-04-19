@@ -1,6 +1,7 @@
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use parachain_wetee_runtime as runtime;
+use polkadot_sdk::sc_service;
 use runtime::{AccountId, AuraId, EXISTENTIAL_DEPOSIT};
 use sc_service::ChainType;
 use sp_core::crypto::UncheckedInto;

@@ -2,4 +2,4 @@
 [submodule "orml"]
 	path = orml
 	url = https://github.com/open-web3-stack/open-runtime-module-library
-	branch = polkadot-v1.13.0
+	branch = polkadot-stable2412

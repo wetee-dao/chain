@@ -25,7 +25,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     pallet_prelude::*,
-    traits::{Get, LockIdentifier},
+    traits::{ExistenceRequirement, Get, LockIdentifier},
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
 use orml_traits::{
@@ -378,6 +378,7 @@ pub mod pallet {
                 Self::get_local_asset(asset_id),
                 &user,
                 amount,
+                ExistenceRequirement::AllowDeath,
             )?;
             Self::deposit_event(Event::Burn(user, asset_id, amount));
             Ok(().into())
@@ -408,6 +409,7 @@ pub mod pallet {
                 &from,
                 &to,
                 amount,
+                ExistenceRequirement::AllowDeath,
             )?;
             Ok(().into())
         }
@@ -673,6 +675,7 @@ pub mod pallet {
                 &from,
                 &to,
                 value,
+                ExistenceRequirement::AllowDeath,
             )?;
             Ok(())
         }
@@ -687,6 +690,7 @@ pub mod pallet {
                 Self::get_local_asset(asset_id),
                 &from,
                 value,
+                ExistenceRequirement::AllowDeath,
             )?;
             Ok(())
         }
@@ -703,6 +707,7 @@ pub mod pallet {
                 Self::get_local_asset(asset_id),
                 &from,
                 amount,
+                ExistenceRequirement::AllowDeath,
             )?;
             Ok(())
         }

@@ -8,92 +8,55 @@ publish = false
 repository.workspace = true
 version.workspace = true
 
-[lints]
-workspace = true
-
-# [[bin]]
-# name = "parachain-template-node"
-
 [dependencies]
-clap = {version = "4.5.3", features = ["derive"]}
-codec = {package = "parity-scale-codec", version = "3.6.12"}
-docify = "0.2.8"
-futures = "0.3.28"
-hex-literal = {version = "0.4.1"}
-jsonrpsee = {version = "0.22", features = ["server"]}
+clap = {features = ["derive"], workspace = true}
+codec = {workspace = true, default-features = true}
+color-print = {workspace = true}
+docify = {workspace = true}
+futures = {workspace = true}
+jsonrpsee = {features = ["server"], workspace = true}
 log = {workspace = true, default-features = true}
+polkadot-sdk = {workspace = true, features = ["node"]}
+prometheus-endpoint.default-features = true
+prometheus-endpoint.workspace = true
+sc-tracing.default-features = true
+sc-tracing.workspace = true
 serde = {features = ["derive"], workspace = true, default-features = true}
 serde_json = {workspace = true, default-features = true}
 
-# Local
-parachain-wetee-runtime = {path = "../runtime"}
-
-# Substrate
-frame-benchmarking = {workspace = true}
-frame-benchmarking-cli = {workspace = true}
-pallet-transaction-payment-rpc = {workspace = true}
-sc-basic-authorship = {workspace = true}
-sc-chain-spec = {workspace = true}
-sc-cli = {workspace = true}
-sc-client-api = {workspace = true}
-sc-consensus = {workspace = true}
-sc-executor = {workspace = true}
-sc-network = {workspace = true}
-sc-network-sync = {workspace = true}
-sc-offchain = {workspace = true}
-sc-rpc = {workspace = true}
-sc-service = {workspace = true}
-sc-sysinfo = {workspace = true}
-sc-telemetry = {workspace = true}
-sc-tracing = {workspace = true}
-sc-transaction-pool = {workspace = true}
-sc-transaction-pool-api = {workspace = true}
+cumulus-primitives-core = {workspace = true, default-features = true}
+hex-literal = {version = "0.4.1"}
+sc-chain-spec = {workspace = true, default-features = true}
 sp-api = {workspace = true}
 sp-block-builder = {workspace = true}
-sp-blockchain = {workspace = true}
-sp-consensus-aura = {workspace = true}
+sp-consensus-aura = {workspace = true, default-features = true}
 sp-core = {workspace = true}
-sp-io = {workspace = true}
+sp-genesis-builder = {workspace = true}
 sp-keystore = {workspace = true}
-sp-runtime = {workspace = true}
-sp-timestamp = {workspace = true}
-substrate-frame-rpc-system = {workspace = true}
-substrate-prometheus-endpoint = {workspace = true}
+sp-runtime = {workspace = true, default-features = true}
+sp-timestamp = {workspace = true, default-features = true}
+xcm = {workspace = true}
 
-# Polkadot
-polkadot-cli = {workspace = true, features = ["rococo-native"]}
-polkadot-primitives = {workspace = true}
-xcm = {workspace = true, default-features = false}
-
-# Cumulus
-color-print = "0.3.4"
-cumulus-client-cli = {workspace = true}
-cumulus-client-collator = {workspace = true}
-cumulus-client-consensus-aura = {workspace = true}
-cumulus-client-consensus-common = {workspace = true}
-cumulus-client-consensus-proposer = {workspace = true}
-cumulus-client-service = {workspace = true}
-cumulus-primitives-core = {workspace = true}
-cumulus-primitives-parachain-inherent = {workspace = true}
-cumulus-relay-chain-interface = {workspace = true}
+parachain-wetee-runtime = {path = "../runtime"}
 
 [build-dependencies]
-substrate-build-script-utils = {workspace = true}
+polkadot-sdk = {workspace = true, features = ["substrate-build-script-utils"]}
 
 [features]
-default = []
+default = ["std"]
+
 runtime-benchmarks = [
-  "cumulus-primitives-core/runtime-benchmarks",
-  "frame-benchmarking-cli/runtime-benchmarks",
-  "frame-benchmarking/runtime-benchmarks",
   "parachain-wetee-runtime/runtime-benchmarks",
-  "polkadot-cli/runtime-benchmarks",
-  "polkadot-primitives/runtime-benchmarks",
-  "sc-service/runtime-benchmarks",
-  "sp-runtime/runtime-benchmarks",
+  "polkadot-sdk/runtime-benchmarks",
 ]
+
+std = [
+  "log/std",
+  "parachain-wetee-runtime/std",
+  "polkadot-sdk/std",
+]
+
 try-runtime = [
   "parachain-wetee-runtime/try-runtime",
-  "polkadot-cli/try-runtime",
-  "sp-runtime/try-runtime",
+  "polkadot-sdk/try-runtime",
 ]

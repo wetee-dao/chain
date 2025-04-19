@@ -1,5 +1,5 @@
 use codec::FullCodec;
-use frame_support::traits::Get;
+use frame_support::traits::{ExistenceRequirement, Get};
 use sp_runtime::{
     traits::{Convert, MaybeSerializeDeserialize, SaturatedConversion},
     DispatchError,
@@ -13,7 +13,7 @@ use sp_std::{
 };
 
 use orml_xcm_support::{OnDepositFail, UnknownAsset as UnknownAssetT};
-use xcm::v4::{prelude::*, Asset, Error as XcmError, Location, Result};
+use xcm::v5::{prelude::*, Asset, Error as XcmError, Location, Result};
 use xcm_executor::{
     traits::{ConvertLocation, MatchesFungible, TransactAsset},
     AssetsInHolding,
@@ -141,7 +141,7 @@ impl<
                 .ok_or_else(|| XcmError::from(Error::FailedToMatchFungible))?
                 .saturated_into();
 
-            MultiCurrency::withdraw(currency_id, &who, amount)
+            MultiCurrency::withdraw(currency_id, &who, amount, ExistenceRequirement::AllowDeath)
                 .map_err(|e| XcmError::FailedToTransactAsset(e.into()))
         })?;
 
@@ -150,9 +150,9 @@ impl<
 
     fn transfer_asset(
         asset: &Asset,
-        from: &xcm::v4::Location,
-        to: &xcm::v4::Location,
-        _context: &xcm::v4::XcmContext,
+        from: &xcm::v5::Location,
+        to: &xcm::v5::Location,
+        _context: &xcm::v5::XcmContext,
     ) -> result::Result<AssetsInHolding, XcmError> {
         let from_account = AccountIdConvert::convert_location(from)
             .ok_or(XcmError::from(Error::AccountIdConversionFailed))?;
@@ -167,8 +167,14 @@ impl<
             .ok_or_else(|| XcmError::from(Error::FailedToMatchFungible))?
             .saturated_into();
 
-        MultiCurrency::transfer(currency_id, &from_account, &to_account, amount)
-            .map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+        MultiCurrency::transfer(
+            currency_id,
+            &from_account,
+            &to_account,
+            amount,
+            ExistenceRequirement::AllowDeath,
+        )
+        .map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
 
         Ok(asset.clone().into())
     }

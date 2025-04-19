@@ -1,6 +1,6 @@
 [package]
 authors.workspace = true
-description = "A solochain node template built with Substrate, part of Polkadot Sdk."
+build = "build.rs"
 edition.workspace = true
 homepage.workspace = true
 license = "MIT-0"
@@ -9,71 +9,68 @@ publish = false
 repository.workspace = true
 version = "0.0.0"
 
-build = "build.rs"
-
-[lints]
-workspace = true
-
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-clap = {version = "4.5.3", features = ["derive"]}
-futures = {version = "0.3.30", features = ["thread-pool"]}
-hex-literal = {version = "0.4.1"}
-jsonrpsee = {version = "0.22", features = ["server"]}
-serde_json = {version = "1.0.114", default-features = true}
+clap = {features = ["derive"], workspace = true}
+futures = {features = ["thread-pool"], workspace = true}
+jsonrpsee = {features = ["server"], workspace = true}
+serde_json = {workspace = true, default-features = true}
 
 # substrate client
-sc-basic-authorship = {workspace = true}
-sc-cli = {workspace = true}
-sc-client-api = {workspace = true}
-sc-consensus = {workspace = true}
-sc-consensus-aura = {workspace = true}
-sc-consensus-grandpa = {workspace = true}
-sc-executor = {workspace = true}
-sc-network = {workspace = true}
-sc-offchain = {workspace = true}
-sc-rpc-api = {workspace = true}
-sc-service = {workspace = true}
-sc-telemetry = {workspace = true}
-sc-transaction-pool = {workspace = true}
-sc-transaction-pool-api = {workspace = true}
-sp-consensus-aura = {workspace = true}
-sp-consensus-grandpa = {workspace = true}
-sp-core = {workspace = true}
+sc-basic-authorship = {workspace = true, default-features = true}
+sc-cli = {workspace = true, default-features = true}
+sc-client-api = {workspace = true, default-features = true}
+sc-consensus = {workspace = true, default-features = true}
+sc-consensus-aura = {workspace = true, default-features = true}
+sc-consensus-grandpa = {workspace = true, default-features = true}
+sc-executor = {workspace = true, default-features = true}
+sc-network = {workspace = true, default-features = true}
+sc-offchain = {workspace = true, default-features = true}
+sc-service = {workspace = true, default-features = true}
+sc-telemetry = {workspace = true, default-features = true}
+sc-transaction-pool = {workspace = true, default-features = true}
+sc-transaction-pool-api = {workspace = true, default-features = true}
+sp-consensus-aura = {workspace = true, default-features = true}
+sp-consensus-grandpa = {workspace = true, default-features = true}
+sp-core = {workspace = true, default-features = true}
+sp-genesis-builder = {workspace = true, default-features = true}
 
 # substrate primitives
-sp-api = {workspace = true}
-sp-block-builder = {workspace = true}
-sp-blockchain = {workspace = true}
-sp-inherents = {workspace = true}
-sp-io = {workspace = true}
-sp-keyring = {workspace = true}
-sp-runtime = {workspace = true}
-sp-timestamp = {workspace = true}
+sp-api = {workspace = true, default-features = true}
+sp-block-builder = {workspace = true, default-features = true}
+sp-blockchain = {workspace = true, default-features = true}
+sp-inherents = {workspace = true, default-features = true}
+sp-io = {workspace = true, default-features = true}
+sp-keyring = {workspace = true, default-features = true}
+sp-runtime = {workspace = true, default-features = true}
+sp-timestamp = {workspace = true, default-features = true}
 
 # frame and pallets
-frame-system = {workspace = true}
-pallet-transaction-payment = {workspace = true, default-features = false}
-pallet-transaction-payment-rpc = {workspace = true}
-substrate-frame-rpc-system = {workspace = true}
+frame-metadata-hash-extension = {workspace = true, default-features = true}
+frame-system = {workspace = true, default-features = true}
+pallet-transaction-payment = {workspace = true, default-features = true}
+pallet-transaction-payment-rpc = {workspace = true, default-features = true}
+substrate-frame-rpc-system = {workspace = true, default-features = true}
 
 # These dependencies are used for runtime benchmarking
-frame-benchmarking-cli = {workspace = true}
+frame-benchmarking-cli = {workspace = true, default-features = true}
 
 # Local Dependencies
 wetee-runtime = {path = "../runtime"}
 
 [build-dependencies]
-substrate-build-script-utils = {workspace = true}
+substrate-build-script-utils = {workspace = true, default-features = true}
 
 [features]
-default = []
+default = ["std"]
+std = ["wetee-runtime/std"]
 # Dependencies that are only required if runtime benchmarking should be build.
 runtime-benchmarks = [
   "frame-benchmarking-cli/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
+  "pallet-transaction-payment/runtime-benchmarks",
   "sc-service/runtime-benchmarks",
   "wetee-runtime/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",

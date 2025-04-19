@@ -96,4 +96,6 @@ impl pallet_contracts::Config for Runtime {
 
     type UploadOrigin = EnsureSigned<Self::AccountId>;
     type InstantiateOrigin = EnsureSigned<Self::AccountId>;
+
+    type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }

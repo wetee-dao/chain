@@ -67,6 +67,9 @@ pub fn handle_dispatch_error(error: DispatchError) -> String {
         DispatchError::RootNotAllowed => {
             return String::from("RootNotAllowed");
         }
+        DispatchError::Trie(_) => {
+            return String::from("TrieError");
+        }
     }
 }
 

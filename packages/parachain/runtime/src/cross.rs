@@ -7,7 +7,7 @@ use orml_traits::location::RelativeReserveProvider;
 use orml_traits::parameter_type_with_key;
 use sp_runtime::traits::Convert;
 use wetee_utils::converter::{CurrencyId, CurrencyIdConvert};
-use xcm::v4::{prelude::*, Weight};
+use xcm::v5::{prelude::*, Weight};
 use xcm_builder::FixedWeightBounds;
 use xcm_executor::XcmExecutor;
 

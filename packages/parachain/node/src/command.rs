@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use polkadot_sdk::*;
 
 use cumulus_client_service::storage_proof_size::HostFunctions as ReclaimHostFunctions;
 use cumulus_primitives_core::ParaId;
@@ -7,7 +7,7 @@ use log::info;
 use parachain_wetee_runtime::Block;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-    NetworkParams, Result, SharedParams, SubstrateCli,
+    NetworkParams, Result, RpcEndpoint, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 
@@ -21,8 +21,8 @@ use crate::{
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     info!("load_spec: {id}");
     Ok(match id {
-        "dev" => Box::new(chain_spec::development_config()),
-        "" | "local" => Box::new(chain_spec::local_testnet_config()),
+        "dev" => Box::new(chain_spec::development_chain_spec()),
+        "" | "local" => Box::new(chain_spec::local_chain_spec()),
         "wetee-paseo" => Box::new(spec_paseo_net::paseo_config()),
         "wetee-dev" => Box::new(spec_dev_net::wetee_dev_config()),
         "wetee-polkadot" => Box::new(spec_polkadot_net::polkadot_config()),
@@ -56,7 +56,7 @@ impl SubstrateCli for Cli {
     }
 
     fn support_url() -> String {
-        "https://github.com/wetee-dao/chain/issues/new".into()
+        "https://github.com/paritytech/polkadot-sdk/issues/new".into()
     }
 
     fn copyright_start_year() -> i32 {
@@ -70,7 +70,7 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for RelayChainCli {
     fn impl_name() -> String {
-        "Parachain Collator".into()
+        "Parachain Collator Template".into()
     }
 
     fn impl_version() -> String {
@@ -79,7 +79,7 @@ impl SubstrateCli for RelayChainCli {
 
     fn description() -> String {
         format!(
-            "Parachain Collator \n\nThe command-line arguments provided first will be \
+            "Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
 		{} <parachain-args> -- <relay-chain-args>",
@@ -230,10 +230,15 @@ pub fn run() -> Result<()> {
 
             runner.run_node_until_exit(|config| async move {
                 let hwbench = (!cli.no_hardware_benchmarks)
-                    .then_some(config.database.path().map(|database_path| {
-                        let _ = std::fs::create_dir_all(database_path);
-                        sc_sysinfo::gather_hwbench(Some(database_path))
-                    }))
+                    .then(|| {
+                        config.database.path().map(|database_path| {
+                            let _ = std::fs::create_dir_all(database_path);
+                            sc_sysinfo::gather_hwbench(
+                                Some(database_path),
+                                &SUBSTRATE_REFERENCE_HARDWARE,
+                            )
+                        })
+                    })
                     .flatten();
 
                 let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
@@ -316,7 +321,7 @@ impl CliConfiguration<Self> for RelayChainCli {
             .or_else(|| self.base_path.clone().map(Into::into)))
     }
 
-    fn rpc_addr(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
+    fn rpc_addr(&self, default_listen_port: u16) -> Result<Option<Vec<RpcEndpoint>>> {
         self.base.base.rpc_addr(default_listen_port)
     }
 
@@ -330,15 +335,9 @@ impl CliConfiguration<Self> for RelayChainCli {
             .prometheus_config(default_listen_port, chain_spec)
     }
 
-    fn init<F>(
-        &self,
-        _support_url: &String,
-        _impl_version: &String,
-        _logger_hook: F,
-        _config: &sc_service::Configuration,
-    ) -> Result<()>
+    fn init<F>(&self, _support_url: &String, _impl_version: &String, _logger_hook: F) -> Result<()>
     where
-        F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+        F: FnOnce(&mut sc_cli::LoggerBuilder),
     {
         unreachable!("PolkadotCli is never initialized; qed");
     }

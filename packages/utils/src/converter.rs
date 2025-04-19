@@ -3,8 +3,8 @@ use sp_std::marker::PhantomData;
 use xcm::{
     latest::Asset,
     prelude::{Fungible, GeneralKey, Parachain},
-    v4::prelude::*,
-    v4::{AssetId, Location, Parent},
+    v5::prelude::*,
+    v5::{AssetId, Location, Parent},
 };
 
 use wetee_primitives::{types::WeAssetId, u8_32_vec, values::PARENT};
