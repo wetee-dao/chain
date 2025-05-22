@@ -95,6 +95,36 @@ pallet-contracts = {workspace = true}
 pallet-insecure-randomness-collective-flip = {workspace = true}
 pallet-utility = {workspace = true}
 
+polkadot-sdk = {workspace = true, default-features = false, features = [
+  "pallet-aura",
+  "pallet-authorship",
+  "pallet-balances",
+  "pallet-message-queue",
+  "pallet-session",
+  "pallet-sudo",
+  "pallet-timestamp",
+  "pallet-transaction-payment",
+  "pallet-transaction-payment-rpc-runtime-api",
+  "pallet-xcm",
+  "polkadot-parachain-primitives",
+  "polkadot-runtime-common",
+  "staging-xcm",
+  "staging-xcm-builder",
+  "staging-xcm-executor",
+  "cumulus-pallet-aura-ext",
+  "cumulus-pallet-session-benchmarking",
+  "cumulus-pallet-weight-reclaim",
+  "cumulus-pallet-xcm",
+  "cumulus-pallet-xcmp-queue",
+  "cumulus-primitives-aura",
+  "cumulus-primitives-core",
+  "cumulus-primitives-utility",
+  "pallet-collator-selection",
+  "parachains-common",
+  "staging-parachain-info",
+  "runtime",
+]}
+
 wetee-message-queue = {path = "../../pallets/message-queue", default-features = false}
 
 wetee-app = {path = "../../pallets/wetee-app", default-features = false}

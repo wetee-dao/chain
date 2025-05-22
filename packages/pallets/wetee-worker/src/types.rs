@@ -1,12 +1,13 @@
 use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
+use frame_support::pallet_prelude::DecodeWithMemTracking;
 
 use wetee_primitives::types::{ClusterId, ComCr, Ip, WeAssetId, WorkId};
 
 /// K8sCluster specific information
 /// 集群信息
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct K8sCluster<AccountId, BlockNumber> {
     /// 节点id
     /// 节点id
@@ -40,7 +41,7 @@ pub struct K8sCluster<AccountId, BlockNumber> {
 /// 被废弃
 /// 质押数据
 /// deposit of computing resource
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct Deposit<Balance> {
     /// Deposit amount
     /// 质押金额
@@ -63,7 +64,7 @@ pub struct Deposit<Balance> {
 
 /// 质押数据
 /// deposit of computing resource
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct AssetDeposit<Balance> {
     /// Asset id
     /// 资产id
@@ -92,7 +93,7 @@ pub struct AssetDeposit<Balance> {
 
 /// 工作证明
 /// proof of K8sCluster
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct ProofOfWork {
     /// Task log address and hash
     /// 任务日志地址及hash
@@ -107,7 +108,7 @@ pub struct ProofOfWork {
 
 /// 合约日志
 /// Log of contract
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct ContractState<BlockNumber, Balance> {
     /// block_number
     /// 区块号
@@ -122,7 +123,7 @@ pub struct ContractState<BlockNumber, Balance> {
 
 /// 合同缓存
 /// Log of contract
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct ClusterContractState<BlockNumber, AccountId> {
     /// start_number
     /// 开始区块号
@@ -137,7 +138,7 @@ pub struct ClusterContractState<BlockNumber, AccountId> {
 
 /// 抵押
 /// DepositPrice
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct DepositPrice {
     /// cpu
     pub cpu_per: u32,

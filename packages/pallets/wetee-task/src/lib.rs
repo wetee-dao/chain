@@ -79,7 +79,7 @@ pub struct TeeTask<AccountId, BlockNumber> {
 
 /// 价格
 /// price of computing resource
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct Price {
     /// cpu
     pub cpu_per_block: u32,

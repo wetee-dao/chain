@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 use frame_support::traits::IsSubType;
+use frame_support::pallet_prelude::DecodeWithMemTracking;
 pub use pallet::*;
 use parity_scale_codec::MaxEncodedLen;
 use parity_scale_codec::{Decode, Encode};
@@ -25,7 +26,7 @@ mod benchmarking;
 
 /// DAO's status.
 /// 组织状态
-#[derive(Default, PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(Default, PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub enum Status {
     #[default]
     /// In use.

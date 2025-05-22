@@ -9,6 +9,7 @@ use frame_support::traits::QueuePausedQuery;
 use frame_support::{
     traits::{ProcessMessage, ProcessMessageError, QueueFootprint},
     weights::WeightMeter,
+    pallet_prelude::DecodeWithMemTracking,
 };
 use scale_info::TypeInfo;
 
@@ -27,7 +28,7 @@ use wetee_message_queue::OnQueueChanged;
 
 /// Mocked message origin for testing.
 /// 消息来源
-#[derive(Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen, TypeInfo, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen, TypeInfo, Debug, DecodeWithMemTracking)]
 pub enum MessageOrigin {
     /// 用户发起的任务
     Work,

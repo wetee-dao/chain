@@ -32,7 +32,7 @@ use weights::WeightInfo;
 
 /// WETEE's status.
 /// 状态
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub enum Status {
     /// In use.
     /// 激活
@@ -42,7 +42,7 @@ pub enum Status {
     InActive,
 }
 
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub enum TaskStatus {
     ToDo = 0,
     InProgress,
@@ -52,7 +52,7 @@ pub enum TaskStatus {
 
 /// Project specific information
 /// 看板信息
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct ProjectInfo<AccountId> {
     /// boardID
     /// 看板ID
@@ -74,7 +74,7 @@ pub struct ProjectInfo<AccountId> {
 
 /// task specific information
 /// 任务信息
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct TaskInfo<AccountId, Balance> {
     pub id: TaskId,
     pub name: Vec<u8>,
@@ -112,7 +112,7 @@ pub struct TaskInfo<AccountId, Balance> {
 
 /// vote yes or no
 /// 投票
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum ReviewOpinion {
     /// Agree.
     YES,
@@ -122,7 +122,7 @@ pub enum ReviewOpinion {
 
 /// vote yes or no
 /// 投票
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct ReviewRecord<AccountId> {
     pub who: AccountId,
     pub meta: Vec<u8>,
@@ -131,7 +131,7 @@ pub struct ReviewRecord<AccountId> {
 
 /// Info regarding an Review.
 /// 审核的状态
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct ReviewStatus<AccountId> {
     /// 审核历史
     pub records: Vec<ReviewRecord<AccountId>>,
@@ -142,7 +142,7 @@ pub struct ReviewStatus<AccountId> {
 
 /// Review Statistics.
 /// 审核数据统计
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct Tally {
     /// The number of yes votes
     /// 同意的数量

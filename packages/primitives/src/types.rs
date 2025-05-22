@@ -1,4 +1,5 @@
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::pallet_prelude::DecodeWithMemTracking;
 use scale_info::prelude::vec;
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_runtime::RuntimeDebug;
@@ -60,7 +61,7 @@ pub type WorkStatus = u8;
 /// String
 pub type TeeString = Vec<u8>;
 
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen, DecodeWithMemTracking)]
 pub enum WorkType {
     #[default]
     /// APP
@@ -73,7 +74,7 @@ pub enum WorkType {
 
 /// WorkId
 /// 工作ID
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen, DecodeWithMemTracking)]
 pub struct WorkId {
     pub wtype: WorkType,
     pub id: TeeAppId,
@@ -81,7 +82,7 @@ pub struct WorkId {
 
 /// MintId
 /// 挖矿ID
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct MintId {
     pub wtype: WorkType,
     pub cid: ClusterId,
@@ -90,7 +91,7 @@ pub struct MintId {
 
 /// 计算资源
 /// computing resource
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct Cr {
     pub cpu: u32,
     pub mem: u32,
@@ -100,7 +101,7 @@ pub struct Cr {
 
 /// 网络设置
 /// disk setting
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum Service {
     /// TCP
     Tcp(u16),
@@ -124,7 +125,7 @@ impl Default for Service {
 
 /// 储存类型
 /// disk setting
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum DiskClass {
     /// TCP
     SSD(Vec<u8>),
@@ -138,7 +139,7 @@ impl Default for DiskClass {
 
 /// 储存设置
 /// disk setting
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct Disk {
     /// key
     pub path: DiskClass,
@@ -157,7 +158,7 @@ impl Default for Disk {
 
 /// 计算资源
 /// computing resource
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct ComCr {
     pub cpu: u32,
     pub mem: u32,
@@ -167,7 +168,7 @@ pub struct ComCr {
     pub gpu: u32,
 }
 
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum EditType {
     #[default]
     /// INSERT
@@ -178,7 +179,7 @@ pub enum EditType {
     REMOVE(u16),
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum EnvKey {
     /// Env 环境变量
     Env(Vec<u8>),
@@ -193,7 +194,7 @@ impl Default for EnvKey {
 
 /// App setting
 /// 应用设置
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct Env {
     /// container index
     pub index: u16,
@@ -205,7 +206,7 @@ pub struct Env {
 
 /// App setting
 /// 应用设置
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct EnvInput {
     /// edit type
     pub etype: EditType,
@@ -232,7 +233,7 @@ impl Default for EnvInput {
 /// secret setting hash
 pub type EnvHash = Vec<u8>;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum Command {
     /// /bin/sh 启动
     SH(Vec<u8>),
@@ -251,7 +252,7 @@ impl Default for Command {
 
 /// TEEVersion
 /// TEE 实现版本
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum TEEVersion {
     #[default]
     SGX,
@@ -262,7 +263,7 @@ pub type GPUtype = u16;
 
 /// App specific information
 /// 程序信息
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct Container {
     /// img of the App.
     /// image 目标宗旨
@@ -291,7 +292,7 @@ impl Default for Container {
 
 /// Ip 信息
 /// Ip
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct Ip {
     pub ipv4: Option<u32>,
     pub ipv6: Option<u128>,
@@ -300,7 +301,7 @@ pub struct Ip {
 
 /// P2P 信息
 /// P2P address
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct P2PAddr<AccountId> {
     /// ip of the p2p
     pub ip: Ip,
@@ -312,7 +313,7 @@ pub struct P2PAddr<AccountId> {
 
 /// App specific information
 /// 程序 meta data
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct ApiMeta {
     pub port: u16,
     pub apis: Vec<Api>,
@@ -320,7 +321,7 @@ pub struct ApiMeta {
 
 /// App Api
 /// 应用接口信息
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct Api {
     // url
     pub url: Vec<u8>,
@@ -330,7 +331,7 @@ pub struct Api {
 
 /// Ink contract call argument
 /// Ink 合约调用参数
-#[derive(Encode, Decode, Clone, Debug, TypeInfo, PartialEq)]
+#[derive(Encode, Decode, Clone, Debug, TypeInfo, PartialEq, DecodeWithMemTracking)]
 pub enum InkArg {
     TBool(bool),
     U8(u8),

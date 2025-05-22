@@ -24,7 +24,7 @@
 #![allow(clippy::type_complexity)]
 
 use frame_support::traits::UnfilteredDispatchable;
-use frame_support::{dispatch::DispatchResult as DResult, traits::OriginTrait};
+use frame_support::{dispatch::DispatchResult as DResult, traits::OriginTrait, pallet_prelude::DecodeWithMemTracking};
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::prelude::vec::Vec;
@@ -67,7 +67,7 @@ pub type PalletsOriginOf<T> =
 
 /// vote yes or no
 /// 投票
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum MemberData {
     /// 全局.
     GLOBAL,
@@ -79,7 +79,7 @@ pub enum MemberData {
 
 /// Voting Statistics.
 /// 投票数据统计
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct Tally<Balance> {
     /// The number of yes votes
     /// 同意的数量
@@ -91,7 +91,7 @@ pub struct Tally<Balance> {
 
 /// vote yes or no
 /// 投票
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum Opinion {
     /// Agree.
     YES = 0,
@@ -101,7 +101,7 @@ pub enum Opinion {
 
 /// Information about votes.
 /// 投票信息
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct VoteInfo<DaoId, BlockNumber, Balance, Opinion, PropIndex> {
     /// The id of the Dao where the vote is located.
     /// 投票所在组织
@@ -123,7 +123,7 @@ pub struct VoteInfo<DaoId, BlockNumber, Balance, Opinion, PropIndex> {
     pub prop_index: PropIndex,
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct PreProp<BlockNumber, Call, Hash, AccountId> {
     pub id: PropIndex,
     pub hash: Hash,
@@ -136,7 +136,7 @@ pub struct PreProp<BlockNumber, Call, Hash, AccountId> {
 
 /// Info regarding an ongoing prop.
 /// 全民公投的状态
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct Prop<BlockNumber, Call, Balance> {
     /// 公投id
     pub id: PropIndex,
@@ -157,7 +157,7 @@ pub struct Prop<BlockNumber, Call, Balance> {
 }
 
 /// 投票轨道
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct Period<BlockNumber, Balance> {
     /// 投票轨道名
     pub name: Vec<u8>,
@@ -192,7 +192,7 @@ pub struct Period<BlockNumber, Balance> {
     pub max_balance: Balance,
 }
 
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub enum PropStatus {
     Ongoing = 0,
     Approved,

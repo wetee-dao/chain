@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 use frame_support::traits::IsSubType;
+use frame_support::pallet_prelude::*;
 pub use pallet::*;
 use parity_scale_codec::MaxEncodedLen;
 use parity_scale_codec::{Decode, Encode};
@@ -21,7 +22,7 @@ mod benchmarking;
 
 /// Node's status.
 /// 节点状态
-#[derive(Default, PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(Default, PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub enum Status {
     #[default]
     /// In use.
@@ -34,7 +35,7 @@ pub enum Status {
 
 /// Node specific information
 /// 节点信息
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct NodeInfo<AccountId, BlockNumber> {
     pub id: u128,
     /// creator of Node
@@ -78,7 +79,6 @@ pub mod pallet {
     use super::*;
     use frame_support::{
         dispatch::{DispatchResultWithPostInfo, GetDispatchInfo},
-        pallet_prelude::*,
         traits::UnfilteredDispatchable,
         PalletId,
     };

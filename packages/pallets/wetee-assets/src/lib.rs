@@ -63,7 +63,7 @@ mod weights;
 pub use weights::WeightInfo;
 
 #[derive(
-    Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo, Serialize, Deserialize,
+    Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo, Serialize, Deserialize, DecodeWithMemTracking,
 )]
 pub struct AssetMeta {
     /// project name

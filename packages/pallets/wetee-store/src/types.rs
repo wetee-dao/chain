@@ -1,11 +1,12 @@
 use parity_scale_codec::{Decode, Encode};
 use scale_info::{prelude::vec::Vec, TypeInfo};
+use frame_support::pallet_prelude::DecodeWithMemTracking;
 use sp_runtime::RuntimeDebug;
 use wetee_primitives::types::{Command, Disk, Service, TEEVersion};
 
 /// app template
 /// 应用模版
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct AppTemplate<AccountId, BlockNumber> {
     /// 节点id
     /// 节点id
@@ -38,7 +39,7 @@ pub struct AppTemplate<AccountId, BlockNumber> {
 
 /// config of container
 /// 容器配置
-#[derive(Default, PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(Default, PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct Image {
     /// 容器镜像
     /// image
@@ -64,14 +65,14 @@ pub struct Image {
 
 /// 环境变量
 /// environment variable
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct Env {
     pub k: Vec<u8>,
     pub v: Vec<u8>,
 }
 
 /// 容器
-#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, Encode, Decode, TypeInfo, DecodeWithMemTracking)]
 pub struct Volume {
     pub k: Vec<u8>,
     pub v: u32,
@@ -79,7 +80,7 @@ pub struct Volume {
 
 /// App run type
 /// 程序运行的类型
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub enum AppType {
     /// Service
     Service,
