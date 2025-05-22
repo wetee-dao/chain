@@ -41,9 +41,9 @@ members = [
   # parachain node
   "packages/parachain/node",
   "packages/parachain/runtime", #
-  # local node
-  "packages/localchain/node",
-  "packages/localchain/runtime", #
+  # solo node
+  "packages/solochain/node",
+  "packages/solochain/runtime", #
 ]
 resolver = "2"
 

@@ -74,7 +74,8 @@ frame-system-benchmarking = {workspace = true, default-features = false, optiona
 # Local Dependencies
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
-pallet-contracts = {workspace = true}
+pallet-revive = {workspace = true}
+# pallet-contracts = {workspace = true}
 pallet-insecure-randomness-collective-flip = {workspace = true}
 pallet-utility = {workspace = true}
 
