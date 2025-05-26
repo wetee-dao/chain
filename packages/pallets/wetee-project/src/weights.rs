@@ -11,11 +11,6 @@ pub trait WeightInfo {
 
 }
 
-/// Weights for pallet_currencies using the Substrate node and recommended hardware.
-pub struct DicoWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for DicoWeight<T> {
-
-}
 
 // For backwards compatibility and tests
 impl WeightInfo for () {

@@ -17,7 +17,7 @@ type Amount = i128;
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
-    pub ServiceWeight: Option<Weight> = Some(Perbill::from_percent(10) * BlockWeights::get().max_block);
+    pub ServiceWeight: Option<Weight> = Some(Perbill::from_percent(20) * RuntimeBlockWeights::get().max_block);
 }
 
 impl wetee_message_queue::Config for Runtime {
@@ -232,11 +232,11 @@ impl wetee_matrix::Config for Runtime {
     type WeightInfo = ();
 }
 
-impl wetee_tee_bridge::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-    type WorkExt = WorkExtIns;
-}
+// impl wetee_tee_bridge::Config for Runtime {
+//     type RuntimeEvent = RuntimeEvent;
+//     type WeightInfo = ();
+//     type WorkExt = WorkExtIns;
+// }
 
 // pub struct FairlanchHook;
 // impl CrossCall<AccountId, Fairlanch> for FairlanchHook {

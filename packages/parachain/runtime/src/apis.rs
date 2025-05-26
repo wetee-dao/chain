@@ -25,62 +25,83 @@
 
 // External crates imports
 use frame_support::{
-	genesis_builder_helper::{build_state, get_preset},
-	weights::Weight,
+    genesis_builder_helper::{build_state, get_preset},
+    weights::Weight,
 };
+use frame_system::limits::BlockWeights;
 use pallet_aura::Authorities;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, U256};
+use sp_runtime::traits::TransactionExtension;
 use sp_runtime::{
-	traits::Block as BlockT,
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+    traits::Block as BlockT,
+    transaction_validity::{TransactionSource, TransactionValidity},
+    ApplyExtrinsicResult,
 };
 use sp_std::prelude::Vec;
 use sp_version::RuntimeVersion;
 
 // Local module imports
+use crate::configs::RuntimeBlockWeights;
+use crate::opaque::SessionKeys;
 use crate::*;
 
-type BlockWeights = <Runtime as frame_system::Config>::BlockWeights;
-
-// WeTEE Contracts
-const CONTRACTS_DEBUG_OUTPUT: pallet_contracts::DebugInfo =
-    pallet_contracts::DebugInfo::UnsafeDebug;
-const CONTRACTS_EVENTS: pallet_contracts::CollectEvents =
-    pallet_contracts::CollectEvents::UnsafeCollect;
-
-type EventRecord = frame_system::EventRecord<
-    <Runtime as frame_system::Config>::RuntimeEvent,
-    <Runtime as frame_system::Config>::Hash,
->;
-// WeTEE end Contracts
-
 impl_runtime_apis! {
-	// WeTEE
-	impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord>
-    for Runtime
+    // WeTEE
+    impl pallet_revive::ReviveApi<Block, AccountId, Balance, Nonce, BlockNumber> for Runtime
     {
+        fn balance(address: H160) -> U256 {
+            Revive::evm_balance(&address)
+        }
+
+        fn block_gas_limit() -> U256 {
+            Revive::evm_block_gas_limit()
+        }
+
+        fn gas_price() -> U256 {
+            log::info!("-----gas price");
+            Revive::evm_gas_price()
+        }
+
+        fn nonce(address: H160) -> Nonce {
+            let account = <Runtime as pallet_revive::Config>::AddressMapper::to_account_id(&address);
+            System::account_nonce(account)
+        }
+
+        fn eth_transact(tx: pallet_revive::evm::GenericTransaction) -> Result<pallet_revive::EthTransactInfo<Balance>, pallet_revive::EthTransactError>
+        {
+            let blockweights: BlockWeights = <Runtime as frame_system::Config>::BlockWeights::get();
+            let tx_fee = |pallet_call, mut dispatch_info: DispatchInfo| {
+                let call = RuntimeCall::Revive(pallet_call);
+                dispatch_info.extension_weight = EthExtraImpl::get_eth_extension(0, 0u32.into()).weight(&call);
+                let uxt: UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic::new_bare(call).into();
+
+                pallet_transaction_payment::Pallet::<Runtime>::compute_fee(
+                    uxt.encoded_size() as u32,
+                    &dispatch_info,
+                    0u32.into(),
+                )
+            };
+
+            Revive::bare_eth_transact(tx, blockweights.max_block, tx_fee)
+        }
+
         fn call(
             origin: AccountId,
-            dest: AccountId,
+            dest: H160,
             value: Balance,
             gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
-        ) -> pallet_contracts::ContractExecResult<Balance, EventRecord> {
-            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-            Contracts::bare_call(
-                origin,
+        ) -> pallet_revive::ContractResult<pallet_revive::ExecReturnValue, Balance> {
+            Revive::bare_call(
+                RuntimeOrigin::signed(origin),
                 dest,
                 value,
-                gas_limit,
-                storage_deposit_limit,
+                gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block),
+                pallet_revive::DepositLimit::Balance(storage_deposit_limit.unwrap_or(u128::MAX)),
                 input_data,
-                CONTRACTS_DEBUG_OUTPUT,
-                CONTRACTS_EVENTS,
-                pallet_contracts::Determinism::Enforced,
             )
         }
 
@@ -89,22 +110,19 @@ impl_runtime_apis! {
             value: Balance,
             gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
-            code: pallet_contracts::Code<Hash>,
+            code: pallet_revive::Code,
             data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_contracts::ContractInstantiateResult<AccountId, Balance, EventRecord>
+            salt: Option<[u8; 32]>,
+        ) -> pallet_revive::ContractResult<pallet_revive::InstantiateReturnValue, Balance>
         {
-            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-            Contracts::bare_instantiate(
-                origin,
+            Revive::bare_instantiate(
+                RuntimeOrigin::signed(origin),
                 value,
-                gas_limit,
-                storage_deposit_limit,
+                gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block),
+                pallet_revive::DepositLimit::Balance(storage_deposit_limit.unwrap_or(u128::MAX)),
                 code,
                 data,
                 salt,
-                CONTRACTS_DEBUG_OUTPUT,
-                CONTRACTS_EVENTS,
             )
         }
 
@@ -112,257 +130,328 @@ impl_runtime_apis! {
             origin: AccountId,
             code: Vec<u8>,
             storage_deposit_limit: Option<Balance>,
-            determinism: pallet_contracts::Determinism,
-        ) -> pallet_contracts::CodeUploadResult<Hash, Balance>
+        ) -> pallet_revive::CodeUploadResult<Balance>
         {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
+            Revive::bare_upload_code(
+                RuntimeOrigin::signed(origin),
+                code,
+                storage_deposit_limit.unwrap_or(u128::MAX),
+            )
         }
 
         fn get_storage(
-            address: AccountId,
-            key: Vec<u8>,
-        ) -> pallet_contracts::GetStorageResult {
-            Contracts::get_storage(address, key)
+            address: H160,
+            key: [u8; 32],
+        ) -> pallet_revive::GetStorageResult {
+            Revive::get_storage(
+                address,
+                key
+            )
+        }
+
+        fn trace_block(
+            block: Block,
+            tracer_type: pallet_revive::evm::TracerType,
+        ) -> Vec<(u32, pallet_revive::evm::Trace)> {
+            use pallet_revive::tracing::trace;
+            let mut tracer = Revive::evm_tracer(tracer_type);
+            let mut traces = vec![];
+            let (header, extrinsics) = block.deconstruct();
+            Executive::initialize_block(&header);
+            for (index, ext) in extrinsics.into_iter().enumerate() {
+                trace(tracer.as_tracing(), || {
+                    let _ = Executive::apply_extrinsic(ext);
+                });
+
+                if let Some(tx_trace) = tracer.collect_trace() {
+                    traces.push((index as u32, tx_trace));
+                }
+            }
+
+            traces
+        }
+        fn trace_tx(
+            block: Block,
+            tx_index: u32,
+            tracer_type: pallet_revive::evm::TracerType,
+        ) -> Option<pallet_revive::evm::Trace> {
+            use pallet_revive::tracing::trace;
+            let mut tracer = Revive::evm_tracer(tracer_type);
+            let (header, extrinsics) = block.deconstruct();
+
+            Executive::initialize_block(&header);
+            for (index, ext) in extrinsics.into_iter().enumerate() {
+                if index as u32 == tx_index {
+                trace(tracer.as_tracing(), || {
+                        let _ = Executive::apply_extrinsic(ext);
+                    });
+                    break;
+                } else {
+                    let _ = Executive::apply_extrinsic(ext);
+                }
+            }
+
+            tracer.collect_trace()
+        }
+
+        fn trace_call(
+            tx: pallet_revive::evm::GenericTransaction,
+            tracer_type: pallet_revive::evm::TracerType,
+            )
+            -> Result<pallet_revive::evm::Trace, pallet_revive::EthTransactError>
+        {
+            use pallet_revive::tracing::trace;
+            let mut tracer = Revive::evm_tracer(tracer_type);
+            let result = trace(tracer.as_tracing(), || Self::eth_transact(tx));
+
+            if let Some(trace) = tracer.collect_trace() {
+                Ok(trace)
+            } else if let Err(err) = result {
+                Err(err)
+            } else {
+                Ok(tracer.empty_trace())
+            }
         }
     }
     // WeTEE end
 
-	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
-		fn slot_duration() -> sp_consensus_aura::SlotDuration {
-			sp_consensus_aura::SlotDuration::from_millis(SLOT_DURATION)
-		}
+    impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+        fn slot_duration() -> sp_consensus_aura::SlotDuration {
+            sp_consensus_aura::SlotDuration::from_millis(SLOT_DURATION)
+        }
 
-		fn authorities() -> Vec<AuraId> {
-			Authorities::<Runtime>::get().into_inner()
-		}
-	}
+        fn authorities() -> Vec<AuraId> {
+            Authorities::<Runtime>::get().into_inner()
+        }
+    }
 
-	impl cumulus_primitives_aura::AuraUnincludedSegmentApi<Block> for Runtime {
-		fn can_build_upon(
-			included_hash: <Block as BlockT>::Hash,
-			slot: cumulus_primitives_aura::Slot,
-		) -> bool {
-			ConsensusHook::can_build_upon(included_hash, slot)
-		}
-	}
+    impl cumulus_primitives_aura::AuraUnincludedSegmentApi<Block> for Runtime {
+        fn can_build_upon(
+            included_hash: <Block as BlockT>::Hash,
+            slot: cumulus_primitives_aura::Slot,
+        ) -> bool {
+            ConsensusHook::can_build_upon(included_hash, slot)
+        }
+    }
 
-	impl sp_api::Core<Block> for Runtime {
-		fn version() -> RuntimeVersion {
-			VERSION
-		}
+    impl sp_api::Core<Block> for Runtime {
+        fn version() -> RuntimeVersion {
+            VERSION
+        }
 
-		fn execute_block(block: Block) {
-			Executive::execute_block(block)
-		}
+        fn execute_block(block: Block) {
+            Executive::execute_block(block)
+        }
 
-		fn initialize_block(header: &<Block as BlockT>::Header) -> sp_runtime::ExtrinsicInclusionMode {
-			Executive::initialize_block(header)
-		}
-	}
+        fn initialize_block(header: &<Block as BlockT>::Header) -> sp_runtime::ExtrinsicInclusionMode {
+            Executive::initialize_block(header)
+        }
+    }
 
-	impl sp_api::Metadata<Block> for Runtime {
-		fn metadata() -> OpaqueMetadata {
-			OpaqueMetadata::new(Runtime::metadata().into())
-		}
+    impl sp_api::Metadata<Block> for Runtime {
+        fn metadata() -> OpaqueMetadata {
+            OpaqueMetadata::new(Runtime::metadata().into())
+        }
 
-		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
-			Runtime::metadata_at_version(version)
-		}
+        fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+            Runtime::metadata_at_version(version)
+        }
 
-		fn metadata_versions() -> sp_std::vec::Vec<u32> {
-			Runtime::metadata_versions()
-		}
-	}
+        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+            Runtime::metadata_versions()
+        }
+    }
 
-	impl sp_block_builder::BlockBuilder<Block> for Runtime {
-		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
-			Executive::apply_extrinsic(extrinsic)
-		}
+    impl sp_block_builder::BlockBuilder<Block> for Runtime {
+        fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
+            Executive::apply_extrinsic(extrinsic)
+        }
 
-		fn finalize_block() -> <Block as BlockT>::Header {
-			Executive::finalize_block()
-		}
+        fn finalize_block() -> <Block as BlockT>::Header {
+            Executive::finalize_block()
+        }
 
-		fn inherent_extrinsics(data: sp_inherents::InherentData) -> Vec<<Block as BlockT>::Extrinsic> {
-			data.create_extrinsics()
-		}
+        fn inherent_extrinsics(data: sp_inherents::InherentData) -> Vec<<Block as BlockT>::Extrinsic> {
+            data.create_extrinsics()
+        }
 
-		fn check_inherents(
-			block: Block,
-			data: sp_inherents::InherentData,
-		) -> sp_inherents::CheckInherentsResult {
-			data.check_extrinsics(&block)
-		}
-	}
+        fn check_inherents(
+            block: Block,
+            data: sp_inherents::InherentData,
+        ) -> sp_inherents::CheckInherentsResult {
+            data.check_extrinsics(&block)
+        }
+    }
 
-	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
-		fn validate_transaction(
-			source: TransactionSource,
-			tx: <Block as BlockT>::Extrinsic,
-			block_hash: <Block as BlockT>::Hash,
-		) -> TransactionValidity {
-			Executive::validate_transaction(source, tx, block_hash)
-		}
-	}
+    impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
+        fn validate_transaction(
+            source: TransactionSource,
+            tx: <Block as BlockT>::Extrinsic,
+            block_hash: <Block as BlockT>::Hash,
+        ) -> TransactionValidity {
+            Executive::validate_transaction(source, tx, block_hash)
+        }
+    }
 
-	impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
-		fn offchain_worker(header: &<Block as BlockT>::Header) {
-			Executive::offchain_worker(header)
-		}
-	}
+    impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
+        fn offchain_worker(header: &<Block as BlockT>::Header) {
+            Executive::offchain_worker(header)
+        }
+    }
 
-	impl sp_session::SessionKeys<Block> for Runtime {
-		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-			SessionKeys::generate(seed)
-		}
+    impl sp_session::SessionKeys<Block> for Runtime {
+        fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
+            SessionKeys::generate(seed)
+        }
 
-		fn decode_session_keys(
-			encoded: Vec<u8>,
-		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
-			SessionKeys::decode_into_raw_public_keys(&encoded)
-		}
-	}
+        fn decode_session_keys(
+            encoded: Vec<u8>,
+        ) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
+            SessionKeys::decode_into_raw_public_keys(&encoded)
+        }
+    }
 
-	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
-		fn account_nonce(account: AccountId) -> Nonce {
-			System::account_nonce(account)
-		}
-	}
+    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+        fn account_nonce(account: AccountId) -> Nonce {
+            System::account_nonce(account)
+        }
+    }
 
-	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
-		fn query_info(
-			uxt: <Block as BlockT>::Extrinsic,
-			len: u32,
-		) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
-			TransactionPayment::query_info(uxt, len)
-		}
-		fn query_fee_details(
-			uxt: <Block as BlockT>::Extrinsic,
-			len: u32,
-		) -> pallet_transaction_payment::FeeDetails<Balance> {
-			TransactionPayment::query_fee_details(uxt, len)
-		}
-		fn query_weight_to_fee(weight: Weight) -> Balance {
-			TransactionPayment::weight_to_fee(weight)
-		}
-		fn query_length_to_fee(length: u32) -> Balance {
-			TransactionPayment::length_to_fee(length)
-		}
-	}
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
+        fn query_info(
+            uxt: <Block as BlockT>::Extrinsic,
+            len: u32,
+        ) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_info(uxt, len)
+        }
+        fn query_fee_details(
+            uxt: <Block as BlockT>::Extrinsic,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_fee_details(uxt, len)
+        }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
+    }
 
-	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
-		for Runtime
-	{
-		fn query_call_info(
-			call: RuntimeCall,
-			len: u32,
-		) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
-			TransactionPayment::query_call_info(call, len)
-		}
-		fn query_call_fee_details(
-			call: RuntimeCall,
-			len: u32,
-		) -> pallet_transaction_payment::FeeDetails<Balance> {
-			TransactionPayment::query_call_fee_details(call, len)
-		}
-		fn query_weight_to_fee(weight: Weight) -> Balance {
-			TransactionPayment::weight_to_fee(weight)
-		}
-		fn query_length_to_fee(length: u32) -> Balance {
-			TransactionPayment::length_to_fee(length)
-		}
-	}
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
+        for Runtime
+    {
+        fn query_call_info(
+            call: RuntimeCall,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
+        }
+        fn query_call_fee_details(
+            call: RuntimeCall,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
+        }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
+    }
 
-	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
-		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
-			ParachainSystem::collect_collation_info(header)
-		}
-	}
+    impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
+        fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
+            ParachainSystem::collect_collation_info(header)
+        }
+    }
 
-	#[cfg(feature = "try-runtime")]
-	impl frame_try_runtime::TryRuntime<Block> for Runtime {
-		fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
-			use super::configs::RuntimeBlockWeights;
+    #[cfg(feature = "try-runtime")]
+    impl frame_try_runtime::TryRuntime<Block> for Runtime {
+        fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
+            use super::configs::RuntimeBlockWeights;
 
-			let weight = Executive::try_runtime_upgrade(checks).unwrap();
-			(weight, RuntimeBlockWeights::get().max_block)
-		}
+            let weight = Executive::try_runtime_upgrade(checks).unwrap();
+            (weight, RuntimeBlockWeights::get().max_block)
+        }
 
-		fn execute_block(
-			block: Block,
-			state_root_check: bool,
-			signature_check: bool,
-			select: frame_try_runtime::TryStateSelect,
-		) -> Weight {
-			// NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
-			// have a backtrace here.
-			Executive::try_execute_block(block, state_root_check, signature_check, select).unwrap()
-		}
-	}
+        fn execute_block(
+            block: Block,
+            state_root_check: bool,
+            signature_check: bool,
+            select: frame_try_runtime::TryStateSelect,
+        ) -> Weight {
+            // NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
+            // have a backtrace here.
+            Executive::try_execute_block(block, state_root_check, signature_check, select).unwrap()
+        }
+    }
 
-	#[cfg(feature = "runtime-benchmarks")]
-	impl frame_benchmarking::Benchmark<Block> for Runtime {
-		fn benchmark_metadata(extra: bool) -> (
-			Vec<frame_benchmarking::BenchmarkList>,
-			Vec<frame_support::traits::StorageInfo>,
-		) {
-			use frame_benchmarking::{Benchmarking, BenchmarkList};
-			use frame_support::traits::StorageInfoTrait;
-			use frame_system_benchmarking::Pallet as SystemBench;
-			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
-			use super::*;
+    #[cfg(feature = "runtime-benchmarks")]
+    impl frame_benchmarking::Benchmark<Block> for Runtime {
+        fn benchmark_metadata(extra: bool) -> (
+            Vec<frame_benchmarking::BenchmarkList>,
+            Vec<frame_support::traits::StorageInfo>,
+        ) {
+            use frame_benchmarking::{Benchmarking, BenchmarkList};
+            use frame_support::traits::StorageInfoTrait;
+            use frame_system_benchmarking::Pallet as SystemBench;
+            use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
+            use super::*;
 
-			let mut list = Vec::<BenchmarkList>::new();
-			list_benchmarks!(list, extra);
+            let mut list = Vec::<BenchmarkList>::new();
+            list_benchmarks!(list, extra);
 
-			let storage_info = AllPalletsWithSystem::storage_info();
-			(list, storage_info)
-		}
+            let storage_info = AllPalletsWithSystem::storage_info();
+            (list, storage_info)
+        }
 
-		fn dispatch_benchmark(
-			config: frame_benchmarking::BenchmarkConfig
-		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{BenchmarkError, Benchmarking, BenchmarkBatch};
-			use super::*;
+        fn dispatch_benchmark(
+            config: frame_benchmarking::BenchmarkConfig
+        ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
+            use frame_benchmarking::{BenchmarkError, Benchmarking, BenchmarkBatch};
+            use super::*;
 
-			use frame_system_benchmarking::Pallet as SystemBench;
-			impl frame_system_benchmarking::Config for Runtime {
-				fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
-					ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
-					Ok(())
-				}
+            use frame_system_benchmarking::Pallet as SystemBench;
+            impl frame_system_benchmarking::Config for Runtime {
+                fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
+                    ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+                    Ok(())
+                }
 
-				fn verify_set_code() {
-					System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
-				}
-			}
+                fn verify_set_code() {
+                    System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+                }
+            }
 
-			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
-			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
+            use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
+            impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
-			use frame_support::traits::WhitelistedStorageKeys;
-			let whitelist = AllPalletsWithSystem::whitelisted_storage_keys();
+            use frame_support::traits::WhitelistedStorageKeys;
+            let whitelist = AllPalletsWithSystem::whitelisted_storage_keys();
 
-			let mut batches = Vec::<BenchmarkBatch>::new();
-			let params = (&config, &whitelist);
-			add_benchmarks!(params, batches);
+            let mut batches = Vec::<BenchmarkBatch>::new();
+            let params = (&config, &whitelist);
+            add_benchmarks!(params, batches);
 
-			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
-			Ok(batches)
-		}
-	}
+            if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
+            Ok(batches)
+        }
+    }
 
-	impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
-		fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
-			build_state::<RuntimeGenesisConfig>(config)
-		}
 
-		fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-			get_preset::<RuntimeGenesisConfig>(id, |_| None)
-		}
+    impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+        fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+            build_state::<RuntimeGenesisConfig>(config)
+        }
 
-		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-			Default::default()
-		}
-	}
+        fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+        }
+
+        fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
+            Default::default()
+        }
+    }
 }

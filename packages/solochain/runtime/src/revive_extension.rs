@@ -1,7 +1,7 @@
 use crate::{Bridge, Runtime};
 use codec::{Decode, Encode, MaxEncodedLen};
 use log::error;
-use pallet_contracts::chain_extension::{
+use pallet_revive::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, SysConfig,
 };
 use scale_info::prelude::boxed::Box;

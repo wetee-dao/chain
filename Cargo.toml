@@ -128,6 +128,7 @@ pallet-proxy = {git = "https://github.com/paritytech/polkadot-sdk.git", branch =
 pallet-ranked-collective = {git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2503", default-features = false}
 pallet-recovery = {git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2503", default-features = false}
 pallet-referenda = {git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2503", default-features = false}
+pallet-revive = {git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2503", default-features = false}
 pallet-root-testing = {git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2503", default-features = false}
 pallet-scheduler = {git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2503", default-features = false}
 pallet-session = {git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2503", default-features = false}

@@ -6,17 +6,19 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+extern crate alloc;
 pub mod apis;
 mod configs;
 mod weights;
 
+use codec::Encode;
+use frame_support::dispatch::DispatchInfo;
 use smallvec::smallvec;
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
+    generic, impl_opaque_keys,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
     MultiSignature,
 };
-
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -29,6 +31,7 @@ use frame_support::{
         WeightToFeeCoefficients, WeightToFeePolynomial,
     },
 };
+use pallet_revive::{evm::runtime::EthExtra, AddressMapper};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
@@ -45,8 +48,8 @@ mod worker;
 pub use worker::*;
 mod wetee;
 pub use wetee::*;
-mod contracts;
-pub use contracts::*;
+mod revive;
+pub use revive::*;
 mod cross;
 pub use cross::*;
 pub mod teleport_adapter;
@@ -63,7 +66,7 @@ pub use wetee_matrix::Call as MatrixCall;
 pub use wetee_project::Call as ProjectCall;
 pub use wetee_sudo::Call as SudoCall;
 pub use wetee_task::Call as TaskCall;
-pub use wetee_tee_bridge::Call as TeeBridgeCall;
+// pub use wetee_tee_bridge::Call as TeeBridgeCall;
 pub use wetee_treasury::Call as TreasuryCall;
 pub use wetee_worker::Call as WorkerCall;
 // End WETEE pallet.
@@ -107,8 +110,8 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 
-/// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
+/// The TransactionExtension to the basic transaction logic.
+pub type TxExtension = (
     frame_system::CheckNonZeroSender<Runtime>,
     frame_system::CheckSpecVersion<Runtime>,
     frame_system::CheckTxVersion<Runtime>,
@@ -116,13 +119,35 @@ pub type SignedExtra = (
     frame_system::CheckEra<Runtime>,
     frame_system::CheckNonce<Runtime>,
     frame_system::CheckWeight<Runtime>,
-    pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-    cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
+    frame_system::WeightReclaim<Runtime>,
+    // pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+    // cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
 );
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct EthExtraImpl;
+
+impl EthExtra for EthExtraImpl {
+    type Config = Runtime;
+    type Extension = TxExtension;
+
+    fn get_eth_extension(nonce: u32, _tip: Balance) -> Self::Extension {
+        (
+            frame_system::CheckNonZeroSender::<Runtime>::new(),
+            frame_system::CheckSpecVersion::<Runtime>::new(),
+            frame_system::CheckTxVersion::<Runtime>::new(),
+            frame_system::CheckGenesis::<Runtime>::new(),
+            frame_system::CheckEra::from(crate::generic::Era::Immortal),
+            frame_system::CheckNonce::<Runtime>::from(nonce),
+            frame_system::CheckWeight::<Runtime>::new(),
+            frame_system::WeightReclaim::<Runtime>::new(),
+        )
+    }
+}
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-    generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+    pallet_revive::evm::runtime::UncheckedExtrinsic<Address, Signature, EthExtraImpl>;
 
 type Migrations = (wetee_worker::migrations::v2::Migration<Runtime>,);
 
@@ -135,6 +160,16 @@ pub type Executive = frame_executive::Executive<
     AllPalletsWithSystem,
     Migrations,
 >;
+
+impl TryFrom<RuntimeCall> for pallet_revive::Call<Runtime> {
+    type Error = ();
+    fn try_from(value: RuntimeCall) -> Result<Self, Self::Error> {
+        match value {
+            RuntimeCall::Revive(call) => Ok(call),
+            _ => Err(()),
+        }
+    }
+}
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -183,6 +218,12 @@ pub mod opaque {
     pub type BlockId = generic::BlockId<Block>;
     /// Opaque block hash type.
     pub type Hash = <BlakeTwo256 as HashT>::Output;
+
+    impl_opaque_keys! {
+        pub struct SessionKeys {
+            pub aura: Aura,
+        }
+    }
 }
 
 impl_opaque_keys! {
@@ -193,10 +234,10 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("WeTEE"),
-    impl_name: create_runtime_str!("WeTEE"),
+    spec_name: alloc::borrow::Cow::Borrowed("WeTEE"),
+    impl_name: alloc::borrow::Cow::Borrowed("WeTEE"),
     authoring_version: 1,
-    spec_version: 57,
+    spec_version: 58,
     impl_version: 0,
     apis: apis::RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -313,9 +354,9 @@ construct_runtime!(
         Task: wetee_task = 113,
         Gpu: wetee_gpu = 114,
         Worker: wetee_worker = 115,
-        Contracts: pallet_contracts = 116,
+        Revive: pallet_revive = 116,
         DSecret: wetee_dsecret = 117,
-        Bridge: wetee_tee_bridge = 118,
+        // Bridge: wetee_tee_bridge = 118,
         Matrix:  wetee_matrix = 119,
         Fairlanch: wetee_fairlanch = 120,
         Store: wetee_store = 124,

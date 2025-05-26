@@ -74,10 +74,11 @@ frame-system-benchmarking = {workspace = true, default-features = false, optiona
 # Local Dependencies
 orml-tokens = {workspace = true}
 orml-traits = {workspace = true}
-pallet-revive = {workspace = true}
-# pallet-contracts = {workspace = true}
+pallet-authorship = {workspace = true}
 pallet-insecure-randomness-collective-flip = {workspace = true}
+pallet-revive = {workspace = true}
 pallet-utility = {workspace = true}
+polkadot-runtime-common = {workspace = true}
 
 wetee-message-queue = {path = "../../pallets/message-queue", default-features = false}
 
@@ -141,7 +142,9 @@ std = [
   "substrate-wasm-builder",
   "pallet-insecure-randomness-collective-flip/std",
   "pallet-utility/std",
-  "pallet-contracts/std",
+  "pallet-revive/std",
+  "pallet-authorship/std",
+  "polkadot-runtime-common/std",
   "orml-traits/std",
   "orml-tokens/std",
   "wetee-message-queue/std",
@@ -175,7 +178,7 @@ runtime-benchmarks = [
   "pallet-sudo/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
-  "pallet-contracts/runtime-benchmarks",
+  "pallet-revive/runtime-benchmarks",
   "wetee-dao/runtime-benchmarks",
   "wetee-sudo/runtime-benchmarks",
   "wetee-guild/runtime-benchmarks",

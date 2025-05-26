@@ -1,30 +1,43 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+// Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use pallet_grandpa::AuthorityId as GrandpaId;
+extern crate alloc;
+use alloc::{vec, vec::Vec};
+use codec::Encode;
+use frame_support::{
+    derive_impl,
+    dispatch::DispatchClass,
+    genesis_builder_helper::{build_state, get_preset},
+};
+use frame_system::limits::{BlockLength, BlockWeights};
+use pallet_revive::{evm::runtime::EthExtra, AddressMapper};
+use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_consensus_grandpa::AuthorityId as GrandpaId;
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, U256};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
-    traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, One, Verify},
+    generic, impl_opaque_keys,
+    traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, MultiSignature,
 };
-use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use frame_support::genesis_builder_helper::{build_state, get_preset};
+// A few exports that help ease life for downstream crates.
+use frame_support::dispatch::DispatchInfo;
 pub use frame_support::{
-    construct_runtime, derive_impl, parameter_types,
+    construct_runtime, parameter_types,
     traits::{
-        ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness,
-        StorageInfo,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8,
+        KeyOwnerProofSystem, Randomness, StorageInfo,
     },
     weights::{
         constants::{
@@ -37,7 +50,8 @@ pub use frame_support::{
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
+use pallet_transaction_payment::{FeeDetails, FungibleAdapter, RuntimeDispatchInfo};
+use sp_runtime::traits::TransactionExtension;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -50,9 +64,9 @@ mod worker;
 pub use worker::*;
 mod wetee;
 pub use wetee::*;
-mod contracts;
-pub use contracts::*;
-mod contract_extension;
+mod revive;
+// pub use contracts::*;
+// mod contract_extension;
 
 pub use wetee_app::Call as AppCall;
 pub use wetee_assets::Call as AssetsCall;
@@ -66,7 +80,7 @@ pub use wetee_matrix::Call as MatrixCall;
 pub use wetee_project::Call as ProjectCall;
 pub use wetee_sudo::Call as SudoCall;
 pub use wetee_task::Call as TaskCall;
-pub use wetee_tee_bridge::Call as TeeBridgeCall;
+// pub use wetee_tee_bridge::Call as TeeBridgeCall;
 pub use wetee_treasury::Call as TreasuryCall;
 pub use wetee_worker::Call as WorkerCall;
 // End WETEE pallet.
@@ -109,7 +123,6 @@ pub mod opaque {
     impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
-            pub grandpa: Grandpa,
         }
     }
 }
@@ -118,37 +131,20 @@ pub mod opaque {
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("WeTEE-dev"),
-    impl_name: create_runtime_str!("WeTEE-dev-runtime"),
+    spec_name: alloc::borrow::Cow::Borrowed("WeTEE-dev"),
+    impl_name: alloc::borrow::Cow::Borrowed("WeTEE-dev-runtime"),
     authoring_version: 1,
     // The version of the runtime specification. A full node will not attempt to use its native
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 168,
+    spec_version: 169,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
     system_version: 1,
 };
-
-/// This determines the average expected block time that we are targeting.
-/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
-/// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
-/// up by `pallet_aura` to implement `fn slot_duration()`.
-///
-/// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
-
-// NOTE: Currently it is not possible to change the slot duration after the chain has started.
-//       Attempting to do so will brick block production.
-pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
-
-// Time is measured by number of blocks.
-pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-pub const HOURS: BlockNumber = MINUTES * 60;
-pub const DAYS: BlockNumber = HOURS * 24;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -161,31 +157,60 @@ pub fn native_version() -> NativeVersion {
 
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// This is used to limit the maximal weight of a single extrinsic.
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+
+/// We allow for 2 seconds of compute with a 6 second average block time, with maximum proof size.
+const MAXIMUM_BLOCK_WEIGHT: Weight =
+    Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
+
+// Unit = the base number of indivisible units for balances
+const MILLIUNIT: Balance = 1_000_000_000;
+pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
+
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     pub const Version: RuntimeVersion = VERSION;
-    /// We allow for 2 seconds of compute with a 6 second average block time.
-    pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::with_sensible_defaults(
-            Weight::from_parts(2u64 * WEIGHT_REF_TIME_PER_SECOND, u64::MAX),
-            NORMAL_DISPATCH_RATIO,
-        );
-    pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-        ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+
+    // This part is copied from Substrate's `bin/node/runtime/src/lib.rs`.
+    //  The `RuntimeBlockLength` and `RuntimeBlockWeights` exist here because the
+    // `DeletionWeightLimit` and `DeletionQueueDepth` depend on those to parameterize
+    // the lazy contract deletion.
+    pub RuntimeBlockLength: BlockLength =
+        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+        .base_block(BlockExecutionWeight::get())
+        .for_class(DispatchClass::all(), |weights| {
+            weights.base_extrinsic = ExtrinsicBaseWeight::get();
+        })
+        .for_class(DispatchClass::Normal, |weights| {
+            weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+        })
+        .for_class(DispatchClass::Operational, |weights| {
+            weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+            // Operational transactions have some extra reserved space, so that they
+            // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+            weights.reserved = Some(
+                MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+            );
+        })
+        .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+        .build_or_panic();
+
     pub const SS58Prefix: u8 = 42;
 }
 
-/// The default types are being injected by [`derive_impl`](`frame_support::derive_impl`) from
-/// [`SoloChainDefaultConfig`](`struct@frame_system::config_preludes::SolochainDefaultConfig`),
-/// but overridden as needed.
+// Configure FRAME pallets to include in runtime.
+
 #[derive_impl(frame_system::config_preludes::SolochainDefaultConfig)]
 impl frame_system::Config for Runtime {
     /// The block type for the runtime.
     type Block = Block;
     /// Block & extrinsics weights: base values and limits.
-    type BlockWeights = BlockWeights;
+    type BlockWeights = RuntimeBlockWeights;
     /// The maximum length of a block (in bytes).
-    type BlockLength = BlockLength;
+    type BlockLength = RuntimeBlockLength;
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
     /// The type for storing how many extrinsics an account has signed.
@@ -225,20 +250,35 @@ impl pallet_grandpa::Config for Runtime {
     type EquivocationReportSystem = ();
 }
 
+parameter_types! {
+    pub const UncleGenerations: u32 = 0;
+}
+
+impl pallet_authorship::Config for Runtime {
+    type FindAuthor = ();
+    type EventHandler = ();
+}
+
+parameter_types! {
+    pub const MinimumPeriod: u64 = 0;
+}
+
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = Aura;
-    type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
+    type OnTimestampSet = ();
+    type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
 
-/// Existential deposit.
-pub const EXISTENTIAL_DEPOSIT: u128 = 500;
+parameter_types! {
+    pub const MaxLocks: u32 = 50;
+    pub const MaxReserves: u32 = 50;
+}
 
 impl pallet_balances::Config for Runtime {
-    type MaxLocks = ConstU32<50>;
-    type MaxReserves = ();
+    type MaxLocks = MaxLocks;
+    type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
     /// The type for recording an account's balance.
     type Balance = Balance;
@@ -255,18 +295,14 @@ impl pallet_balances::Config for Runtime {
     type DoneSlashHandler = ();
 }
 
-parameter_types! {
-    pub FeeMultiplier: Multiplier = Multiplier::one();
-}
-
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type OnChargeTransaction = FungibleAdapter<Balances, ()>;
     type OperationalFeeMultiplier = ConstU8<5>;
     type WeightToFee = IdentityFee<Balance>;
     type LengthToFee = IdentityFee<Balance>;
-    type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
-    type WeightInfo = ();
+    type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
+    type WeightInfo = pallet_transaction_payment::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -280,16 +316,16 @@ impl pallet_sudo::Config for Runtime {
 mod runtime {
     #[runtime::runtime]
     #[runtime::derive(
-		RuntimeCall,
-		RuntimeEvent,
-		RuntimeError,
-		RuntimeOrigin,
-		RuntimeFreezeReason,
-		RuntimeHoldReason,
-		RuntimeSlashReason,
-		RuntimeLockId,
-		RuntimeTask,
-		RuntimeViewFunction
+        RuntimeCall,
+        RuntimeEvent,
+        RuntimeError,
+        RuntimeOrigin,
+        RuntimeFreezeReason,
+        RuntimeHoldReason,
+        RuntimeSlashReason,
+        RuntimeLockId,
+        RuntimeTask,
+        RuntimeViewFunction
     )]
     pub struct Runtime;
 
@@ -298,6 +334,9 @@ mod runtime {
 
     #[runtime::pallet_index(2)]
     pub type Timestamp = pallet_timestamp;
+
+    #[runtime::pallet_index(5)]
+    pub type Authorship = pallet_authorship;
 
     #[runtime::pallet_index(23)]
     pub type Aura = pallet_aura;
@@ -345,12 +384,12 @@ mod runtime {
     pub type Gpu = wetee_gpu;
     #[runtime::pallet_index(115)]
     pub type Worker = wetee_worker;
-    #[runtime::pallet_index(116)]
-    pub type Contracts = pallet_contracts;
+    #[runtime::pallet_index(8)]
+    pub type Revive = pallet_revive;
     #[runtime::pallet_index(117)]
     pub type DSecret = wetee_dsecret;
-    #[runtime::pallet_index(118)]
-    pub type Bridge = wetee_tee_bridge;
+    // #[runtime::pallet_index(118)]
+    // pub type Bridge = wetee_tee_bridge;
     #[runtime::pallet_index(119)]
     pub type Matrix = wetee_matrix;
     #[runtime::pallet_index(120)]
@@ -366,8 +405,8 @@ pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-/// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
+/// The TransactionExtension to the basic transaction logic.
+pub type TxExtension = (
     frame_system::CheckNonZeroSender<Runtime>,
     frame_system::CheckSpecVersion<Runtime>,
     frame_system::CheckTxVersion<Runtime>,
@@ -378,17 +417,31 @@ pub type SignedExtra = (
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 
-/// All migrations of the runtime, aside from the ones declared in the pallets.
-///
-/// This can be a tuple of types, each implementing `OnRuntimeUpgrade`.
-#[allow(unused_parens)]
-type Migrations = ();
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct EthExtraImpl;
+
+impl EthExtra for EthExtraImpl {
+    type Config = Runtime;
+    type Extension = TxExtension;
+
+    fn get_eth_extension(nonce: u32, tip: Balance) -> Self::Extension {
+        (
+            frame_system::CheckNonZeroSender::<Runtime>::new(),
+            frame_system::CheckSpecVersion::<Runtime>::new(),
+            frame_system::CheckTxVersion::<Runtime>::new(),
+            frame_system::CheckGenesis::<Runtime>::new(),
+            frame_system::CheckEra::from(crate::generic::Era::Immortal),
+            frame_system::CheckNonce::<Runtime>::from(nonce),
+            frame_system::CheckWeight::<Runtime>::new(),
+            pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+        )
+    }
+}
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-    generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
-/// The payload being signed in transactions.
-pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
+    pallet_revive::evm::runtime::UncheckedExtrinsic<Address, Signature, EthExtraImpl>;
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -396,45 +449,16 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    Migrations,
 >;
 
-// WeTEE Contracts
-const CONTRACTS_DEBUG_OUTPUT: pallet_contracts::DebugInfo =
-    pallet_contracts::DebugInfo::UnsafeDebug;
-const CONTRACTS_EVENTS: pallet_contracts::CollectEvents =
-    pallet_contracts::CollectEvents::UnsafeCollect;
-
-type EventRecord = frame_system::EventRecord<
-    <Runtime as frame_system::Config>::RuntimeEvent,
-    <Runtime as frame_system::Config>::Hash,
->;
-// WeTEE end Contracts
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benches {
-    frame_benchmarking::define_benchmarks!(
-        [frame_benchmarking, BaselineBench::<Runtime>]
-        [frame_system, SystemBench::<Runtime>]
-        [pallet_balances, Balances]
-        [pallet_timestamp, Timestamp]
-        [pallet_sudo, Sudo]
-        [wetee_dao, Dao]
-        // [wetee_matrix, Matrix]
-        [wetee_sudo, WeSudo]
-        [wetee_guild, Guild]
-        [wetee_treasury, Treasury]
-        [wetee_assets, Asset]
-        [wetee_gov, Gov]
-        [wetee_app, App]
-        [wetee_gpu, Gpu]
-        [wetee_task, Task]
-        [wetee_dsecret, DSecret]
-        [wetee_tee_bridge, Bridge]
-        [wetee_worker, Worker]
-        [wetee_fairlanch, Fairlanch]
-        [wetee_store, Store]
-    );
+impl TryFrom<RuntimeCall> for pallet_revive::Call<Runtime> {
+    type Error = ();
+    fn try_from(value: RuntimeCall) -> Result<Self, Self::Error> {
+        match value {
+            RuntimeCall::Revive(call) => Ok(call),
+            _ => Err(()),
+        }
+    }
 }
 
 impl_runtime_apis! {
@@ -461,8 +485,14 @@ impl_runtime_apis! {
             Runtime::metadata_at_version(version)
         }
 
-        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+        fn metadata_versions() -> Vec<u32> {
             Runtime::metadata_versions()
+        }
+    }
+
+    impl frame_support::view_functions::runtime_api::RuntimeViewFunction<Block> for Runtime {
+        fn execute_view_function(id: frame_support::view_functions::ViewFunctionId, input: Vec<u8>) -> Result<Vec<u8>, frame_support::view_functions::ViewFunctionDispatchError> {
+            Runtime::execute_view_function(id, input)
         }
     }
 
@@ -561,17 +591,14 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
-        fn query_info(
-            uxt: <Block as BlockT>::Extrinsic,
-            len: u32,
-        ) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
+        Block,
+        Balance,
+    > for Runtime {
+        fn query_info(uxt: <Block as BlockT>::Extrinsic, len: u32) -> RuntimeDispatchInfo<Balance> {
             TransactionPayment::query_info(uxt, len)
         }
-        fn query_fee_details(
-            uxt: <Block as BlockT>::Extrinsic,
-            len: u32,
-        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+        fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
         fn query_weight_to_fee(weight: Weight) -> Balance {
@@ -582,9 +609,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
-        for Runtime
-    {
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall> for Runtime {
         fn query_call_info(
             call: RuntimeCall,
             len: u32,
@@ -605,66 +630,168 @@ impl_runtime_apis! {
         }
     }
 
-    #[cfg(feature = "runtime-benchmarks")]
-    impl frame_benchmarking::Benchmark<Block> for Runtime {
-        fn benchmark_metadata(extra: bool) -> (
-            Vec<frame_benchmarking::BenchmarkList>,
-            Vec<frame_support::traits::StorageInfo>,
-        ) {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
-            use frame_support::traits::StorageInfoTrait;
-            use frame_system_benchmarking::Pallet as SystemBench;
-            use baseline::Pallet as BaselineBench;
-
-            let mut list = Vec::<BenchmarkList>::new();
-            list_benchmarks!(list, extra);
-
-            let storage_info = AllPalletsWithSystem::storage_info();
-
-            (list, storage_info)
+    impl pallet_revive::ReviveApi<Block, AccountId, Balance, Nonce, BlockNumber> for Runtime
+    {
+        fn balance(address: H160) -> U256 {
+            Revive::evm_balance(&address)
         }
 
-        fn dispatch_benchmark(
-            config: frame_benchmarking::BenchmarkConfig
-        ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
-            use sp_storage::TrackedStorageKey;
-            use frame_system_benchmarking::Pallet as SystemBench;
-            use baseline::Pallet as BaselineBench;
-
-            impl frame_system_benchmarking::Config for Runtime {}
-            impl baseline::Config for Runtime {}
-
-            use frame_support::traits::WhitelistedStorageKeys;
-            let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
-
-            let mut batches = Vec::<BenchmarkBatch>::new();
-            let params = (&config, &whitelist);
-            add_benchmarks!(params, batches);
-
-            Ok(batches)
-        }
-    }
-
-    #[cfg(feature = "try-runtime")]
-    impl frame_try_runtime::TryRuntime<Block> for Runtime {
-        fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
-            // NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
-            // have a backtrace here. If any of the pre/post migration checks fail, we shall stop
-            // right here and right now.
-            let weight = Executive::try_runtime_upgrade(checks).unwrap();
-            (weight, BlockWeights::get().max_block)
+        fn block_gas_limit() -> U256 {
+            Revive::evm_block_gas_limit()
         }
 
-        fn execute_block(
+        fn gas_price() -> U256 {
+            log::info!("-----gas price");
+            Revive::evm_gas_price()
+        }
+
+        fn nonce(address: H160) -> Nonce {
+            let account = <Runtime as pallet_revive::Config>::AddressMapper::to_account_id(&address);
+            System::account_nonce(account)
+        }
+
+        fn eth_transact(tx: pallet_revive::evm::GenericTransaction) -> Result<pallet_revive::EthTransactInfo<Balance>, pallet_revive::EthTransactError>
+        {
+            let blockweights: BlockWeights = <Runtime as frame_system::Config>::BlockWeights::get();
+            let tx_fee = |pallet_call, mut dispatch_info: DispatchInfo| {
+                let call = RuntimeCall::Revive(pallet_call);
+                dispatch_info.extension_weight = EthExtraImpl::get_eth_extension(0, 0u32.into()).weight(&call);
+                let uxt: UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic::new_bare(call).into();
+
+                pallet_transaction_payment::Pallet::<Runtime>::compute_fee(
+                    uxt.encoded_size() as u32,
+                    &dispatch_info,
+                    0u32.into(),
+                )
+            };
+
+            Revive::bare_eth_transact(tx, blockweights.max_block, tx_fee)
+        }
+
+        fn call(
+            origin: AccountId,
+            dest: H160,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            input_data: Vec<u8>,
+        ) -> pallet_revive::ContractResult<pallet_revive::ExecReturnValue, Balance> {
+            Revive::bare_call(
+                RuntimeOrigin::signed(origin),
+                dest,
+                value,
+                gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block),
+                pallet_revive::DepositLimit::Balance(storage_deposit_limit.unwrap_or(u128::MAX)),
+                input_data,
+            )
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            code: pallet_revive::Code,
+            data: Vec<u8>,
+            salt: Option<[u8; 32]>,
+        ) -> pallet_revive::ContractResult<pallet_revive::InstantiateReturnValue, Balance>
+        {
+            Revive::bare_instantiate(
+                RuntimeOrigin::signed(origin),
+                value,
+                gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block),
+                pallet_revive::DepositLimit::Balance(storage_deposit_limit.unwrap_or(u128::MAX)),
+                code,
+                data,
+                salt,
+            )
+        }
+
+        fn upload_code(
+            origin: AccountId,
+            code: Vec<u8>,
+            storage_deposit_limit: Option<Balance>,
+        ) -> pallet_revive::CodeUploadResult<Balance>
+        {
+            Revive::bare_upload_code(
+                RuntimeOrigin::signed(origin),
+                code,
+                storage_deposit_limit.unwrap_or(u128::MAX),
+            )
+        }
+
+        fn get_storage(
+            address: H160,
+            key: [u8; 32],
+        ) -> pallet_revive::GetStorageResult {
+            Revive::get_storage(
+                address,
+                key
+            )
+        }
+
+        fn trace_block(
             block: Block,
-            state_root_check: bool,
-            signature_check: bool,
-            select: frame_try_runtime::TryStateSelect
-        ) -> Weight {
-            // NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
-            // have a backtrace here.
-            Executive::try_execute_block(block, state_root_check, signature_check, select).expect("execute-block failed")
+            tracer_type: pallet_revive::evm::TracerType,
+        ) -> Vec<(u32, pallet_revive::evm::Trace)> {
+            use pallet_revive::tracing::trace;
+            let mut tracer = Revive::evm_tracer(tracer_type);
+            let mut traces = vec![];
+            let (header, extrinsics) = block.deconstruct();
+            Executive::initialize_block(&header);
+            for (index, ext) in extrinsics.into_iter().enumerate() {
+                trace(tracer.as_tracing(), || {
+                    let _ = Executive::apply_extrinsic(ext);
+                });
+
+                if let Some(tx_trace) = tracer.collect_trace() {
+                    traces.push((index as u32, tx_trace));
+                }
+            }
+
+            traces
+        }
+        fn trace_tx(
+            block: Block,
+            tx_index: u32,
+            tracer_type: pallet_revive::evm::TracerType,
+        ) -> Option<pallet_revive::evm::Trace> {
+            use pallet_revive::tracing::trace;
+            let mut tracer = Revive::evm_tracer(tracer_type);
+            let (header, extrinsics) = block.deconstruct();
+
+            Executive::initialize_block(&header);
+            for (index, ext) in extrinsics.into_iter().enumerate() {
+                if index as u32 == tx_index {
+                trace(tracer.as_tracing(), || {
+                        let _ = Executive::apply_extrinsic(ext);
+                    });
+                    break;
+                } else {
+                    let _ = Executive::apply_extrinsic(ext);
+                }
+            }
+
+            tracer.collect_trace()
+        }
+
+        fn trace_call(
+            tx: pallet_revive::evm::GenericTransaction,
+            tracer_type: pallet_revive::evm::TracerType,
+            )
+            -> Result<pallet_revive::evm::Trace, pallet_revive::EthTransactError>
+        {
+            use pallet_revive::tracing::trace;
+            let mut tracer = Revive::evm_tracer(tracer_type);
+            let result = trace(tracer.as_tracing(), || Self::eth_transact(tx));
+
+            if let Some(trace) = tracer.collect_trace() {
+                Ok(trace)
+            } else if let Err(err) = result {
+                Err(err)
+            } else {
+                Ok(tracer.empty_trace())
+            }
         }
     }
 
@@ -678,76 +805,7 @@ impl_runtime_apis! {
         }
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-            vec![]
+            Default::default()
         }
     }
-
-    // WeTEE
-    impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord>
-    for Runtime
-    {
-        fn call(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: Option<Weight>,
-            storage_deposit_limit: Option<Balance>,
-            input_data: Vec<u8>,
-        ) -> pallet_contracts::ContractExecResult<Balance, EventRecord> {
-            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-            Contracts::bare_call(
-                origin,
-                dest,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                input_data,
-                CONTRACTS_DEBUG_OUTPUT,
-                CONTRACTS_EVENTS,
-                pallet_contracts::Determinism::Enforced,
-            )
-        }
-
-        fn instantiate(
-            origin: AccountId,
-            value: Balance,
-            gas_limit: Option<Weight>,
-            storage_deposit_limit: Option<Balance>,
-            code: pallet_contracts::Code<Hash>,
-            data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_contracts::ContractInstantiateResult<AccountId, Balance, EventRecord>
-        {
-            let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-            Contracts::bare_instantiate(
-                origin,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                code,
-                data,
-                salt,
-                CONTRACTS_DEBUG_OUTPUT,
-                CONTRACTS_EVENTS,
-            )
-        }
-
-        fn upload_code(
-            origin: AccountId,
-            code: Vec<u8>,
-            storage_deposit_limit: Option<Balance>,
-            determinism: pallet_contracts::Determinism,
-        ) -> pallet_contracts::CodeUploadResult<Hash, Balance>
-        {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
-        }
-
-        fn get_storage(
-            address: AccountId,
-            key: Vec<u8>,
-        ) -> pallet_contracts::GetStorageResult {
-            Contracts::get_storage(address, key)
-        }
-    }
-    // WeTEE end
 }

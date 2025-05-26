@@ -14,10 +14,7 @@ use orml_xcm_support::{IsNativeConcrete, MultiNativeAsset};
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain_primitives::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
-use polkadot_sdk::{
-	polkadot_sdk_frame::traits::Disabled,
-	staging_xcm_builder::{DenyRecursively, DenyThenTry},
-};
+use polkadot_sdk::polkadot_sdk_frame::traits::Disabled;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin,
@@ -187,7 +184,7 @@ impl pallet_xcm::Config for Runtime {
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
     // Aliasing is disabled: xcm_executor::Config::Aliasers is set to `Nothing`.
-	type AuthorizedAliasConsideration = Disabled;
+    type AuthorizedAliasConsideration = Disabled;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
