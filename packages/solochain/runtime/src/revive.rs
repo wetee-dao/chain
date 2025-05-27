@@ -1,12 +1,14 @@
-use crate::{
-    Balance, Balances, BalancesCall, Perbill, Runtime, RuntimeCall, RuntimeEvent,
-    RuntimeHoldReason, Timestamp,
-};
 use frame_support::{
     parameter_types,
     traits::{ConstBool, ConstU32, ConstU64},
 };
 use frame_system::EnsureSigned;
+pub use sp_runtime::Perbill;
+
+use crate::{
+    Balance, Balances, BalancesCall, Runtime, RuntimeCall, RuntimeEvent, RuntimeHoldReason,
+    Timestamp,
+};
 
 pub enum AllowBalancesCall {}
 
@@ -25,6 +27,11 @@ const MILLIUNIT: Balance = 1_000_000_000;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
     (items as Balance * UNIT + (bytes as Balance) * (5 * MILLIUNIT / 100)) / 10
+}
+
+impl pallet_authorship::Config for Runtime {
+    type FindAuthor = ();
+    type EventHandler = ();
 }
 
 parameter_types! {

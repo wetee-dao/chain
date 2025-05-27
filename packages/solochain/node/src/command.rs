@@ -127,21 +127,18 @@ pub fn run() -> sc_cli::Result<()> {
         None => {
             let runner = cli.create_runner(&cli.run)?;
             runner.run_node_until_exit(|config| async move {
-                match config.network.network_backend {
-                    Some(sc_network::config::NetworkBackendType::Libp2p) => {
-                        service::new_full::<
-                            sc_network::NetworkWorker<
-                                wetee_runtime::opaque::Block,
-                                <wetee_runtime::opaque::Block as sp_runtime::traits::Block>::Hash,
-                            >,
-                        >(config)
-                        .map_err(sc_cli::Error::Service)
-                    }
-                    Some(sc_network::config::NetworkBackendType::Litep2p) => {
+                match config.network.network_backend.unwrap_or_default() {
+                    sc_network::config::NetworkBackendType::Libp2p => service::new_full::<
+                        sc_network::NetworkWorker<
+                            wetee_runtime::opaque::Block,
+                            <wetee_runtime::opaque::Block as sp_runtime::traits::Block>::Hash,
+                        >,
+                    >(config)
+                    .map_err(sc_cli::Error::Service),
+                    sc_network::config::NetworkBackendType::Litep2p => {
                         service::new_full::<sc_network::Litep2pNetworkBackend>(config)
                             .map_err(sc_cli::Error::Service)
                     }
-                    None => panic!("Unsupported network backend"),
                 }
             })
         }

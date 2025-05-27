@@ -22,6 +22,8 @@ scale-info = {version = "2.10.0", default-features = false, features = [
   "derive",
   "serde",
 ]}
+serde_json = {workspace = true, default-features = false, features = ["alloc"]}
+sp-keyring = {workspace = true}
 
 # frame
 frame-executive = {workspace = true, default-features = false}
@@ -139,6 +141,7 @@ std = [
   "sp-storage/std",
   "sp-transaction-pool/std",
   "sp-version/std",
+  "sp-keyring/std",
   "substrate-wasm-builder",
   "pallet-insecure-randomness-collective-flip/std",
   "pallet-utility/std",
