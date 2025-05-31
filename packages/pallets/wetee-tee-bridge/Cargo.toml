@@ -25,7 +25,7 @@ sp-runtime = {workspace = true}
 sp-std = {workspace = true}
 
 orml-traits = {workspace = true}
-pallet-contracts = {workspace = true}
+pallet-revive = {workspace = true}
 
 wetee-assets = {path = "../wetee-assets", package = "wetee-assets", default-features = false}
 wetee-dao = {path = "../wetee-dao", package = "wetee-dao", default-features = false}
@@ -51,6 +51,6 @@ std = [
   "wetee-assets/std",
   "wetee-worker/std",
   "orml-traits/std",
-  "pallet-contracts/std",
+  "pallet-revive/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

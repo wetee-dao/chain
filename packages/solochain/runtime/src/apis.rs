@@ -309,7 +309,7 @@ impl_runtime_apis! {
         }
     }
 
-        impl pallet_revive::ReviveApi<Block, AccountId, Balance, Nonce, BlockNumber> for Runtime
+    impl pallet_revive::ReviveApi<Block, AccountId, Balance, Nonce, BlockNumber> for Runtime
     {
         fn balance(address: H160) -> U256 {
             Revive::evm_balance(&address)
@@ -320,7 +320,6 @@ impl_runtime_apis! {
         }
 
         fn gas_price() -> U256 {
-            log::info!("-----gas price");
             Revive::evm_gas_price()
         }
 

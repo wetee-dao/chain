@@ -51,7 +51,7 @@ pub use wetee_matrix::Call as MatrixCall;
 pub use wetee_project::Call as ProjectCall;
 pub use wetee_sudo::Call as SudoCall;
 pub use wetee_task::Call as TaskCall;
-// pub use wetee_tee_bridge::Call as TeeBridgeCall;
+pub use wetee_tee_bridge::Call as TeeBridgeCall;
 pub use wetee_treasury::Call as TreasuryCall;
 pub use wetee_worker::Call as WorkerCall;
 // End WETEE pallet.
@@ -105,7 +105,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 100,
+    spec_version: 103,
     impl_version: 1,
     apis: apis::RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -332,8 +332,8 @@ mod runtime {
     pub type Revive = pallet_revive;
     #[runtime::pallet_index(117)]
     pub type DSecret = wetee_dsecret;
-    // #[runtime::pallet_index(118)]
-    // pub type Bridge = wetee_tee_bridge;
+    #[runtime::pallet_index(118)]
+    pub type Bridge = wetee_tee_bridge;
     #[runtime::pallet_index(119)]
     pub type Matrix = wetee_matrix;
     #[runtime::pallet_index(120)]

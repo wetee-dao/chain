@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::traits::fungible::Inspect;
+use pallet_revive::evm::H160;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::prelude::vec::Vec;
 use scale_info::TypeInfo;
@@ -32,15 +33,15 @@ pub enum TEECallType {
 }
 
 #[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq, TypeInfo)]
-pub struct TEECall<AccountId> {
+pub struct TEECall {
     // tee call id
     pub id: u128,
     // tee call from chain index
     pub chain_id: Option<u64>,
     // tee call from contract
-    pub org_contract: AccountId,
+    pub org_contract: H160,
     // tee call from contract
-    pub org_caller: AccountId,
+    pub org_caller: H160,
     // tee call type
     pub call_type: TEECallType,
     // tee call to
@@ -58,9 +59,14 @@ pub mod pallet {
     use super::*;
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     use frame_system::pallet_prelude::*;
+    use pallet_revive::{
+        evm::{H256, U256},
+        ContractResult, DepositLimit, ExecReturnValue, MomentOf,
+    };
+    use sp_runtime::traits::Bounded;
     use wetee_primitives::types::ClusterId;
 
-    type BalanceOf<T> = <<T as pallet_contracts::Config>::Currency as Inspect<
+    type BalanceOf<T> = <<T as pallet_revive::Config>::Currency as Inspect<
         <T as frame_system::Config>::AccountId,
     >>::Balance;
 
@@ -68,7 +74,7 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config
         + wetee_dao::Config
-        + pallet_contracts::Config
+        + pallet_revive::Config
         + wetee_assets::Config
         + wetee_worker::Config
     {
@@ -102,21 +108,19 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn tee_calls)]
-    pub type TEECalls<T: Config> = StorageDoubleMap<
-        _,
-        Identity,
-        ClusterId,
-        Identity,
-        u128,
-        TEECall<T::AccountId>,
-        OptionQuery,
-    >;
+    pub type TEECalls<T: Config> =
+        StorageDoubleMap<_, Identity, ClusterId, Identity, u128, TEECall, OptionQuery>;
 
     /// App
     /// 应用
     #[pallet::storage]
     #[pallet::getter(fn api_metas)]
     pub type ApiMetas<T: Config> = StorageMap<_, Identity, WorkId, ApiMeta>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn results)]
+    pub type Results<T: Config> =
+        StorageMap<_, Identity, u128, ContractResult<ExecReturnValue, BalanceOf<T>>>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -146,7 +150,7 @@ pub mod pallet {
         /// Ink call successed
         InkCallSuccessed {
             work_id: WorkId,
-            contract: T::AccountId,
+            contract: H160,
             method: [u8; 4],
             args: Vec<InkArg>,
         },
@@ -172,7 +176,12 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T> {
+    impl<T: Config> Pallet<T>
+    where
+        BalanceOf<T>: Into<U256> + TryFrom<U256> + Bounded,
+        MomentOf<T>: Into<U256>,
+        T::Hash: frame_support::traits::IsType<H256>,
+    {
         // ink call tee callback function
         #[pallet::call_index(001)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::ink_callback())]
@@ -220,16 +229,13 @@ pub mod pallet {
             let gas_limit = Weight::MAX;
 
             // call contract
-            let call_result = pallet_contracts::Pallet::<T>::bare_call(
-                who,
+            let call_result = pallet_revive::Pallet::<T>::bare_call(
+                T::RuntimeOrigin::signed(who),
                 call.org_contract,
                 value,
                 gas_limit,
-                None,
+                DepositLimit::Unchecked,
                 call_data,
-                pallet_contracts::DebugInfo::UnsafeDebug,
-                pallet_contracts::CollectEvents::UnsafeCollect,
-                pallet_contracts::Determinism::Enforced,
             );
 
             // get work account
@@ -278,7 +284,7 @@ pub mod pallet {
         pub fn call_ink(
             origin: OriginFor<T>,
             work_id: WorkId,
-            contract: T::AccountId,
+            contract: H160,
             method: [u8; 4],
             args: Vec<InkArg>,
             value: BalanceOf<T>,
@@ -300,16 +306,13 @@ pub mod pallet {
             let gas_limit = Weight::MAX;
 
             // call contract
-            let call_result = pallet_contracts::Pallet::<T>::bare_call(
-                who,
+            let call_result = pallet_revive::Pallet::<T>::bare_call(
+                T::RuntimeOrigin::signed(who),
                 contract.clone(),
                 value,
                 gas_limit,
-                None,
+                DepositLimit::Unchecked,
                 call_data,
-                pallet_contracts::DebugInfo::UnsafeDebug,
-                pallet_contracts::CollectEvents::UnsafeCollect,
-                pallet_contracts::Determinism::Enforced,
             );
 
             // get work account
@@ -396,9 +399,9 @@ pub mod pallet {
         // handle call from ink
         pub fn call_from_ink(
             // tee caller contract
-            org_contract: T::AccountId,
+            org_contract: H160,
             // tee caller
-            org_caller: T::AccountId,
+            org_caller: H160,
             // tee call to
             work_id: WorkId,
             // tee call method index
@@ -426,7 +429,7 @@ pub mod pallet {
                 id,
                 chain_id: None,
                 org_contract: org_contract.clone(),
-                org_caller: org_caller.clone(),
+                org_caller: org_caller.clone(), //TODO
                 call_type: TEECallType::Ink,
                 work_id,
                 method,

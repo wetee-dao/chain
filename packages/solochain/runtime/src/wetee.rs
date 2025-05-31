@@ -237,11 +237,11 @@ impl wetee_matrix::Config for Runtime {
     type WeightInfo = ();
 }
 
-// impl wetee_tee_bridge::Config for Runtime {
-//     type RuntimeEvent = RuntimeEvent;
-//     type WeightInfo = ();
-//     type WorkExt = WorkExtIns;
-// }
+impl wetee_tee_bridge::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+    type WorkExt = WorkExtIns;
+}
 
 // pub struct FairlanchHook;
 // impl CrossCall<AccountId, Fairlanch> for FairlanchHook {

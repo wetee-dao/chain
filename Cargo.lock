@@ -21782,7 +21782,7 @@ dependencies = [
  "frame-system 40.1.0",
  "orml-traits",
  "pallet-balances 41.1.0",
- "pallet-contracts 40.1.0",
+ "pallet-revive",
  "parity-scale-codec",
  "scale-info",
  "sp-core 36.1.0",
