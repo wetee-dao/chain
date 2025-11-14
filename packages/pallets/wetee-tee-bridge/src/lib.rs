@@ -54,6 +54,14 @@ pub struct TEECall {
     pub callback_method: [u8; 4],
 }
 
+#[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq, TypeInfo)]
+pub enum Test{
+    BaseT,
+    TupleT(u8, u16),
+    StructT{ f1: i32, f2: i32 },
+    StrT(Vec<u8>),
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -121,6 +129,16 @@ pub mod pallet {
     #[pallet::getter(fn results)]
     pub type Results<T: Config> =
         StorageMap<_, Identity, u128, ContractResult<ExecReturnValue, BalanceOf<T>>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn enums)]
+    pub type Enums<T: Config> =
+        StorageMap<_, Identity, u128, Test>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn tuples)]
+    pub type Tuples<T: Config> =
+        StorageMap<_, Identity, u128, (u32, u32)>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]

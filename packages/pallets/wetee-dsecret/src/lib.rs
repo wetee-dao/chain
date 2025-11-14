@@ -1,7 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use frame_support::pallet_prelude::DecodeWithMemTracking;
+use parity_scale_codec::{Decode, Encode};
+use scale_info::TypeInfo;
+use sp_runtime::{
+    traits::{IdentifyAccount, Verify},
+    RuntimeDebug,
+};
 use sp_std::prelude::Vec;
-
 use wetee_primitives::types::{ClusterId, P2PAddr, WorkId};
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -11,6 +16,14 @@ mod weights;
 use weights::WeightInfo;
 
 pub use pallet::*;
+
+#[derive(
+    Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, TypeInfo, DecodeWithMemTracking,
+)]
+pub struct Validator<AccountId> {
+    pub validator_id: AccountId,
+    pub p2p_id: AccountId,
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -94,8 +107,17 @@ pub mod pallet {
 
     /// dkg 节点列表
     #[pallet::storage]
-    #[pallet::getter(fn nodes)]
-    pub type Nodes<T: Config> = StorageMap<_, Identity, u64, T::AccountId, OptionQuery>;
+    #[pallet::getter(fn validators)]
+    pub type Validators<T: Config> =
+        StorageMap<_, Identity, u64, Validator<T::AccountId>, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn epoch)]
+    pub type Epoch<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn last_epoch_block)]
+    pub type LastEpochBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, ValueQuery>;
 
     /// dkg pub server
     /// dkg pub 服务
@@ -140,6 +162,8 @@ pub mod pallet {
         /// Boot peers too long
         /// 启动节点过多
         BootPeersTooLong,
+        /// Epoch not expired
+        EpochNotExpired,
     }
 
     #[pallet::call]
@@ -151,6 +175,7 @@ pub mod pallet {
         pub fn register_node(
             origin: OriginFor<T>,
             sender: T::AccountId,
+            p2p_id: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             // TODO 更新治理模块后更新
             ensure_root(origin)?;
@@ -158,7 +183,13 @@ pub mod pallet {
             let nid = <NextNodeId<T>>::get();
 
             // 添加节点
-            <Nodes<T>>::insert(nid, sender.clone());
+            <Validators<T>>::insert(
+                nid,
+                Validator {
+                    validator_id: sender.clone(),
+                    p2p_id: p2p_id,
+                },
+            );
 
             // 增加 node id
             <NextNodeId<T>>::put(nid + 1);
@@ -211,15 +242,15 @@ pub mod pallet {
 
             // dsecret 节点列表
             // dsecret node list
-            let dpubs = Nodes::<T>::iter_values().collect::<Vec<_>>();
+            let dpubs = Validators::<T>::iter_values().collect::<Vec<_>>();
             for j in 0..dpubs.len() {
                 for i in 0..pubs.len() {
-                    if dpubs[j] == pubs[i] {
+                    if dpubs[j].validator_id == pubs[i] {
                         pubkeys.push(pubs[i].clone());
                         csigs.push(sigs[i].clone());
                     }
                 }
-                if dpubs[j] == who {
+                if dpubs[j].validator_id == who {
                     sender_in_pubs = true;
                 }
             }
@@ -273,9 +304,9 @@ pub mod pallet {
             // dsecret 节点列表
             // dsecret node list
             let mut sender_in_pubs = false;
-            let dpubs = Nodes::<T>::iter_values().collect::<Vec<_>>();
+            let dpubs = Validators::<T>::iter_values().collect::<Vec<_>>();
             for j in 0..dpubs.len() {
-                if dpubs[j] == who {
+                if dpubs[j].validator_id == who {
                     sender_in_pubs = true;
                 }
             }
@@ -301,9 +332,9 @@ pub mod pallet {
             server: P2PAddr<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            let node = Nodes::<T>::get(id).ok_or(Error::<T>::Call403)?;
+            let node = Validators::<T>::get(id).ok_or(Error::<T>::Call403)?;
 
-            ensure!(who == node, Error::<T>::Call403);
+            ensure!(who == node.validator_id, Error::<T>::Call403);
 
             <NodePubServers<T>>::insert(id, server);
             Ok(().into())
@@ -324,6 +355,34 @@ pub mod pallet {
 
             let bts = BoundedVec::try_from(boots).unwrap();
             BootPeers::<T>::put(bts);
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(015)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::upload_code())]
+        pub fn set_epoch(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let now = <frame_system::Pallet<T>>::block_number();
+            let last_epoch = <LastEpochBlock<T>>::get();
+            if now - last_epoch < 72000u32.into() {
+                return Err(Error::<T>::EpochNotExpired.into());
+            }
+
+            <Epoch<T>>::put(<Epoch<T>>::get() + 1);
+            <LastEpochBlock<T>>::put(now);
+
+            Ok(().into())
+        }
+
+        #[pallet::call_index(016)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::upload_code())]
+        pub fn set_epoch_with_gov(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            // TODO 更新治理模块后更新
+            ensure_root(origin)?;
+
+            let now = <frame_system::Pallet<T>>::block_number();
+            <Epoch<T>>::put(<Epoch<T>>::get() + 1);
+            <LastEpochBlock<T>>::put(now);
 
             Ok(().into())
         }

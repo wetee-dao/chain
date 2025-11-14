@@ -1,12 +1,8 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ## shell json解析包
-RUN apt-get update
-# RUN apt-get install -y jq
-# RUN apt-get install -y curl
-# RUN apt-get install -y httpie
+RUN apt-get update && apt-get install -y ca-certificates
 
-# 复制
 COPY /target/release/wetee-node /
 
 EXPOSE 9933 9944 9615
