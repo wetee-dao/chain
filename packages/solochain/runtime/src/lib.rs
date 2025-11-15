@@ -1,11 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![recursion_limit = "256"]
 
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub mod apis;
 pub mod configs;
+
+pub mod apis;
+pub mod assets_config;
+pub mod revive_config;
 
 extern crate alloc;
 use alloc::vec::Vec;
@@ -24,37 +26,9 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-pub mod genesis_config_presets;
-
-// Import the WETEE pallet.
 use pallet_revive::evm::runtime::EthExtra;
-mod call;
-mod vote;
-pub use vote::*;
-mod worker;
-pub use worker::*;
-mod wetee;
-pub use wetee::*;
-mod revive;
-// pub use contracts::*;
-// mod contract_extension;
 
-pub use wetee_app::Call as AppCall;
-pub use wetee_assets::Call as AssetsCall;
-pub use wetee_dao::Call as DaoCall;
-pub use wetee_dsecret::Call as SecretCall;
-pub use wetee_fairlanch::Call as FairlanchCall;
-pub use wetee_gov::Call as GovCall;
-pub use wetee_gpu::Call as GpuCall;
-pub use wetee_guild::Call as GuildCall;
-pub use wetee_matrix::Call as MatrixCall;
-pub use wetee_project::Call as ProjectCall;
-pub use wetee_sudo::Call as SudoCall;
-pub use wetee_task::Call as TaskCall;
-pub use wetee_tee_bridge::Call as TeeBridgeCall;
-pub use wetee_treasury::Call as TreasuryCall;
-pub use wetee_worker::Call as WorkerCall;
-// End WETEE pallet.
+pub mod genesis_config_presets;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -77,13 +51,6 @@ pub mod opaque {
     pub type BlockId = generic::BlockId<Block>;
     /// Opaque block hash type.
     pub type Hash = <BlakeTwo256 as HashT>::Output;
-
-    impl_opaque_keys! {
-        pub struct SessionKeys {
-            pub aura: Aura,
-            pub grandpa: Grandpa,
-        }
-    }
 }
 
 impl_opaque_keys! {
@@ -97,15 +64,15 @@ impl_opaque_keys! {
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: alloc::borrow::Cow::Borrowed("WeTEE-dev"),
-    impl_name: alloc::borrow::Cow::Borrowed("WeTEE-dev-runtime"),
+    spec_name: alloc::borrow::Cow::Borrowed("solochain-template-runtime"),
+    impl_name: alloc::borrow::Cow::Borrowed("solochain-template-runtime"),
     authoring_version: 1,
     // The version of the runtime specification. A full node will not attempt to use its native
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 110,
+    spec_version: 100,
     impl_version: 1,
     apis: apis::RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -185,7 +152,7 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 
-/// The `TransactionExtension` to the basic transaction logic.
+/// The TransactionExtension to the basic transaction logic.
 pub type TxExtension = (
     frame_system::CheckNonZeroSender<Runtime>,
     frame_system::CheckSpecVersion<Runtime>,
@@ -195,7 +162,7 @@ pub type TxExtension = (
     frame_system::CheckNonce<Runtime>,
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-    frame_system::WeightReclaim<Runtime>,
+    pallet_revive::evm::tx_extension::SetOrigin<Runtime>,
 );
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -215,25 +182,17 @@ impl EthExtra for EthExtraImpl {
             frame_system::CheckNonce::<Runtime>::from(nonce),
             frame_system::CheckWeight::<Runtime>::new(),
             pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
-            frame_system::WeightReclaim::<Runtime>::new(),
+            pallet_revive::evm::tx_extension::SetOrigin::<Runtime>::new_from_eth_transaction(),
         )
     }
 }
 
 /// Unchecked extrinsic type as expected by this runtime.
-// pub type UncheckedExtrinsic =
-//     generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 pub type UncheckedExtrinsic =
     pallet_revive::evm::runtime::UncheckedExtrinsic<Address, Signature, EthExtraImpl>;
 
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<RuntimeCall, TxExtension>;
-
-/// All migrations of the runtime, aside from the ones declared in the pallets.
-///
-/// This can be a tuple of types, each implementing `OnRuntimeUpgrade`.
-#[allow(unused_parens)]
-type Migrations = ();
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -242,18 +201,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    Migrations,
 >;
-
-impl TryFrom<RuntimeCall> for pallet_revive::Call<Runtime> {
-    type Error = ();
-    fn try_from(value: RuntimeCall) -> Result<Self, Self::Error> {
-        match value {
-            RuntimeCall::Revive(call) => Ok(call),
-            _ => Err(()),
-        }
-    }
-}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 #[frame_support::runtime]
@@ -294,51 +242,9 @@ mod runtime {
     #[runtime::pallet_index(6)]
     pub type Sudo = pallet_sudo;
 
-    #[runtime::pallet_index(7)]
-    pub type Authorship = pallet_authorship;
-
-    // WETEE
-    #[runtime::pallet_index(101)]
-    pub type Tokens = orml_tokens;
-    #[runtime::pallet_index(102)]
-    pub type RandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
-    #[runtime::pallet_index(103)]
-    pub type WeMessageQueue = wetee_message_queue;
-    #[runtime::pallet_index(104)]
-    pub type Utility = pallet_utility;
-    #[runtime::pallet_index(105)]
-    pub type Dao = wetee_dao;
-    #[runtime::pallet_index(106)]
-    pub type Asset = wetee_assets;
-    #[runtime::pallet_index(107)]
-    pub type WeSudo = wetee_sudo;
-    #[runtime::pallet_index(108)]
-    pub type Guild = wetee_guild;
-    #[runtime::pallet_index(109)]
-    pub type Project = wetee_project;
-    #[runtime::pallet_index(110)]
-    pub type Gov = wetee_gov;
-    #[runtime::pallet_index(111)]
-    pub type Treasury = wetee_treasury;
-    #[runtime::pallet_index(112)]
-    pub type App = wetee_app;
-    #[runtime::pallet_index(113)]
-    pub type Task = wetee_task;
-    #[runtime::pallet_index(114)]
-    pub type Gpu = wetee_gpu;
-    #[runtime::pallet_index(115)]
-    pub type Worker = wetee_worker;
-    #[runtime::pallet_index(8)]
+    #[runtime::pallet_index(100)]
     pub type Revive = pallet_revive;
-    #[runtime::pallet_index(117)]
-    pub type DSecret = wetee_dsecret;
-    #[runtime::pallet_index(118)]
-    pub type Bridge = wetee_tee_bridge;
-    #[runtime::pallet_index(119)]
-    pub type Matrix = wetee_matrix;
-    #[runtime::pallet_index(120)]
-    pub type Fairlanch = wetee_fairlanch;
-    #[runtime::pallet_index(124)]
-    pub type Store = wetee_store;
-    // WETEE end
+
+    #[runtime::pallet_index(101)]
+    pub type Assets = pallet_assets;
 }
