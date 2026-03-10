@@ -24,11 +24,19 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 extern crate alloc;
 
 use alloc::{vec, vec::Vec};
+use currency::*;
 use frame_support::weights::{
 	constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
 	Weight,
 };
 use frame_system::limits::BlockWeights;
+use pallet_revive::{
+	evm::{
+		fees::{BlockRatioFee, Info as FeeInfo},
+		runtime::EthExtra,
+	},
+	AccountId32Mapper,
+};
 use pallet_transaction_payment::{ConstFeeMultiplier, FeeDetails, Multiplier, RuntimeDispatchInfo};
 use polkadot_sdk::{
 	polkadot_sdk_frame::{
@@ -39,7 +47,6 @@ use polkadot_sdk::{
 	*,
 };
 use sp_weights::ConstantMultiplier;
-use currency::{CENTS, MILLICENTS};
 
 pub use polkadot_sdk::{
 	parachains_common::{AccountId, Balance, BlockNumber, Hash, Header, Nonce, Signature},
@@ -57,11 +64,12 @@ pub mod currency {
 pub mod genesis_config_presets {
 	use super::*;
 	use crate::{
-		currency::DOLLARS, sp_keyring::Sr25519Keyring, Balance, BalancesConfig,
+		currency::DOLLARS, sp_keyring::Sr25519Keyring, Balance, BalancesConfig, ReviveConfig,
 		RuntimeGenesisConfig, SudoConfig,
 	};
 
 	use alloc::{vec, vec::Vec};
+	use pallet_revive::is_eth_derived;
 	use serde_json::Value;
 
 	pub const ENDOWMENT: Balance = 10_000_000_000_001 * DOLLARS;
@@ -69,6 +77,28 @@ pub mod genesis_config_presets {
 	fn well_known_accounts() -> Vec<AccountId> {
 		Sr25519Keyring::well_known()
 			.map(|k| k.to_account_id())
+			.chain([
+				// subxt_signer::eth::dev::alith()
+				array_bytes::hex_n_into_unchecked(
+					"f24ff3a9cf04c71dbc94d0b566f7a27b94566caceeeeeeeeeeeeeeeeeeeeeeee",
+				),
+				// subxt_signer::eth::dev::baltathar()
+				array_bytes::hex_n_into_unchecked(
+					"3cd0a705a2dc65e5b1e1205896baa2be8a07c6e0eeeeeeeeeeeeeeeeeeeeeeee",
+				),
+				// subxt_signer::eth::dev::charleth()
+				array_bytes::hex_n_into_unchecked(
+					"798d4ba9baf0064ec19eb4f0a1a45785ae9d6dfceeeeeeeeeeeeeeeeeeeeeeee",
+				),
+				// subxt_signer::eth::dev::dorothy()
+				array_bytes::hex_n_into_unchecked(
+					"773539d4ac0e786233d90a233654ccee26a613d9eeeeeeeeeeeeeeeeeeeeeeee",
+				),
+				// subxt_signer::eth::dev::ethan()
+				array_bytes::hex_n_into_unchecked(
+					"ff64d3f6efe2317ee2807d223a0bdc4c0c49dfdbeeeeeeeeeeeeeeeeeeeeeeee",
+				),
+			])
 			.collect::<Vec<_>>()
 	}
 
@@ -84,6 +114,13 @@ pub mod genesis_config_presets {
 					.collect::<Vec<_>>(),
 			},
 			sudo: SudoConfig { key: Some(Sr25519Keyring::Alice.to_account_id()) },
+			revive: ReviveConfig {
+				mapped_accounts: endowed_accounts
+					.iter()
+					.filter(|x| !is_eth_derived(x))
+					.cloned()
+					.collect(),
+			},
 		})
 	}
 
@@ -109,8 +146,8 @@ pub mod genesis_config_presets {
 /// The runtime version.
 #[runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: alloc::borrow::Cow::Borrowed("wetee-runtime"),
-	impl_name: alloc::borrow::Cow::Borrowed("wetee-runtime"),
+	spec_name: alloc::borrow::Cow::Borrowed("revive-dev-runtime"),
+	impl_name: alloc::borrow::Cow::Borrowed("revive-dev-runtime"),
 	authoring_version: 1,
 	spec_version: 0,
 	impl_version: 1,
@@ -148,13 +185,40 @@ type TxExtension = (
 	// Ensures that the sender has enough funds to pay for the transaction
 	// and deducts the fee from the sender's account.
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	// Needs to be done after all extensions that rely on a signed origin.
+	pallet_revive::evm::tx_extension::SetOrigin<Runtime>,
 	// Reclaim the unused weight from the block using post dispatch information.
 	// It must be last in the pipeline in order to catch the refund in previous transaction
 	// extensions
 	frame_system::WeightReclaim<Runtime>,
 );
 
-pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
+/// Default extensions applied to Ethereum transactions.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct EthExtraImpl;
+
+impl EthExtra for EthExtraImpl {
+	type Config = Runtime;
+	type Extension = TxExtension;
+
+	fn get_eth_extension(nonce: u32, tip: Balance) -> Self::Extension {
+		(
+			frame_system::CheckNonZeroSender::<Runtime>::new(),
+			frame_system::CheckSpecVersion::<Runtime>::new(),
+			frame_system::CheckTxVersion::<Runtime>::new(),
+			frame_system::CheckGenesis::<Runtime>::new(),
+			frame_system::CheckMortality::from(sp_runtime::generic::Era::Immortal),
+			frame_system::CheckNonce::<Runtime>::from(nonce),
+			frame_system::CheckWeight::<Runtime>::new(),
+			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+			pallet_revive::evm::tx_extension::SetOrigin::<Runtime>::new_from_eth_transaction(),
+			frame_system::WeightReclaim::<Runtime>::new(),
+		)
+	}
+}
+
+pub type UncheckedExtrinsic =
+	pallet_revive::evm::runtime::UncheckedExtrinsic<Address, Signature, EthExtraImpl>;
 
 type Executive = frame_executive::Executive<
 	Runtime,
@@ -203,9 +267,9 @@ mod runtime {
 	#[runtime::pallet_index(4)]
 	pub type TransactionPayment = pallet_transaction_payment::Pallet<Runtime>;
 
-	/// Provides the ability to batch transactions.
+	/// Provides the ability to execute Smart Contracts.
 	#[runtime::pallet_index(5)]
-	pub type Utility = pallet_utility::Pallet<Runtime>;
+	pub type Revive = pallet_revive::Pallet<Runtime>;
 }
 
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
@@ -267,17 +331,9 @@ impl pallet_balances::Config for Runtime {
 #[derive_impl(pallet_sudo::config_preludes::TestDefaultConfig)]
 impl pallet_sudo::Config for Runtime {}
 
-// Implements the types required for the timestamp pallet.
+// Implements the types required for the sudo pallet.
 #[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for Runtime {}
-
-// Implements the types required for the utility pallet.
-impl pallet_utility::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
-	type PalletsOrigin = OriginCaller;
-	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
-}
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 10 * MILLICENTS;
@@ -288,12 +344,37 @@ parameter_types! {
 #[derive_impl(pallet_transaction_payment::config_preludes::TestDefaultConfig)]
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, ()>;
-	type WeightToFee = frame_support::weights::IdentityFee<Balance>;
+	type WeightToFee = BlockRatioFee<1, 1, Self, Balance>;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
 }
 
-impl_runtime_apis! {
+parameter_types! {
+	pub CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
+}
+
+#[derive_impl(pallet_revive::config_preludes::TestDefaultConfig)]
+impl pallet_revive::Config for Runtime {
+	type AddressMapper = AccountId32Mapper<Self>;
+	type ChainId = ConstU64<420_420_420>;
+	type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+	type Balance = Balance;
+	type Currency = Balances;
+	type NativeToEthRatio = ConstU32<1_000_000>;
+	type UploadOrigin = EnsureSigned<Self::AccountId>;
+	type InstantiateOrigin = EnsureSigned<Self::AccountId>;
+	type Time = Timestamp;
+	type FeeInfo = FeeInfo<Address, Signature, EthExtraImpl>;
+	type DebugEnabled = ConstBool<true>;
+	type GasScale = ConstU32<50000>;
+}
+
+pallet_revive::impl_runtime_apis_plus_revive_traits!(
+	Runtime,
+	Revive,
+	Executive,
+	EthExtraImpl,
+
 	impl apis::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
 			VERSION
@@ -409,4 +490,4 @@ impl_runtime_apis! {
 			self::genesis_config_presets::preset_names()
 		}
 	}
-}
+);

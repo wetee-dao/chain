@@ -13,6 +13,7 @@ array-bytes = { workspace = true }
 codec = { workspace = true }
 polkadot-sdk = { workspace = true, features = [
 	"pallet-balances",
+	"pallet-revive",
 	"pallet-sudo",
 	"pallet-timestamp",
 	"pallet-transaction-payment",
