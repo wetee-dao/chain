@@ -1,250 +1,412 @@
+// This file is part of Substrate.
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
+// Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub mod configs;
-
-pub mod apis;
-pub mod assets_config;
-pub mod revive_config;
-
 extern crate alloc;
-use alloc::vec::Vec;
-use sp_runtime::{
-    generic, impl_opaque_keys,
-    traits::{BlakeTwo256, IdentifyAccount, Verify},
-    MultiAddress, MultiSignature,
+
+use alloc::{vec, vec::Vec};
+use frame_support::weights::{
+	constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
+	Weight,
 };
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
+use frame_system::limits::BlockWeights;
+use pallet_transaction_payment::{ConstFeeMultiplier, FeeDetails, Multiplier, RuntimeDispatchInfo};
+use polkadot_sdk::{
+	polkadot_sdk_frame::{
+		deps::sp_genesis_builder,
+		runtime::{apis, prelude::*},
+		traits::Block as BlockT,
+	},
+	*,
+};
+use sp_weights::ConstantMultiplier;
+use currency::{CENTS, MILLICENTS};
 
-pub use frame_system::Call as SystemCall;
-pub use pallet_balances::Call as BalancesCall;
-pub use pallet_timestamp::Call as TimestampCall;
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
+pub use polkadot_sdk::{
+	parachains_common::{AccountId, Balance, BlockNumber, Hash, Header, Nonce, Signature},
+	polkadot_sdk_frame::runtime::types_common::OpaqueBlock,
+};
 
-use pallet_revive::evm::runtime::EthExtra;
-
-pub mod genesis_config_presets;
-
-/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
-/// the specifics of the runtime. They can then be made to be agnostic over specific formats
-/// of data like extrinsics, allowing for them to continue syncing the network through upgrades
-/// to even the core data structures.
-pub mod opaque {
-    use super::*;
-    use sp_runtime::{
-        generic,
-        traits::{BlakeTwo256, Hash as HashT},
-    };
-
-    pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
-
-    /// Opaque block header type.
-    pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// Opaque block type.
-    pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-    /// Opaque block identifier type.
-    pub type BlockId = generic::BlockId<Block>;
-    /// Opaque block hash type.
-    pub type Hash = <BlakeTwo256 as HashT>::Output;
+pub mod currency {
+	use super::Balance;
+	pub const DOLLARS: Balance = 1_000_000_000_000;
+	pub const CENTS: Balance = DOLLARS / 100;
+	pub const MILLICENTS: Balance = CENTS / 1_000;
 }
 
-impl_opaque_keys! {
-    pub struct SessionKeys {
-        pub aura: Aura,
-        pub grandpa: Grandpa,
-    }
+/// Provides getters for genesis configuration presets.
+pub mod genesis_config_presets {
+	use super::*;
+	use crate::{
+		currency::DOLLARS, sp_keyring::Sr25519Keyring, Balance, BalancesConfig,
+		RuntimeGenesisConfig, SudoConfig,
+	};
+
+	use alloc::{vec, vec::Vec};
+	use serde_json::Value;
+
+	pub const ENDOWMENT: Balance = 10_000_000_000_001 * DOLLARS;
+
+	fn well_known_accounts() -> Vec<AccountId> {
+		Sr25519Keyring::well_known()
+			.map(|k| k.to_account_id())
+			.collect::<Vec<_>>()
+	}
+
+	/// Returns a development genesis config preset.
+	pub fn development_config_genesis() -> Value {
+		let endowed_accounts = well_known_accounts();
+		frame_support::build_struct_json_patch!(RuntimeGenesisConfig {
+			balances: BalancesConfig {
+				balances: endowed_accounts
+					.iter()
+					.cloned()
+					.map(|id| (id, ENDOWMENT))
+					.collect::<Vec<_>>(),
+			},
+			sudo: SudoConfig { key: Some(Sr25519Keyring::Alice.to_account_id()) },
+		})
+	}
+
+	/// Get the set of the available genesis config presets.
+	pub fn get_preset(id: &PresetId) -> Option<Vec<u8>> {
+		let patch = match id.as_ref() {
+			sp_genesis_builder::DEV_RUNTIME_PRESET => development_config_genesis(),
+			_ => return None,
+		};
+		Some(
+			serde_json::to_string(&patch)
+				.expect("serialization to json is expected to work. qed.")
+				.into_bytes(),
+		)
+	}
+
+	/// List of supported presets.
+	pub fn preset_names() -> Vec<PresetId> {
+		vec![PresetId::from(sp_genesis_builder::DEV_RUNTIME_PRESET)]
+	}
 }
 
-// To learn more about runtime versioning, see:
-// https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
-#[sp_version::runtime_version]
+/// The runtime version.
+#[runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: alloc::borrow::Cow::Borrowed("solochain-template-runtime"),
-    impl_name: alloc::borrow::Cow::Borrowed("solochain-template-runtime"),
-    authoring_version: 1,
-    // The version of the runtime specification. A full node will not attempt to use its native
-    //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
-    //   `spec_version`, and `authoring_version` are the same between Wasm and native.
-    // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
-    //   the compatible custom types.
-    spec_version: 100,
-    impl_version: 1,
-    apis: apis::RUNTIME_API_VERSIONS,
-    transaction_version: 1,
-    system_version: 1,
+	spec_name: alloc::borrow::Cow::Borrowed("wetee-runtime"),
+	impl_name: alloc::borrow::Cow::Borrowed("wetee-runtime"),
+	authoring_version: 1,
+	spec_version: 0,
+	impl_version: 1,
+	apis: RUNTIME_API_VERSIONS,
+	transaction_version: 1,
+	system_version: 1,
 };
-
-mod block_times {
-    /// This determines the average expected block time that we are targeting. Blocks will be
-    /// produced at a minimum duration defined by `SLOT_DURATION`. `SLOT_DURATION` is picked up by
-    /// `pallet_timestamp` which is in turn picked up by `pallet_aura` to implement `fn
-    /// slot_duration()`.
-    ///
-    /// Change this to adjust the block time.
-    pub const MILLI_SECS_PER_BLOCK: u64 = 6000;
-
-    // NOTE: Currently it is not possible to change the slot duration after the chain has started.
-    // Attempting to do so will brick block production.
-    pub const SLOT_DURATION: u64 = MILLI_SECS_PER_BLOCK;
-}
-pub use block_times::*;
-
-// Time is measured by number of blocks.
-pub const MINUTES: BlockNumber = 60_000 / (MILLI_SECS_PER_BLOCK as BlockNumber);
-pub const HOURS: BlockNumber = MINUTES * 60;
-pub const DAYS: BlockNumber = HOURS * 24;
-
-pub const BLOCK_HASH_COUNT: BlockNumber = 2400;
-
-// Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = 1_000_000_000_000;
-pub const MILLI_UNIT: Balance = 1_000_000_000;
-pub const MICRO_UNIT: Balance = 1_000_000;
-
-/// Existential deposit.
-pub const EXISTENTIAL_DEPOSIT: Balance = MILLI_UNIT;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-    NativeVersion {
-        runtime_version: VERSION,
-        can_author_with: Default::default(),
-    }
+	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
-
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = MultiSignature;
-
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
-
-/// Balance of an account.
-pub type Balance = u128;
-
-/// Index of a transaction in the chain.
-pub type Nonce = u32;
-
-/// A hash of some data used by the chain.
-pub type Hash = sp_core::H256;
-
-/// An index to a block.
-pub type BlockNumber = u32;
 
 /// The address format for describing accounts.
-pub type Address = MultiAddress<AccountId, ()>;
-
-/// Block header type as expected by this runtime.
-pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-
+pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Block type as expected by this runtime.
-pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-
-/// A Block signed with a Justification
-pub type SignedBlock = generic::SignedBlock<Block>;
-
-/// BlockId type as expected by this runtime.
-pub type BlockId = generic::BlockId<Block>;
-
-/// The TransactionExtension to the basic transaction logic.
-pub type TxExtension = (
-    frame_system::CheckNonZeroSender<Runtime>,
-    frame_system::CheckSpecVersion<Runtime>,
-    frame_system::CheckTxVersion<Runtime>,
-    frame_system::CheckGenesis<Runtime>,
-    frame_system::CheckEra<Runtime>,
-    frame_system::CheckNonce<Runtime>,
-    frame_system::CheckWeight<Runtime>,
-    pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-    pallet_revive::evm::tx_extension::SetOrigin<Runtime>,
+pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
+/// The transaction extensions that are added to the runtime.
+type TxExtension = (
+	// Checks that the sender is not the zero address.
+	frame_system::CheckNonZeroSender<Runtime>,
+	// Checks that the runtime version is correct.
+	frame_system::CheckSpecVersion<Runtime>,
+	// Checks that the transaction version is correct.
+	frame_system::CheckTxVersion<Runtime>,
+	// Checks that the genesis hash is correct.
+	frame_system::CheckGenesis<Runtime>,
+	// Checks that the era is valid.
+	frame_system::CheckEra<Runtime>,
+	// Checks that the nonce is valid.
+	frame_system::CheckNonce<Runtime>,
+	// Checks that the weight is valid.
+	frame_system::CheckWeight<Runtime>,
+	// Ensures that the sender has enough funds to pay for the transaction
+	// and deducts the fee from the sender's account.
+	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	// Reclaim the unused weight from the block using post dispatch information.
+	// It must be last in the pipeline in order to catch the refund in previous transaction
+	// extensions
+	frame_system::WeightReclaim<Runtime>,
 );
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct EthExtraImpl;
+pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
-impl EthExtra for EthExtraImpl {
-    type Config = Runtime;
-    type Extension = TxExtension;
-
-    fn get_eth_extension(nonce: u32, tip: Balance) -> Self::Extension {
-        (
-            frame_system::CheckNonZeroSender::<Runtime>::new(),
-            frame_system::CheckSpecVersion::<Runtime>::new(),
-            frame_system::CheckTxVersion::<Runtime>::new(),
-            frame_system::CheckGenesis::<Runtime>::new(),
-            frame_system::CheckEra::from(crate::generic::Era::Immortal),
-            frame_system::CheckNonce::<Runtime>::from(nonce),
-            frame_system::CheckWeight::<Runtime>::new(),
-            pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
-            pallet_revive::evm::tx_extension::SetOrigin::<Runtime>::new_from_eth_transaction(),
-        )
-    }
-}
-
-/// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic =
-    pallet_revive::evm::runtime::UncheckedExtrinsic<Address, Signature, EthExtraImpl>;
-
-/// The payload being signed in transactions.
-pub type SignedPayload = generic::SignedPayload<RuntimeCall, TxExtension>;
-
-/// Executive: handles dispatch to the various modules.
-pub type Executive = frame_executive::Executive<
-    Runtime,
-    Block,
-    frame_system::ChainContext<Runtime>,
-    Runtime,
-    AllPalletsWithSystem,
+type Executive = frame_executive::Executive<
+	Runtime,
+	Block,
+	frame_system::ChainContext<Runtime>,
+	Runtime,
+	AllPalletsWithSystem,
 >;
 
-// Create the runtime by composing the FRAME pallets that were previously configured.
-#[frame_support::runtime]
+// Composes the runtime by adding all the used pallets and deriving necessary types.
+#[frame_construct_runtime]
 mod runtime {
-    #[runtime::runtime]
-    #[runtime::derive(
-        RuntimeCall,
-        RuntimeEvent,
-        RuntimeError,
-        RuntimeOrigin,
-        RuntimeFreezeReason,
-        RuntimeHoldReason,
-        RuntimeSlashReason,
-        RuntimeLockId,
-        RuntimeTask,
-        RuntimeViewFunction
-    )]
-    pub struct Runtime;
+	/// The main runtime type.
+	#[runtime::runtime]
+	#[runtime::derive(
+		RuntimeCall,
+		RuntimeEvent,
+		RuntimeError,
+		RuntimeOrigin,
+		RuntimeFreezeReason,
+		RuntimeHoldReason,
+		RuntimeSlashReason,
+		RuntimeLockId,
+		RuntimeTask,
+		RuntimeViewFunction
+	)]
+	pub struct Runtime;
 
-    #[runtime::pallet_index(0)]
-    pub type System = frame_system;
+	/// Mandatory system pallet that should always be included in a FRAME runtime.
+	#[runtime::pallet_index(0)]
+	pub type System = frame_system::Pallet<Runtime>;
 
-    #[runtime::pallet_index(1)]
-    pub type Timestamp = pallet_timestamp;
+	/// Provides a way for consensus systems to set and check the onchain time.
+	#[runtime::pallet_index(1)]
+	pub type Timestamp = pallet_timestamp::Pallet<Runtime>;
 
-    #[runtime::pallet_index(2)]
-    pub type Aura = pallet_aura;
+	/// Provides the ability to keep track of balances.
+	#[runtime::pallet_index(2)]
+	pub type Balances = pallet_balances::Pallet<Runtime>;
 
-    #[runtime::pallet_index(3)]
-    pub type Grandpa = pallet_grandpa;
+	/// Provides a way to execute privileged functions.
+	#[runtime::pallet_index(3)]
+	pub type Sudo = pallet_sudo::Pallet<Runtime>;
 
-    #[runtime::pallet_index(4)]
-    pub type Balances = pallet_balances;
+	/// Provides the ability to charge for extrinsic execution.
+	#[runtime::pallet_index(4)]
+	pub type TransactionPayment = pallet_transaction_payment::Pallet<Runtime>;
 
-    #[runtime::pallet_index(5)]
-    pub type TransactionPayment = pallet_transaction_payment;
+	/// Provides the ability to batch transactions.
+	#[runtime::pallet_index(5)]
+	pub type Utility = pallet_utility::Pallet<Runtime>;
+}
 
-    #[runtime::pallet_index(6)]
-    pub type Sudo = pallet_sudo;
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// This is used to limit the maximal weight of a single extrinsic.
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
+/// by  Operational  extrinsics.
+const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+/// We allow for 2 seconds of compute with a 6 second average block time, with maximum proof size.
+const MAXIMUM_BLOCK_WEIGHT: Weight =
+	Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
 
-    #[runtime::pallet_index(100)]
-    pub type Revive = pallet_revive;
+parameter_types! {
+	pub const Version: RuntimeVersion = VERSION;
+	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+		.base_block(BlockExecutionWeight::get())
+		.for_class(DispatchClass::all(), |weights| {
+			weights.base_extrinsic = ExtrinsicBaseWeight::get();
+		})
+		.for_class(DispatchClass::Normal, |weights| {
+			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+		})
+		.for_class(DispatchClass::Operational, |weights| {
+			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+			// Operational transactions have some extra reserved space, so that they
+			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+			weights.reserved = Some(
+				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+			);
+		})
+		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+		.build_or_panic();
+}
 
-    #[runtime::pallet_index(101)]
-    pub type Assets = pallet_assets;
+/// Implements the types required for the system pallet.
+#[derive_impl(frame_system::config_preludes::SolochainDefaultConfig)]
+impl frame_system::Config for Runtime {
+	type Block = Block;
+	type Version = Version;
+	type AccountId = AccountId;
+	type Hash = Hash;
+	type Nonce = Nonce;
+	type AccountData = pallet_balances::AccountData<<Runtime as pallet_balances::Config>::Balance>;
+}
+
+parameter_types! {
+	pub const ExistentialDeposit: Balance = CENTS;
+}
+
+// Implements the types required for the balances pallet.
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
+impl pallet_balances::Config for Runtime {
+	type AccountStore = System;
+	type Balance = Balance;
+	type ExistentialDeposit = ExistentialDeposit;
+}
+
+// Implements the types required for the sudo pallet.
+#[derive_impl(pallet_sudo::config_preludes::TestDefaultConfig)]
+impl pallet_sudo::Config for Runtime {}
+
+// Implements the types required for the timestamp pallet.
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
+impl pallet_timestamp::Config for Runtime {}
+
+// Implements the types required for the utility pallet.
+impl pallet_utility::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const TransactionByteFee: Balance = 10 * MILLICENTS;
+	pub FeeMultiplier: Multiplier = Multiplier::one();
+}
+
+// Implements the types required for the transaction payment pallet.
+#[derive_impl(pallet_transaction_payment::config_preludes::TestDefaultConfig)]
+impl pallet_transaction_payment::Config for Runtime {
+	type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, ()>;
+	type WeightToFee = frame_support::weights::IdentityFee<Balance>;
+	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
+	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
+}
+
+impl_runtime_apis! {
+	impl apis::Core<Block> for Runtime {
+		fn version() -> RuntimeVersion {
+			VERSION
+		}
+
+		fn execute_block(block: <Block as BlockT>::LazyBlock) {
+			Executive::execute_block(block)
+		}
+
+		fn initialize_block(header: &Header) -> ExtrinsicInclusionMode {
+			Executive::initialize_block(header)
+		}
+	}
+
+	impl apis::Metadata<Block> for Runtime {
+		fn metadata() -> OpaqueMetadata {
+			OpaqueMetadata::new(Runtime::metadata().into())
+		}
+
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> Vec<u32> {
+			Runtime::metadata_versions()
+		}
+	}
+
+	impl apis::BlockBuilder<Block> for Runtime {
+		fn apply_extrinsic(extrinsic: ExtrinsicFor<Runtime>) -> ApplyExtrinsicResult {
+			Executive::apply_extrinsic(extrinsic)
+		}
+
+		fn finalize_block() -> HeaderFor<Runtime> {
+			Executive::finalize_block()
+		}
+
+		fn inherent_extrinsics(data: InherentData) -> Vec<ExtrinsicFor<Runtime>> {
+			data.create_extrinsics()
+		}
+
+		fn check_inherents(
+			block: <Block as BlockT>::LazyBlock,
+			data: InherentData,
+		) -> CheckInherentsResult {
+			data.check_extrinsics(&block)
+		}
+	}
+
+	impl apis::TaggedTransactionQueue<Block> for Runtime {
+		fn validate_transaction(
+			source: TransactionSource,
+			tx: ExtrinsicFor<Runtime>,
+			block_hash: <Runtime as frame_system::Config>::Hash,
+		) -> TransactionValidity {
+			Executive::validate_transaction(source, tx, block_hash)
+		}
+	}
+
+	impl apis::OffchainWorkerApi<Block> for Runtime {
+		fn offchain_worker(header: &HeaderFor<Runtime>) {
+			Executive::offchain_worker(header)
+		}
+	}
+
+	impl apis::SessionKeys<Block> for Runtime {
+		fn generate_session_keys(_owner: Vec<u8>, _seed: Option<Vec<u8>>) -> apis::OpaqueGeneratedSessionKeys {
+		Default::default()
+		}
+
+
+		fn decode_session_keys(
+			_encoded: Vec<u8>,
+		) -> Option<Vec<(Vec<u8>, apis::KeyTypeId)>> {
+			Default::default()
+		}
+	}
+
+	impl apis::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+		fn account_nonce(account: AccountId) -> Nonce {
+			System::account_nonce(account)
+		}
+	}
+
+	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
+		Block,
+		Balance,
+	> for Runtime {
+		fn query_info(uxt: ExtrinsicFor<Runtime>, len: u32) -> RuntimeDispatchInfo<Balance> {
+			TransactionPayment::query_info(uxt, len)
+		}
+		fn query_fee_details(uxt: ExtrinsicFor<Runtime>, len: u32) -> FeeDetails<Balance> {
+			TransactionPayment::query_fee_details(uxt, len)
+		}
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
+		}
+	}
+
+	impl apis::GenesisBuilder<Block> for Runtime {
+		fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+			build_state::<RuntimeGenesisConfig>(config)
+		}
+
+		fn get_preset(id: &Option<PresetId>) -> Option<Vec<u8>> {
+			get_preset::<RuntimeGenesisConfig>(id, self::genesis_config_presets::get_preset)
+		}
+
+		fn preset_names() -> Vec<PresetId> {
+			self::genesis_config_presets::preset_names()
+		}
+	}
 }

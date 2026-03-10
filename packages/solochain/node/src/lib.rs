@@ -15,9 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-fn main() {
-	#[cfg(feature = "std")]
-	{
-		polkadot_sdk::substrate_wasm_builder::WasmBuilder::build_using_defaults();
-	}
-}
+pub mod chain_spec;
+pub(crate) mod cli;
+pub mod command;
+pub mod rpc;
+pub mod service;

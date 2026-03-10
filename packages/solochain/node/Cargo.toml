@@ -1,85 +1,36 @@
 [package]
-authors.workspace = true
-build = "build.rs"
-edition.workspace = true
-homepage.workspace = true
-license = "MIT-0"
-name = "wetee-node"
-publish = false
-repository.workspace = true
+name = "revive-dev-node"
+description = "A development Substrate-based Substrate node, equipped with pallet-revive."
 version = "0.0.0"
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+edition.workspace = true
+publish = false
+build = "build.rs"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
+[lints]
+workspace = true
 
 [dependencies]
 clap = { features = ["derive"], workspace = true }
+docify = { workspace = true }
 futures = { features = ["thread-pool"], workspace = true }
+futures-timer = { workspace = true }
 jsonrpsee = { features = ["server"], workspace = true }
-hex-literal = {workspace = true}
 
-# substrate client
-sc-basic-authorship = { workspace = true, default-features = true }
-sc-cli = { workspace = true, default-features = true }
-sc-client-api = { workspace = true, default-features = true }
-sc-consensus = { workspace = true, default-features = true }
-sc-consensus-aura = { workspace = true, default-features = true }
-sc-consensus-grandpa = { workspace = true, default-features = true }
-sc-executor = { workspace = true, default-features = true }
-sc-network = { workspace = true, default-features = true }
-sc-offchain = { workspace = true, default-features = true }
-sc-service = { workspace = true, default-features = true }
-sc-telemetry = { workspace = true, default-features = true }
-sc-transaction-pool = { workspace = true, default-features = true }
-sc-transaction-pool-api = { workspace = true, default-features = true }
-sp-consensus-aura = { workspace = true, default-features = true }
-sp-core = { workspace = true, default-features = true }
-sp-genesis-builder = { workspace = true, default-features = true }
-
-# substrate primitives
-sp-api = { workspace = true, default-features = true }
-sp-block-builder = { workspace = true, default-features = true }
-sp-blockchain = { workspace = true, default-features = true }
-sp-inherents = { workspace = true, default-features = true }
-sp-io = { workspace = true, default-features = true }
-sp-keyring = { workspace = true, default-features = true }
-sp-runtime = { workspace = true, default-features = true }
-sp-timestamp = { workspace = true, default-features = true }
-
-# frame and pallets
-frame-metadata-hash-extension = { workspace = true, default-features = true }
-frame-system = { workspace = true, default-features = true }
-pallet-transaction-payment = { workspace = true, default-features = true }
-pallet-transaction-payment-rpc = { workspace = true, default-features = true }
-substrate-frame-rpc-system = { workspace = true, default-features = true }
-
-# These dependencies are used for runtime benchmarking
-frame-benchmarking-cli = { workspace = true, default-features = true }
-
-# Local Dependencies
-wetee-runtime = {path = "../runtime"}
+polkadot-sdk = { workspace = true, features = ["experimental", "node"] }
+wetee-runtime = { workspace = true }
 
 [build-dependencies]
-substrate-build-script-utils = { workspace = true, default-features = true }
+polkadot-sdk = { workspace = true, features = ["substrate-build-script-utils"] }
 
 [features]
 default = ["std"]
-std = ["wetee-runtime/std"]
-# Dependencies that are only required if runtime benchmarking should be build.
-runtime-benchmarks = [
-	"frame-benchmarking-cli/runtime-benchmarks",
-	"frame-system/runtime-benchmarks",
-	"pallet-transaction-payment/runtime-benchmarks",
-	"sc-service/runtime-benchmarks",
-	"wetee-runtime/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
-]
-# Enable features that allow the runtime to be tried and debugged. Name might be subject to change
-# in the near future.
-try-runtime = [
-	"frame-system/try-runtime",
-	"pallet-transaction-payment/try-runtime",
-	"wetee-runtime/try-runtime",
-	"sp-runtime/try-runtime",
+std = [
+	"polkadot-sdk/std",
+	"wetee-runtime/std",
 ]
